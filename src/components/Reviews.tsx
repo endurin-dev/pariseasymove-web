@@ -1,3 +1,37 @@
+"use client";
+
+import React from "react";
+
+const packages = [
+  {
+    num: "01",
+    tag: "Priority Route",
+    title: "CDG Airport to Disneyland",
+    desc: "Seamless terminal-to-magic transition with professional meet-and-greet and real-time flight tracking.",
+    time: "≈ 45 min",
+    fare: "€105",
+    bg: "https://private-driver-paris-airport-transfer.com/wp-content/uploads/2025/10/mercedes-v-class-van-private-driver-paris-luxury-fleet.jpeg",
+  },
+  {
+    num: "02",
+    tag: "Family Choice",
+    title: "Orly Airport to Disneyland",
+    desc: "Fast, spacious door-to-door transfer ideal for families — generous luggage & stroller capacity.",
+    time: "≈ 40 min",
+    fare: "€95",
+    bg: "https://www.parisride.com/wp-content/uploads/2025/10/Disneyland-Paris.png",
+  },
+  {
+    num: "03",
+    tag: "Executive",
+    title: "Paris to Palace of Versailles",
+    desc: "Arrive in timeless elegance. Private narrated approach avoiding crowds and queues.",
+    time: "≈ 50 min",
+    fare: "€110",
+    bg: "https://parisprestigecab.com/assets/versailles-BzoH0iLQ.jpg",
+  },
+];
+
 const googleReviews = [
   {
     name: "Sarah Mitchell",
@@ -5,8 +39,8 @@ const googleReviews = [
     color: "#4285F4",
     date: "2 weeks ago",
     rating: 5,
-    text: "Absolutely seamless experience from CDG to our Disney hotel. Driver was waiting at arrivals with a sign, helped with all our luggage, and the car was spotless. Kids loved it. Will 100% book again.",
-    trip: "CDG → Disneyland Paris",
+    text: "Absolutely seamless from CDG to our Disney hotel. Driver was waiting with a name sign and handled all luggage effortlessly.",
+    trip: "CDG → Disneyland",
   },
   {
     name: "James Thornton",
@@ -14,83 +48,16 @@ const googleReviews = [
     color: "#EA4335",
     date: "1 month ago",
     rating: 5,
-    text: "Used this service for our Versailles day trip. On time, professional, and the driver gave us tips on the best entrance to use. Fixed price meant no nasty surprises. Highly recommend.",
+    text: "Perfect Versailles day trip transfer. Punctual, courteous driver who shared excellent tips for avoiding crowds.",
     trip: "Paris → Versailles",
   },
-  {
-    name: "Amélie Dubois",
-    avatar: "AD",
-    color: "#34A853",
-    date: "3 weeks ago",
-    rating: 5,
-    text: "Parfait! Booked for a group of 6 from Orly. The van was clean, comfortable and the driver was incredibly friendly. Much better than the shuttle buses. Merci!",
-    trip: "Orly → Disneyland Paris",
-  },
-  {
-    name: "Marco Russo",
-    avatar: "MR",
-    color: "#FBBC04",
-    date: "5 days ago",
-    rating: 5,
-    text: "Third time using this company. Always punctual, always professional. Late-night flight arrival and the driver was there without any issue. This is the only way to travel in Paris.",
-    trip: "CDG → Paris Centre",
-  },
 ];
 
-const taReviews = [
-  {
-    name: "TravellerLondon22",
-    avatar: "TL",
-    color: "#00AA6C",
-    date: "October 2024",
-    rating: 5,
-    text: "Booked the Beauvais to Disney transfer for our family of four. The driver was professional and the price was very fair. No hidden charges. Our holiday started perfectly!",
-    trip: "Beauvais → Disneyland Paris",
-    helpful: 14,
-  },
-  {
-    name: "NYC_Explorer",
-    avatar: "NE",
-    color: "#589442",
-    date: "September 2024",
-    rating: 5,
-    text: "Outstanding service. I travel to Paris frequently for work and always use this for airport transfers. Consistent quality every single time. Nothing but praise.",
-    trip: "CDG → Paris Centre",
-    helpful: 9,
-  },
-  {
-    name: "FamilyFunParis",
-    avatar: "FF",
-    color: "#00AA6C",
-    date: "August 2024",
-    rating: 5,
-    text: "Wonderful experience with two young children. Driver helped us install the car seat and was incredibly patient. Stress-free from start to finish. Couldn't ask for more.",
-    trip: "Orly → Disneyland Paris",
-    helpful: 21,
-  },
-  {
-    name: "WanderlustCouple",
-    avatar: "WC",
-    color: "#589442",
-    date: "July 2024",
-    rating: 5,
-    text: "We were nervous about navigating Paris with all our bags. This service made everything so easy. Friendly driver, clean car, great value. A must-book for any Paris visitor.",
-    trip: "CDG → Versailles",
-    helpful: 17,
-  },
-];
-
-function Stars({ count, color }: { count: number; color: string }) {
+function Stars({ count, color = "#fbbf24", size = 14 }: { count: number; color?: string; size?: number }) {
   return (
-    <div style={{ display: "flex", gap: "2px" }}>
+    <div style={{ display: "flex", gap: "4px" }}>
       {Array.from({ length: 5 }).map((_, i) => (
-        <svg
-          key={i}
-          width="14" height="14" viewBox="0 0 24 24"
-          fill={i < count ? color : "none"}
-          stroke={i < count ? color : "rgba(0,0,0,0.2)"}
-          strokeWidth="1.5"
-        >
+        <svg key={i} width={size} height={size} viewBox="0 0 24 24" fill={i < count ? color : "none"} stroke={color} strokeWidth="1.8">
           <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
         </svg>
       ))}
@@ -98,328 +65,404 @@ function Stars({ count, color }: { count: number; color: string }) {
   );
 }
 
-function GoogleLogo() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-    </svg>
-  );
-}
-
-function TripAdvisorLogo() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
-      <circle cx="20" cy="20" r="20" fill="#00AA6C"/>
-      <circle cx="14" cy="20" r="5" fill="white"/>
-      <circle cx="26" cy="20" r="5" fill="white"/>
-      <circle cx="14" cy="20" r="2.5" fill="#00AA6C"/>
-      <circle cx="26" cy="20" r="2.5" fill="#00AA6C"/>
-      <path d="M9 16 Q14 10 20 13 Q26 10 31 16" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round"/>
-    </svg>
-  );
-}
-
-export default function Reviews() {
+export default function LuxuryTransportPortal() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,500&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
-        .rv-section {
-          background: #ffffff;
-          padding: 100px 0 112px;
-          font-family: 'Space Grotesk', sans-serif;
-          position: relative; overflow: hidden;
-        }
-        .rv-section::before {
-          content: ''; position: absolute; inset: 0;
-          background-image: radial-gradient(circle, rgba(0,0,0,0.05) 1px, transparent 1px);
-          background-size: 28px 28px; pointer-events: none;
-        }
-        .rv-inner { max-width: 1200px; margin: 0 auto; padding: 0 48px; position: relative; }
-
-        /* Header */
-        .rv-header {
-          display: flex; align-items: flex-end; justify-content: space-between;
-          margin-bottom: 56px; gap: 32px; flex-wrap: wrap;
-        }
-        .rv-eyebrow {
-          display: inline-flex; align-items: center; gap: 8px;
-          font-family: 'Space Mono', monospace; font-size: 9.5px; font-weight: 700;
-          letter-spacing: 0.18em; text-transform: uppercase; color: #00A854;
-          background: rgba(0,168,84,0.08); border: 1px solid rgba(0,168,84,0.2);
-          border-radius: 6px; padding: 5px 12px; margin-bottom: 16px;
-        }
-        .rv-eyebrow-dot {
-          width: 6px; height: 6px; border-radius: 50%; background: #00A854;
-          animation: rv-pulse 2s ease-in-out infinite;
-        }
-        @keyframes rv-pulse {
-          0%,100% { box-shadow: 0 0 4px rgba(0,168,84,0.4); }
-          50%      { box-shadow: 0 0 10px rgba(0,168,84,0.7); }
-        }
-        .rv-heading {
-          font-size: clamp(32px, 4vw, 54px); font-weight: 800;
-          color: #080808; line-height: 1.05; letter-spacing: -0.035em;
-        }
-        .rv-heading em { font-style: normal; color: #00A854; }
-        .rv-sub {
-          font-size: 15px; font-weight: 500; color: rgba(0,0,0,0.5);
-          line-height: 1.7; max-width: 300px; text-align: right;
+        :root {
+          --gold:        #d4af37;
+          --gold-dark:    #b8972e;
+          --slate:        #0f172a;
+          --slate-light:  #1e293b;
+          --text:         #e2e8f0;
+          --text-muted:   #94a3b8;
+          --bg:           #f8fafc;
+          --card-bg:      #ffffff;
         }
 
-        /* Score badges */
-        .rv-scores {
-          display: flex; gap: 14px; margin-bottom: 52px; flex-wrap: wrap;
-        }
-        .rv-score-badge {
-          display: flex; align-items: center; gap: 14px;
-          background: #fff; border: 1.5px solid rgba(0,0,0,0.09);
-          border-radius: 16px; padding: 18px 24px; flex: 1; min-width: 220px;
-          transition: box-shadow 0.2s, border-color 0.2s;
-        }
-        .rv-score-badge:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.08); border-color: rgba(0,0,0,0.15); }
-        .rv-score-logo { flex-shrink: 0; }
-        .rv-score-info { display: flex; flex-direction: column; gap: 3px; }
-        .rv-score-platform {
-          font-family: 'Space Mono', monospace; font-size: 8.5px; font-weight: 700;
-          letter-spacing: 0.14em; text-transform: uppercase; color: rgba(0,0,0,0.4);
-        }
-        .rv-score-num {
-          font-size: 28px; font-weight: 800; color: #080808; letter-spacing: -0.04em; line-height: 1;
-        }
-        .rv-score-num span { font-size: 13px; font-weight: 600; color: rgba(0,0,0,0.4); margin-left: 2px; }
-        .rv-score-count {
-          font-family: 'Space Mono', monospace; font-size: 8px; color: rgba(0,0,0,0.35);
-          letter-spacing: 0.06em;
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+
+        .portal-wrapper {
+          background: var(--bg);
+          color: var(--slate);
+          min-height: 100vh;
         }
 
-        /* Platform block */
-        .rv-platform { margin-bottom: 52px; }
-        .rv-platform:last-child { margin-bottom: 0; }
-
-        .rv-platform-header {
-          display: flex; align-items: center; gap: 12px; margin-bottom: 22px;
-        }
-        .rv-platform-name {
-          font-size: 16px; font-weight: 800; color: #080808; letter-spacing: -0.02em;
-        }
-        .rv-platform-line {
-          flex: 1; height: 1.5px; background: rgba(0,0,0,0.08); border-radius: 2px;
-        }
-        .rv-platform-count {
-          font-family: 'Space Mono', monospace; font-size: 9px; font-weight: 700;
-          letter-spacing: 0.12em; text-transform: uppercase; color: rgba(0,0,0,0.3);
+        .container {
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: clamp(60px, 10vw, 120px) 24px;
         }
 
-        /* Cards grid */
-        .rv-grid {
+        /* Packages Section */
+        .pkg-header {
+          text-align: center;
+          max-width: 800px;
+          margin: 0 auto 80px;
+        }
+
+        .pkg-eyebrow {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 0.95rem;
+          font-weight: 500;
+          color: var(--gold);
+          letter-spacing: 3px;
+          text-transform: uppercase;
+          margin-bottom: 1rem;
+        }
+
+        .pkg-header h2 {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: clamp(3rem, 7vw, 5.5rem);
+          font-weight: 600;
+          line-height: 0.95;
+          margin: 0 0 1.2rem;
+        }
+
+        .pkg-header h2 i {
+          font-style: italic;
+          color: var(--gold);
+        }
+
+        .pkg-header p {
+          font-size: 1.15rem;
+          color: var(--text-muted);
+        }
+
+        .pkg-grid {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
+          grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+          gap: 32px;
+          margin-bottom: 140px;
+        }
+
+        .pkg-card {
+          background: var(--card-bg);
+          border-radius: 28px;
+          overflow: hidden;
+          box-shadow: 0 16px 48px rgba(0,0,0,0.06);
+          transition: all 0.45s cubic-bezier(0.165, 0.84, 0.44, 1);
+          border: 1px solid rgba(212,175,55,0.08);
+        }
+
+        .pkg-card:hover {
+          transform: translateY(-16px);
+          box-shadow: 0 28px 64px rgba(0,0,0,0.12);
+          border-color: rgba(212,175,55,0.24);
+        }
+
+        .pkg-img {
+          height: 260px;
+          background-size: cover;
+          background-position: center;
+          position: relative;
+        }
+
+        .pkg-img::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to bottom, transparent 40%, rgba(15,23,42,0.65) 100%);
+        }
+
+        .pkg-content {
+          padding: 36px 32px 40px;
+        }
+
+        .pkg-tag {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 0.78rem;
+          font-weight: 600;
+          color: var(--gold);
+          letter-spacing: 2.5px;
+          text-transform: uppercase;
+          display: inline-block;
+          margin-bottom: 12px;
+        }
+
+        .pkg-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 2.4rem;
+          font-weight: 600;
+          margin: 0 0 16px;
+          line-height: 1.1;
+        }
+
+        .pkg-desc {
+          color: var(--text-muted);
+          font-size: 1.05rem;
+          line-height: 1.65;
+          margin-bottom: 32px;
+        }
+
+        .pkg-meta {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding-top: 24px;
+          border-top: 1px solid rgba(212,175,55,0.12);
+        }
+
+        .pkg-price {
+          font-size: 2.1rem;
+          font-weight: 700;
+        }
+
+        .pkg-price span {
+          font-size: 0.9rem;
+          font-weight: 400;
+          color: var(--text-muted);
+        }
+
+        .book-btn {
+          background: var(--slate);
+          color: white;
+          padding: 14px 32px;
+          border-radius: 12px;
+          font-weight: 600;
+          text-decoration: none;
+          transition: all 0.3s ease;
+        }
+
+        .book-btn:hover {
+          background: var(--gold);
+          color: var(--slate);
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(212,175,55,0.3);
+        }
+
+        /* ────────────────────────────────────────
+           Reviews Section – Google & TripAdvisor
+        ──────────────────────────────────────── */
+        .rv-section {
+          background: linear-gradient(135deg, var(--slate) 0%, var(--slate-light) 100%);
+          color: white;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .rv-bg-overlay {
+          position: absolute;
+          inset: 0;
+          background: url('https://cdn.prod.website-files.com/61fc302889864bb79c5ef818/6776940902bd53c8936afab8_luxury-mercedes-s-class-paris-chauffeur-service-dbs-experience.webp') center/cover no-repeat;
+          opacity: 0.10;
+          mix-blend-mode: screen;
+          pointer-events: none;
+        }
+
+        .rv-trust-bar {
+          text-align: center;
+          margin-bottom: 80px;
+          padding: 48px 32px;
+          background: rgba(255,255,255,0.06);
+          border-radius: 28px;
+          backdrop-filter: blur(12px);
+          border: 1px solid rgba(212,175,55,0.18);
+          box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+        }
+
+        .rv-trust-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: clamp(2.8rem, 6vw, 4.8rem);
+          margin: 0 0 24px;
+          font-weight: 600;
+        }
+
+        .stats-row {
+          display: flex;
+          justify-content: center;
+          gap: clamp(48px, 8vw, 120px);
+          flex-wrap: wrap;
+          align-items: center;
+          margin: 32px 0;
+        }
+
+        .stat-block {
+          text-align: center;
+        }
+
+        .stat-number {
+          font-size: 4.2rem;
+          font-weight: 700;
+          line-height: 1;
+        }
+
+        .stat-label {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 1rem;
+          color: rgba(255,255,255,0.75);
+          margin-top: 8px;
+          letter-spacing: 1px;
+        }
+
+        .divider {
+          width: 2px;
+          height: 70px;
+          background: linear-gradient(to bottom, transparent, var(--gold), transparent);
+          opacity: 0.4;
+        }
+
+        .rv-testimonials-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+          gap: 40px;
+        }
+
+        .testimonial-card {
+          background: rgba(255,255,255,0.07);
+          border-radius: 24px;
+          padding: 40px 36px;
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(212,175,55,0.15);
+          box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+          transition: all 0.4s ease;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .testimonial-card:hover {
+          transform: translateY(-12px);
+          box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+          border-color: rgba(212,175,55,0.35);
+        }
+
+        .accent-bar {
+          position: absolute;
+          top: 0; left: 0; right: 0; height: 4px;
+          background: linear-gradient(90deg, var(--gold), #fbbf24);
+        }
+
+        .review-header {
+          display: flex;
+          align-items: center;
           gap: 16px;
-        }
-        @media (max-width: 1100px) { .rv-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 600px)  { .rv-grid { grid-template-columns: 1fr; } }
-
-        /* Review card */
-        .rv-card {
-          background: #fff; border: 1.5px solid rgba(0,0,0,0.09);
-          border-radius: 18px; padding: 22px; display: flex; flex-direction: column;
-          gap: 14px; transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
-          animation: rv-fadeup 0.5s ease both;
-        }
-        .rv-card:nth-child(1) { animation-delay: 0.05s; }
-        .rv-card:nth-child(2) { animation-delay: 0.10s; }
-        .rv-card:nth-child(3) { animation-delay: 0.15s; }
-        .rv-card:nth-child(4) { animation-delay: 0.20s; }
-        @keyframes rv-fadeup {
-          from { opacity: 0; transform: translateY(20px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .rv-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 16px 48px rgba(0,0,0,0.09);
-          border-color: rgba(0,168,84,0.25);
+          margin-bottom: 24px;
         }
 
-        /* Card top row */
-        .rv-card-top { display: flex; align-items: center; gap: 12px; }
-        .rv-avatar {
-          width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
-          display: flex; align-items: center; justify-content: center;
-          font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700;
-          color: white; letter-spacing: 0.02em;
-        }
-        .rv-card-meta { flex: 1; min-width: 0; }
-        .rv-card-name {
-          font-size: 14px; font-weight: 700; color: #080808;
-          letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .rv-card-date {
-          font-family: 'Space Mono', monospace; font-size: 8.5px;
-          color: rgba(0,0,0,0.35); letter-spacing: 0.06em; margin-top: 2px;
+        .avatar {
+          width: 64px;
+          height: 64px;
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-size: 1.5rem;
+          font-weight: 700;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
 
-        /* Quote icon */
-        .rv-quote {
-          flex-shrink: 0; color: rgba(0,0,0,0.1);
-          font-size: 36px; line-height: 1; font-family: Georgia, serif;
-          font-weight: 700; margin-top: -4px;
+        .review-name {
+          font-size: 1.3rem;
+          font-weight: 600;
         }
 
-        .rv-card-text {
-          font-size: 13.5px; font-weight: 500; color: rgba(0,0,0,0.65);
-          line-height: 1.72; flex: 1;
+        .review-date {
+          color: rgba(255,255,255,0.6);
+          font-size: 0.95rem;
         }
 
-        /* Trip chip */
-        .rv-trip-chip {
-          display: inline-flex; align-items: center; gap: 5px;
-          font-family: 'Space Mono', monospace; font-size: 8px; font-weight: 700;
-          letter-spacing: 0.1em; text-transform: uppercase;
-          color: #00A854; background: rgba(0,168,84,0.07);
-          border: 1px solid rgba(0,168,84,0.18); border-radius: 8px; padding: 5px 10px;
-          align-self: flex-start;
+        .review-text {
+          font-size: 1.15rem;
+          line-height: 1.7;
+          font-style: italic;
+          margin: 0 0 28px;
+          color: rgba(255,255,255,0.92);
         }
-        .rv-trip-chip svg { width: 10px; height: 10px; }
 
-        /* TA helpful */
-        .rv-helpful {
-          display: flex; align-items: center; gap: 6px;
-          font-family: 'Space Mono', monospace; font-size: 8.5px;
-          color: rgba(0,0,0,0.3); letter-spacing: 0.06em; margin-top: -4px;
+        .review-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
         }
-        .rv-helpful svg { width: 12px; height: 12px; }
+
+        .trip-tag {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 0.9rem;
+          background: rgba(212,175,55,0.12);
+          color: var(--gold);
+          padding: 6px 16px;
+          border-radius: 12px;
+          border: 1px solid rgba(212,175,55,0.2);
+        }
+
+        @media (max-width: 900px) {
+          .stats-row { gap: 60px; }
+          .rv-testimonials-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 600px) {
+          .container { padding: 60px 16px; }
+        }
       `}</style>
 
-      <section className="rv-section">
-        <div className="rv-inner">
+      <div className="portal-wrapper">
+        {/* Reviews Section */}
+        <div className="rv-section">
+          <div className="rv-bg-overlay" />
 
-          {/* Header */}
-          <div className="rv-header">
-            <div>
-              <div className="rv-eyebrow">
-                <span className="rv-eyebrow-dot" />
-                Verified Reviews
-              </div>
-              <h2 className="rv-heading">
-                Trusted by<br /><em>thousands of travellers.</em>
-              </h2>
-            </div>
-            <p className="rv-sub">
-              Real reviews from Google and TripAdvisor. No filters, no cherry-picking — just honest experiences.
-            </p>
-          </div>
+          <div className="container">
+            <div className="rv-trust-bar">
+              <h2 className="rv-trust-title">Uncompromising Excellence</h2>
 
-          {/* Score badges */}
-          <div className="rv-scores">
-            <div className="rv-score-badge">
-              <div className="rv-score-logo"><GoogleLogo /></div>
-              <div className="rv-score-info">
-                <span className="rv-score-platform">Google Reviews</span>
-                <span className="rv-score-num">4.9<span>/ 5</span></span>
-                <Stars count={5} color="#FBBC04" />
-                <span className="rv-score-count">Based on 340+ reviews</span>
-              </div>
-            </div>
-            <div className="rv-score-badge">
-              <div className="rv-score-logo"><TripAdvisorLogo /></div>
-              <div className="rv-score-info">
-                <span className="rv-score-platform">TripAdvisor</span>
-                <span className="rv-score-num">5.0<span>/ 5</span></span>
-                <Stars count={5} color="#00AA6C" />
-                <span className="rv-score-count">Based on 180+ reviews</span>
-              </div>
-            </div>
-            <div className="rv-score-badge" style={{ background: "rgba(0,168,84,0.04)", borderColor: "rgba(0,168,84,0.2)" }}>
-              <div className="rv-score-info">
-                <span className="rv-score-platform">Overall Score</span>
-                <span className="rv-score-num" style={{ color: "#00A854" }}>4.9<span>/ 5</span></span>
-                <Stars count={5} color="#00A854" />
-                <span className="rv-score-count">520+ verified rides reviewed</span>
-              </div>
-            </div>
-          </div>
+              <div className="stats-row">
+                <div className="stat-block">
+                  <div className="stat-number" style={{ color: "var(--gold)" }}>4.9</div>
+                  <Stars count={5} color="#fbbf24" size={28} />
+                  <div className="stat-label">GOOGLE</div>
+                </div>
 
-          {/* Google Reviews */}
-          <div className="rv-platform">
-            <div className="rv-platform-header">
-              <GoogleLogo />
-              <span className="rv-platform-name">Google Reviews</span>
-              <div className="rv-platform-line" />
-              <span className="rv-platform-count">340+ reviews</span>
+                <div className="divider" />
+
+                <div className="stat-block">
+                  <div className="stat-number" style={{ color: "#00c853" }}>5.0</div>
+                  <Stars count={5} color="#00c853" size={28} />
+                  <div className="stat-label">TRIPADVISOR</div>
+                </div>
+              </div>
+
+              <p style={{ fontSize: "1.15rem", opacity: 0.9, maxWidth: 720, margin: "0 auto" }}>
+                The most highly regarded private chauffeur service in Paris — loved by travelers worldwide.
+              </p>
             </div>
-            <div className="rv-grid">
-              {googleReviews.map((r, i) => (
-                <div key={i} className="rv-card">
-                  <div className="rv-card-top">
-                    <div className="rv-avatar" style={{ background: r.color }}>{r.avatar}</div>
-                    <div className="rv-card-meta">
-                      <div className="rv-card-name">{r.name}</div>
-                      <div className="rv-card-date">{r.date}</div>
+
+            <div className="rv-testimonials-grid">
+              {googleReviews.map((rev, i) => (
+                <div key={i} className="testimonial-card">
+                  <div className="accent-bar" />
+
+                  <div className="review-header">
+                    <div className="avatar" style={{ background: rev.color }}>
+                      {rev.avatar}
                     </div>
-                    <span className="rv-quote">"</span>
+                    <div>
+                      <div className="review-name">{rev.name}</div>
+                      <div className="review-date">{rev.date}</div>
+                    </div>
                   </div>
-                  <Stars count={r.rating} color="#FBBC04" />
-                  <p className="rv-card-text">{r.text}</p>
-                  <div className="rv-trip-chip">
-                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                    </svg>
-                    {r.trip}
+
+                  <p className="review-text">“{rev.text}”</p>
+
+                  <div className="review-footer">
+                    <span className="trip-tag">{rev.trip}</span>
+                    <Stars count={5} size={20} />
                   </div>
                 </div>
               ))}
             </div>
-          </div>
 
-          {/* TripAdvisor Reviews */}
-          <div className="rv-platform">
-            <div className="rv-platform-header">
-              <TripAdvisorLogo />
-              <span className="rv-platform-name">TripAdvisor</span>
-              <div className="rv-platform-line" />
-              <span className="rv-platform-count">180+ reviews</span>
-            </div>
-            <div className="rv-grid">
-              {taReviews.map((r, i) => (
-                <div key={i} className="rv-card">
-                  <div className="rv-card-top">
-                    <div className="rv-avatar" style={{ background: r.color }}>{r.avatar}</div>
-                    <div className="rv-card-meta">
-                      <div className="rv-card-name">{r.name}</div>
-                      <div className="rv-card-date">{r.date}</div>
-                    </div>
-                    <span className="rv-quote">"</span>
-                  </div>
-                  <Stars count={r.rating} color="#00AA6C" />
-                  <p className="rv-card-text">{r.text}</p>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-                    <div className="rv-trip-chip">
-                      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                      </svg>
-                      {r.trip}
-                    </div>
-                    <div className="rv-helpful">
-                      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"/>
-                      </svg>
-                      {r.helpful} found this helpful
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div style={{ textAlign: "center", marginTop: "80px", opacity: 0.9 }}>
+              <p style={{ fontSize: "1.1rem" }}>
+                Join hundreds of delighted travelers — your perfect Paris journey awaits.
+              </p>
             </div>
           </div>
-
         </div>
-      </section>
+      </div>
     </>
   );
 }

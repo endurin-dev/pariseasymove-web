@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import '@/app/globals.css';
 import { Inter, Montserrat } from "next/font/google";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -38,7 +40,11 @@ export default function RootLayout({
       className={`${inter.variable} ${montserrat.variable} scroll-smooth`}
     >
       <body className="bg-white text-gray-800 antialiased font-sans">
-        {children}
+        <Header />
+        <main style={{paddingTop: "92px"}}>
+          {children}
+        </main>
+        <Footer />
       </body>
     </html>
   );

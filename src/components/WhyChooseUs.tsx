@@ -1,346 +1,306 @@
-import {
-  CurrencyDollarIcon,
-  ClockIcon,
-  ShieldCheckIcon,
-  MapPinIcon,
-  UserGroupIcon,
-  FaceSmileIcon,
-} from "@heroicons/react/24/outline";
+"use client";
+
+import React from "react";
 
 const benefits = [
   {
-    icon: CurrencyDollarIcon,
-    tag: "01",
-    title: "Affordable Rates",
-    desc: "Competitive and transparent pricing with no surprises — just great value, every ride.",
+    num: "01",
+    icon: (
+      <svg viewBox="0 0 24 24" width={36} height={36} fill="none" stroke="currentColor" strokeWidth={1.6}>
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+    ),
+    title: "Precision Timing",
+    desc: "Live flight tracking and punctual chauffeurs — never a minute lost.",
+    featured: true,
   },
   {
-    icon: ClockIcon,
-    tag: "02",
-    title: "Reliability",
-    desc: "Punctuality is non-negotiable. We show up on time, every time — whether it's a meeting or a getaway.",
+    num: "02",
+    icon: (
+      <svg viewBox="0 0 24 24" width={36} height={36} fill="none" stroke="currentColor" strokeWidth={1.6}>
+        <rect x="3" y="6" width="18" height="12" rx="2" />
+        <line x1="3" y1="11" x2="21" y2="11" />
+      </svg>
+    ),
+    title: "Transparent Fixed Pricing",
+    desc: "All-inclusive quote — no surprises, no surge, no hidden charges.",
+    featured: true,
   },
   {
-    icon: ShieldCheckIcon,
-    tag: "03",
-    title: "Safety First",
-    desc: "Experienced drivers, well-maintained vehicles, and your peace of mind at the heart of every journey.",
+    num: "03",
+    icon: (
+      <svg viewBox="0 0 24 24" width={36} height={36} fill="none" stroke="currentColor" strokeWidth={1.6}>
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      </svg>
+    ),
+    title: "Absolute Safety",
+    desc: "Professionally screened drivers, meticulously maintained vehicles.",
   },
   {
-    icon: MapPinIcon,
-    tag: "04",
-    title: "Convenience",
-    desc: "Book in seconds via app or phone. A driver at your doorstep, exactly when you need one.",
+    num: "04",
+    icon: (
+      <svg viewBox="0 0 24 24" width={36} height={36} fill="none" stroke="currentColor" strokeWidth={1.6}>
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+        <circle cx="12" cy="10" r="3" />
+      </svg>
+    ),
+    title: "Seamless Door-to-Door",
+    desc: "Meet & greet inside terminal → direct to your destination.",
   },
   {
-    icon: UserGroupIcon,
-    tag: "05",
-    title: "Local Knowledge",
-    desc: "Our drivers know every shortcut. Best routes, even during rush hour — because local expertise matters.",
+    num: "05",
+    icon: (
+      <svg viewBox="0 0 24 24" width={36} height={36} fill="none" stroke="currentColor" strokeWidth={1.6}>
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      </svg>
+    ),
+    title: "Family & Group Comfort",
+    desc: "Complimentary child seats • Mercedes vans up to 8 passengers.",
   },
   {
-    icon: FaceSmileIcon,
-    tag: "06",
-    title: "Customer Satisfaction",
-    desc: "Your satisfaction is our destination. We go the extra mile so every ride feels effortless.",
+    num: "06",
+    icon: (
+      <svg viewBox="0 0 24 24" width={36} height={36} fill="none" stroke="currentColor" strokeWidth={1.6}>
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    ),
+    title: "24/7 Concierge",
+    desc: "Personal human support — changes, requests, questions, anytime.",
   },
+];
+
+const stats = [
+  { value: "4.9", label: "Client Rating" },
+  { value: "4,200+", label: "Journeys" },
+  { value: "24/7", label: "Concierge" },
+  { value: "€0", label: "Hidden Fees" },
 ];
 
 export default function WhyChooseUs() {
   return (
-    <>
+    <section style={styles.section}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700&display=swap');
 
-        .wcu-section {
-          background: #ffffff;
-          padding: 100px 0 112px;
-          font-family: 'Space Grotesk', sans-serif;
-          position: relative;
-          overflow: hidden;
-        }
-
-        /* Subtle dot-grid background */
-        .wcu-section::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background-image: radial-gradient(circle, rgba(0,0,0,0.055) 1px, transparent 1px);
-          background-size: 28px 28px;
-          pointer-events: none;
-        }
-
-        .wcu-inner {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 0 48px;
+        .benefit-card {
+          background: white;
+          border: 1px solid rgba(201,163,71,0.14);
+          border-radius: 14px;
+          padding: 36px 32px 28px;
+          transition: all 0.35s ease;
           position: relative;
         }
 
-        /* Header */
-        .wcu-header {
-          display: flex;
-          align-items: flex-end;
-          justify-content: space-between;
-          margin-bottom: 64px;
-          gap: 32px;
-          flex-wrap: wrap;
-        }
-        .wcu-eyebrow {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          font-family: 'Space Mono', monospace;
-          font-size: 9.5px;
-          font-weight: 700;
-          letter-spacing: 0.18em;
-          text-transform: uppercase;
-          color: #00A854;
-          background: rgba(0,168,84,0.08);
-          border: 1px solid rgba(0,168,84,0.2);
-          border-radius: 6px;
-          padding: 5px 12px;
-          margin-bottom: 16px;
-        }
-        .wcu-eyebrow-dot {
-          width: 6px; height: 6px;
-          border-radius: 50%;
-          background: #00A854;
-          box-shadow: 0 0 6px rgba(0,168,84,0.5);
-          animation: wcu-pulse 2s ease-in-out infinite;
-        }
-        @keyframes wcu-pulse {
-          0%,100% { box-shadow: 0 0 4px rgba(0,168,84,0.4); }
-          50%      { box-shadow: 0 0 10px rgba(0,168,84,0.7); }
-        }
-        .wcu-heading {
-          font-size: clamp(34px, 4vw, 56px);
-          font-weight: 800;
-          color: #080808;
-          line-height: 1.05;
-          letter-spacing: -0.035em;
-        }
-        .wcu-heading em {
-          font-style: normal;
-          color: #00A854;
-        }
-        .wcu-sub {
-          font-size: 15px;
-          font-weight: 500;
-          color: rgba(0,0,0,0.5);
-          line-height: 1.7;
-          max-width: 320px;
-          text-align: right;
+        .benefit-card:hover {
+          transform: translateY(-6px);
+          box-shadow: 0 16px 48px rgba(10,31,68,0.1);
+          border-color: #c9a34766;
         }
 
-        /* Grid */
-        .wcu-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 20px;
-        }
-        @media (max-width: 900px) { .wcu-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 560px) { .wcu-grid { grid-template-columns: 1fr; } }
-
-        /* Card */
-        .wcu-card {
-          background: #ffffff;
-          border: 1.5px solid rgba(0,0,0,0.09);
-          border-radius: 20px;
-          padding: 32px 28px 28px;
-          position: relative;
-          overflow: hidden;
-          transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
-          cursor: default;
-        }
-        .wcu-card::before {
-          content: '';
+        .benefit-num {
           position: absolute;
-          top: 0; left: 0; right: 0;
-          height: 3px;
-          background: #00A854;
-          transform: scaleX(0);
-          transform-origin: left;
-          transition: transform 0.3s ease;
-          border-radius: 20px 20px 0 0;
-        }
-        .wcu-card:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 20px 60px rgba(0,0,0,0.10);
-          border-color: rgba(0,168,84,0.25);
-        }
-        .wcu-card:hover::before {
-          transform: scaleX(1);
-        }
-
-        /* Card number tag */
-        .wcu-card-tag {
-          position: absolute;
-          top: 24px;
-          right: 24px;
-          font-family: 'Space Mono', monospace;
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.1em;
-          color: rgba(0,0,0,0.15);
-        }
-
-        /* Icon wrapper */
-        .wcu-icon-wrap {
+          top: -18px;
+          left: 32px;
           width: 52px;
           height: 52px;
-          border-radius: 14px;
-          background: rgba(0,168,84,0.08);
-          border: 1.5px solid rgba(0,168,84,0.15);
+          background: #0a1f44;
+          color: #c9a347;
+          font-weight: 700;
+          font-size: 1.35rem;
           display: flex;
           align-items: center;
           justify-content: center;
-          margin-bottom: 22px;
-          transition: background 0.25s, border-color 0.25s, transform 0.25s;
-        }
-        .wcu-card:hover .wcu-icon-wrap {
-          background: rgba(0,168,84,0.14);
-          border-color: rgba(0,168,84,0.3);
-          transform: scale(1.08);
-        }
-        .wcu-icon-wrap svg {
-          width: 24px;
-          height: 24px;
-          color: #00A854;
-          stroke-width: 1.8;
+          border-radius: 50%;
+          border: 3px solid #c9a347;
+          box-shadow: 0 4px 12px rgba(10,31,68,0.15);
         }
 
-        /* Text */
-        .wcu-card-title {
-          font-size: 18px;
-          font-weight: 800;
-          color: #080808;
-          letter-spacing: -0.025em;
-          margin-bottom: 10px;
-        }
-        .wcu-card-desc {
-          font-size: 14px;
-          font-weight: 500;
-          color: rgba(0,0,0,0.55);
-          line-height: 1.7;
+        .featured {
+          background: linear-gradient(145deg, #ffffff, #fdfaf4);
+          border-color: #c9a34740;
         }
 
-        /* Divider line */
-        .wcu-card-divider {
-          width: 32px;
-          height: 2px;
-          background: rgba(0,168,84,0.3);
-          border-radius: 2px;
-          margin: 16px 0;
-          transition: width 0.3s ease, background 0.3s ease;
-        }
-        .wcu-card:hover .wcu-card-divider {
-          width: 52px;
-          background: #00A854;
-        }
-
-        /* Staggered animation on load */
-        .wcu-card { animation: wcu-fadeup 0.5s ease both; }
-        .wcu-card:nth-child(1) { animation-delay: 0.05s; }
-        .wcu-card:nth-child(2) { animation-delay: 0.10s; }
-        .wcu-card:nth-child(3) { animation-delay: 0.15s; }
-        .wcu-card:nth-child(4) { animation-delay: 0.20s; }
-        .wcu-card:nth-child(5) { animation-delay: 0.25s; }
-        .wcu-card:nth-child(6) { animation-delay: 0.30s; }
-        @keyframes wcu-fadeup {
-          from { opacity: 0; transform: translateY(22px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Bottom stat bar */
-        .wcu-stats {
-          display: flex;
-          gap: 0;
-          margin-top: 56px;
-          border: 1.5px solid rgba(0,0,0,0.09);
-          border-radius: 16px;
-          overflow: hidden;
-        }
-        .wcu-stat {
-          flex: 1;
-          padding: 28px 24px;
+        .stat-card {
+          background: #0a1f44;
+          color: white;
+          border-radius: 12px;
+          padding: 28px 20px;
           text-align: center;
-          border-right: 1.5px solid rgba(0,0,0,0.09);
-          background: #ffffff;
-          transition: background 0.2s;
         }
-        .wcu-stat:last-child { border-right: none; }
-        .wcu-stat:hover { background: rgba(0,168,84,0.04); }
-        .wcu-stat-num {
-          font-size: 36px;
-          font-weight: 800;
-          color: #080808;
-          letter-spacing: -0.04em;
-          line-height: 1;
-          margin-bottom: 6px;
-        }
-        .wcu-stat-num span { color: #00A854; }
-        .wcu-stat-label {
-          font-family: 'Space Mono', monospace;
-          font-size: 9px;
-          font-weight: 700;
-          letter-spacing: 0.14em;
+
+        .cta-btn {
+          padding: 14px 48px;
+          background: #0a1f44;
+          color: #c9a347;
+          border: 2px solid #c9a347;
+          border-radius: 50px;
+          font-weight: 600;
+          font-size: 0.95rem;
+          letter-spacing: 1px;
           text-transform: uppercase;
-          color: rgba(0,0,0,0.4);
+          transition: all 0.3s ease;
+          cursor: pointer;
+        }
+
+        .cta-btn:hover {
+          background: #c9a347;
+          color: #0a1f44;
+          transform: translateY(-2px);
+        }
+
+        @media (max-width: 1024px) {
+          .hero { grid-template-columns: 1fr; padding: 70px 5vw 40px; }
+          .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+          .benefits-grid { gap: 24px; }
+        }
+
+        @media (max-width: 640px) {
+          .benefit-card { padding: 32px 24px 24px; }
+          .benefit-num { left: 24px; width: 46px; height: 46px; font-size: 1.2rem; }
+          .stat-card { padding: 24px 16px; }
         }
       `}</style>
 
-      <section className="wcu-section">
-        <div className="wcu-inner">
-
-          {/* Header */}
-          <div className="wcu-header">
-            <div>
-              <div className="wcu-eyebrow">
-                <span className="wcu-eyebrow-dot" />
-                Why Choose Us
-              </div>
-              <h2 className="wcu-heading">
-                More than just<br />a <em>taxi service.</em>
-              </h2>
-            </div>
-            <p className="wcu-sub">
-              Six reasons why thousands of travellers choose us for every trip across Paris and beyond.
-            </p>
-          </div>
-
-          {/* Cards */}
-          <div className="wcu-grid">
-            {benefits.map((item, index) => (
-              <div key={index} className="wcu-card">
-                <span className="wcu-card-tag">{item.tag}</span>
-                <div className="wcu-icon-wrap">
-                  <item.icon aria-hidden="true" />
-                </div>
-                <h3 className="wcu-card-title">{item.title}</h3>
-                <div className="wcu-card-divider" />
-                <p className="wcu-card-desc">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Stats bar */}
-          <div className="wcu-stats">
-            {[
-              { num: "4.9", suffix: "★", label: "Average Rating" },
-              { num: "1,200", suffix: "+", label: "Verified Rides" },
-              { num: "24", suffix: "/7", label: "Availability" },
-              { num: "0", suffix: "€", label: "Hidden Fees" },
-            ].map((s, i) => (
-              <div key={i} className="wcu-stat">
-                <div className="wcu-stat-num">{s.num}<span>{s.suffix}</span></div>
-                <div className="wcu-stat-label">{s.label}</div>
-              </div>
-            ))}
-          </div>
-
+      {/* Hero – reduced padding */}
+      <div style={styles.hero}>
+        <div style={styles.heroContent}>
+          <div style={styles.eyebrow}>Paris Private Transfers</div>
+          <h1 style={styles.heroTitle}>Luxury Redefined</h1>
         </div>
-      </section>
-    </>
+        <p style={styles.heroDesc}>
+          Discreet, punctual, elegantly executed airport transfers — CDG & ORY
+        </p>
+      </div>
+
+      {/* Stats – tighter */}
+      <div style={styles.statsGrid}>
+        {stats.map((s, i) => (
+          <div key={i} className="stat-card">
+            <div style={styles.statValue}>{s.value}</div>
+            <div style={styles.statLabel}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Benefits – reduced padding & gap */}
+      <div style={styles.benefitsGrid}>
+        {benefits.map((b, i) => (
+          <div
+            key={i}
+            className={`benefit-card ${b.featured ? 'featured' : ''}`}
+            style={styles.benefitCard}
+          >
+            <div className="benefit-num">{b.num}</div>
+            <div style={{ ...styles.iconContainer, color: '#c9a347' }}>
+              {b.icon}
+            </div>
+            <h3 style={styles.benefitTitle}>{b.title}</h3>
+            <p style={styles.benefitDesc}>{b.desc}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA – much tighter */}
+      <div style={styles.ctaSection}>
+        <p style={styles.ctaText}>Begin your journey with effortless elegance</p>
+        <button className="cta-btn">Reserve Your Transfer</button>
+      </div>
+    </section>
   );
 }
+
+const styles: Record<string, React.CSSProperties> = {
+  section: {
+    background: "#ffffff",
+    color: "#0a1f44",
+    fontFamily: "'Inter', system-ui, sans-serif",
+  },
+  hero: {
+    padding: "70px 5vw 40px",
+    textAlign: "center",
+    maxWidth: 1000,
+    margin: "0 auto",
+    borderBottom: "1px solid rgba(201,163,71,0.1)",
+  },
+  heroContent: {},
+  eyebrow: {
+    fontSize: "clamp(13px, 1vw, 14px)",
+    fontWeight: 600,
+    letterSpacing: "0.25em",
+    color: "#c9a347",
+    textTransform: "uppercase",
+    marginBottom: 12,
+  },
+  heroTitle: {
+    fontFamily: "'Cormorant Garamond', serif",
+    fontSize: "clamp(3.2rem, 7vw, 5.4rem)",
+    fontWeight: 500,
+    lineHeight: 1.02,
+    margin: "0 0 16px",
+    color: "#0a1f44",
+  },
+  heroDesc: {
+    fontSize: "clamp(1.05rem, 1.4vw, 1.18rem)",
+    lineHeight: 1.6,
+    color: "#334155",
+    maxWidth: 640,
+    margin: "0 auto",
+  },
+  statsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(4, 1fr)",
+    gap: 20,
+    padding: "50px 5vw",
+    borderBottom: "1px solid rgba(201,163,71,0.1)",
+  },
+  statValue: {
+    fontSize: "clamp(2.6rem, 5vw, 3.8rem)",
+    fontWeight: 700,
+    color: "#c9a347",
+    lineHeight: 1,
+    marginBottom: 6,
+  },
+  statLabel: {
+    fontSize: "clamp(13px, 0.95vw, 14px)",
+    color: "#94a3b8",
+    fontWeight: 500,
+  },
+  benefitsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
+    gap: 24,
+    padding: "50px 5vw",
+  },
+  benefitCard: {
+    position: "relative",
+  },
+  iconContainer: {
+    marginBottom: 20,
+  },
+  benefitTitle: {
+    fontFamily: "'Cormorant Garamond', serif",
+    fontSize: "clamp(1.6rem, 2.2vw, 1.95rem)",
+    fontWeight: 500,
+    lineHeight: 1.2,
+    marginBottom: 10,
+    color: "#0a1f44",
+  },
+  benefitDesc: {
+    fontSize: "clamp(0.97rem, 1.15vw, 1.03rem)",
+    lineHeight: 1.65,
+    color: "#475569",
+  },
+  ctaSection: {
+    padding: "50px 5vw",
+    textAlign: "center",
+  },
+  ctaText: {
+    fontSize: "clamp(1.4rem, 2.6vw, 1.8rem)",
+    fontWeight: 500,
+    color: "#0a1f44",
+    marginBottom: 20,
+  },
+};
