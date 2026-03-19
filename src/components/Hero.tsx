@@ -28,129 +28,35 @@ export default function HeroSection() {
   };
 
   return (
-    <>
+    <div className="hero-root">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=DM+Sans:wght@300;400;500;600&display=swap');
 
-        :root {
-          --ink:          #0c0d0f;
-          --ink-soft:     #16181d;
-          --gold:         #c9a84c;
-          --gold-light:   #e8c97a;
-          --gold-pale:    rgba(201,168,76,0.12);
-          --gold-glow:    rgba(201,168,76,0.22);
-          --ivory:        #f5f0e8;
-          --ivory-dim:    rgba(245,240,232,0.72);
-          --ivory-faint:  rgba(245,240,232,0.38);
-          --stroke:       rgba(245,240,232,0.10);
-          --stroke-gold:  rgba(201,168,76,0.28);
-          --ease:         cubic-bezier(0.25, 0.1, 0.25, 1);
+        .hero-root {
+          --h-ink:          #0c0d0f;
+          --h-ink-soft:     #16181d;
+          --h-gold:         #c9a84c;
+          --h-gold-light:   #e8c97a;
+          --h-gold-pale:    rgba(201,168,76,0.12);
+          --h-gold-glow:    rgba(201,168,76,0.22);
+          --h-ivory:        #f5f0e8;
+          --h-ivory-dim:    rgba(245,240,232,0.72);
+          --h-ivory-faint:  rgba(245,240,232,0.38);
+          --h-stroke:       rgba(245,240,232,0.10);
+          --h-stroke-gold:  rgba(201,168,76,0.28);
+          --h-ease:         cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-        /* ─── NAV ─── */
-        .nav {
-          position: fixed;
-          top: 0; left: 0; right: 0;
-          z-index: 100;
-          padding: 0 5vw;
-          height: 72px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          border-bottom: 1px solid var(--stroke);
-        }
-        .nav::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(180deg, rgba(12,13,15,0.96) 0%, rgba(12,13,15,0.60) 100%);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          z-index: -1;
-        }
-
-        .nav-logo {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          text-decoration: none;
-        }
-        .nav-logo-mark {
-          width: 34px;
-          height: 34px;
-          border: 1.5px solid var(--gold);
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .nav-logo-mark svg { width: 16px; height: 16px; fill: var(--gold); }
-        .nav-logo-text {
-          font-family: 'Cormorant Garamond', serif;
-          font-size: 18px;
-          font-weight: 600;
-          color: var(--ivory);
-          letter-spacing: 0.06em;
-        }
-        .nav-logo-text span { color: var(--gold); }
-
-        .nav-links {
-          display: flex;
-          gap: 32px;
-          align-items: center;
-        }
-        .nav-links a {
-          font-family: 'DM Sans', sans-serif;
-          font-size: 12.5px;
-          font-weight: 400;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          color: var(--ivory-dim);
-          text-decoration: none;
-          transition: color 0.25s var(--ease);
-          position: relative;
-        }
-        .nav-links a::after {
-          content: '';
-          position: absolute;
-          bottom: -4px; left: 0; right: 0;
-          height: 1px;
-          background: var(--gold);
-          transform: scaleX(0);
-          transform-origin: left;
-          transition: transform 0.3s var(--ease);
-        }
-        .nav-links a:hover { color: var(--ivory); }
-        .nav-links a:hover::after { transform: scaleX(1); }
-
-        .nav-reserve {
-          font-family: 'DM Sans', sans-serif;
-          font-size: 12px;
-          font-weight: 500;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
-          color: var(--ink);
-          text-decoration: none;
-          background: var(--gold);
-          padding: 9px 22px;
-          border-radius: 2px;
-          transition: background 0.25s, transform 0.2s;
-        }
-        .nav-reserve:hover {
-          background: var(--gold-light);
-          transform: translateY(-1px);
-        }
+        .hero-root *, .hero-root *::before, .hero-root *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         /* ─── HERO SHELL ─── */
         .hero {
           position: relative;
-          min-height: 100vh;
-          background: var(--ink);
+          min-height: 70vh;
+          background: var(--h-ink);
           overflow: hidden;
           font-family: 'DM Sans', sans-serif;
-          color: var(--ivory);
+          color: var(--h-ivory);
           display: flex;
           flex-direction: column;
         }
@@ -164,7 +70,7 @@ export default function HeroSection() {
         .hero-bg-img {
           position: absolute;
           inset: 0;
-          background: url('https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=90&w=2400') center/cover no-repeat;
+          background: url('/images/banner.webp') center/cover no-repeat;
           opacity: 0.28;
         }
         /* Layered vignettes for cinematic depth */
@@ -191,7 +97,7 @@ export default function HeroSection() {
           right: 30%;
           width: 1px;
           height: 100%;
-          background: linear-gradient(180deg, transparent 0%, var(--stroke-gold) 30%, var(--stroke-gold) 70%, transparent 100%);
+          background: linear-gradient(180deg, transparent 0%, var(--h-stroke-gold) 30%, var(--h-stroke-gold) 70%, transparent 100%);
         }
 
         /* ─── CONTENT ─── */
@@ -201,7 +107,7 @@ export default function HeroSection() {
           flex: 1;
           display: flex;
           align-items: center;
-          padding: 100px 5vw 60px;
+          padding: 80px 5vw 40px;
           max-width: 1480px;
           margin: 0 auto;
           width: 100%;
@@ -212,7 +118,7 @@ export default function HeroSection() {
         .hero-left {
           flex: 1.1;
           max-width: 680px;
-          animation: fadeUp 0.9s var(--ease) both;
+          animation: fadeUp 0.9s var(--h-ease) both;
         }
 
         @keyframes fadeUp {
@@ -225,12 +131,12 @@ export default function HeroSection() {
           align-items: center;
           gap: 12px;
           margin-bottom: 28px;
-          animation: fadeUp 0.9s 0.1s var(--ease) both;
+          animation: fadeUp 0.9s 0.1s var(--h-ease) both;
         }
         .eyebrow-line {
           width: 32px;
           height: 1px;
-          background: var(--gold);
+          background: var(--h-gold);
         }
         .eyebrow-text {
           font-family: 'DM Sans', sans-serif;
@@ -238,7 +144,7 @@ export default function HeroSection() {
           font-weight: 500;
           letter-spacing: 0.22em;
           text-transform: uppercase;
-          color: var(--gold);
+          color: var(--h-gold);
         }
 
         .hero-h1 {
@@ -248,11 +154,11 @@ export default function HeroSection() {
           line-height: 0.96;
           letter-spacing: -0.01em;
           margin-bottom: 10px;
-          animation: fadeUp 0.9s 0.15s var(--ease) both;
+          animation: fadeUp 0.9s 0.15s var(--h-ease) both;
         }
         .hero-h1 em {
           font-style: italic;
-          color: var(--gold);
+          color: var(--h-gold);
           font-weight: 300;
         }
         .hero-h1-sub {
@@ -260,31 +166,31 @@ export default function HeroSection() {
           font-size: clamp(34px, 4.2vw, 58px);
           font-weight: 300;
           line-height: 1.05;
-          color: var(--ivory-dim);
+          color: var(--h-ivory-dim);
           margin-bottom: 36px;
           letter-spacing: 0.01em;
-          animation: fadeUp 0.9s 0.2s var(--ease) both;
+          animation: fadeUp 0.9s 0.2s var(--h-ease) both;
         }
 
         .hero-rule {
           width: 60px;
           height: 1px;
-          background: linear-gradient(90deg, var(--gold), transparent);
+          background: linear-gradient(90deg, var(--h-gold), transparent);
           margin-bottom: 28px;
-          animation: fadeUp 0.9s 0.25s var(--ease) both;
+          animation: fadeUp 0.9s 0.25s var(--h-ease) both;
         }
 
         .hero-desc {
           font-size: 15px;
           font-weight: 300;
           line-height: 1.75;
-          color: var(--ivory-faint);
+          color: var(--h-ivory-faint);
           max-width: 460px;
           margin-bottom: 44px;
-          animation: fadeUp 0.9s 0.3s var(--ease) both;
+          animation: fadeUp 0.9s 0.3s var(--h-ease) both;
         }
         .hero-desc strong {
-          color: var(--ivory-dim);
+          color: var(--h-ivory-dim);
           font-weight: 400;
         }
 
@@ -294,28 +200,28 @@ export default function HeroSection() {
           flex-wrap: wrap;
           gap: 0;
           margin-bottom: 44px;
-          border: 1px solid var(--stroke);
+          border: 1px solid var(--h-stroke);
           border-radius: 4px;
           overflow: hidden;
-          animation: fadeUp 0.9s 0.35s var(--ease) both;
+          animation: fadeUp 0.9s 0.35s var(--h-ease) both;
         }
         .pillar {
           flex: 1;
           min-width: 120px;
           padding: 16px 20px;
-          border-right: 1px solid var(--stroke);
+          border-right: 1px solid var(--h-stroke);
           display: flex;
           flex-direction: column;
           gap: 4px;
           transition: background 0.25s;
         }
         .pillar:last-child { border-right: none; }
-        .pillar:hover { background: var(--gold-pale); }
+        .pillar:hover { background: var(--h-gold-pale); }
         .pillar-value {
           font-family: 'Cormorant Garamond', serif;
           font-size: 26px;
           font-weight: 500;
-          color: var(--gold);
+          color: var(--h-gold);
           line-height: 1;
         }
         .pillar-label {
@@ -323,7 +229,7 @@ export default function HeroSection() {
           font-weight: 400;
           letter-spacing: 0.10em;
           text-transform: uppercase;
-          color: var(--ivory-faint);
+          color: var(--h-ivory-faint);
         }
 
         /* CTAs */
@@ -331,15 +237,15 @@ export default function HeroSection() {
           display: flex;
           gap: 16px;
           flex-wrap: wrap;
-          animation: fadeUp 0.9s 0.4s var(--ease) both;
+          animation: fadeUp 0.9s 0.4s var(--h-ease) both;
         }
 
         .cta-primary {
           display: inline-flex;
           align-items: center;
           gap: 10px;
-          background: var(--gold);
-          color: var(--ink);
+          background: var(--h-gold);
+          color: var(--h-ink);
           font-family: 'DM Sans', sans-serif;
           font-size: 11.5px;
           font-weight: 600;
@@ -352,7 +258,7 @@ export default function HeroSection() {
           box-shadow: 0 4px 24px rgba(201,168,76,0.25);
         }
         .cta-primary:hover {
-          background: var(--gold-light);
+          background: var(--h-gold-light);
           transform: translateY(-2px);
           box-shadow: 0 8px 32px rgba(201,168,76,0.35);
         }
@@ -363,7 +269,7 @@ export default function HeroSection() {
           align-items: center;
           gap: 10px;
           background: transparent;
-          color: var(--ivory-dim);
+          color: var(--h-ivory-dim);
           font-family: 'DM Sans', sans-serif;
           font-size: 11.5px;
           font-weight: 400;
@@ -371,21 +277,21 @@ export default function HeroSection() {
           text-transform: uppercase;
           text-decoration: none;
           padding: 12px 24px;
-          border: 1px solid var(--stroke);
+          border: 1px solid var(--h-stroke);
           border-radius: 2px;
           transition: border-color 0.25s, color 0.25s, background 0.25s;
         }
         .cta-ghost:hover {
-          border-color: var(--stroke-gold);
-          color: var(--gold);
-          background: var(--gold-pale);
+          border-color: var(--h-stroke-gold);
+          color: var(--h-gold);
+          background: var(--h-gold-pale);
         }
 
-        /* ─── BOOKING CARD (redesigned) ─── */
+        /* ─── BOOKING CARD ─── */
         .booking-wrap {
           flex: 0 0 auto;
           width: clamp(300px, 28vw, 410px);
-          animation: fadeUp 0.9s 0.2s var(--ease) both;
+          animation: fadeUp 0.9s 0.2s var(--h-ease) both;
         }
 
         .booking-card {
@@ -397,7 +303,6 @@ export default function HeroSection() {
           background: rgba(10,11,14,0.82);
         }
 
-        /* ── top band — glassy iPhone effect ── */
         .card-band {
           position: relative;
           padding: 22px 24px 20px;
@@ -407,7 +312,6 @@ export default function HeroSection() {
           -webkit-backdrop-filter: blur(24px) saturate(200%) brightness(1.15);
           overflow: hidden;
         }
-        /* top specular sheen — the iPhone "liquid glass" highlight */
         .card-band::before {
           content: '';
           position: absolute;
@@ -422,8 +326,6 @@ export default function HeroSection() {
           border-radius: 20px 20px 60% 60% / 0px 0px 28px 28px;
           pointer-events: none;
         }
-
-        /* bottom inner-shadow edge */
         .card-band::after {
           content: '';
           position: absolute;
@@ -439,12 +341,13 @@ export default function HeroSection() {
           );
           pointer-events: none;
         }
+        .card-band-label {
           position: relative;
           font-size: 10px;
           font-weight: 600;
           letter-spacing: 0.22em;
           text-transform: uppercase;
-          color: var(--gold);
+          color: var(--h-gold);
           margin-bottom: 4px;
         }
         .card-band-title {
@@ -452,11 +355,11 @@ export default function HeroSection() {
           font-family: 'Cormorant Garamond', serif;
           font-size: 28px;
           font-weight: 600;
-          color: var(--ivory);
+          color: var(--h-ivory);
           line-height: 1;
         }
 
-        /* ── trip type pills ── */
+        /* trip type pills */
         .ttabs {
           display: flex;
           gap: 6px;
@@ -471,26 +374,26 @@ export default function HeroSection() {
           letter-spacing: 0.10em;
           text-transform: uppercase;
           text-align: center;
-          color: var(--ivory-faint);
+          color: var(--h-ivory-faint);
           cursor: pointer;
           border-radius: 100px;
-          border: 1px solid var(--stroke);
-          transition: all 0.22s var(--ease);
+          border: 1px solid var(--h-stroke);
+          transition: all 0.22s var(--h-ease);
         }
-        .ttab:hover { color: var(--ivory-dim); border-color: var(--stroke-gold); }
+        .ttab:hover { color: var(--h-ivory-dim); border-color: var(--h-stroke-gold); }
         .ttab.active {
-          background: var(--gold);
-          border-color: var(--gold);
-          color: var(--ink);
+          background: var(--h-gold);
+          border-color: var(--h-gold);
+          color: var(--h-ink);
           font-weight: 600;
         }
 
-        /* ── route block ── */
+        /* route block */
         .card-body { padding: 16px 24px 24px; }
 
         .route-block {
           background: rgba(255,255,255,0.04);
-          border: 1px solid var(--stroke);
+          border: 1px solid var(--h-stroke);
           border-radius: 14px;
           overflow: hidden;
           margin-bottom: 14px;
@@ -504,17 +407,17 @@ export default function HeroSection() {
         }
         .route-row:hover { background: rgba(255,255,255,0.03); }
         .route-row + .route-row {
-          border-top: 1px solid var(--stroke);
+          border-top: 1px solid var(--h-stroke);
         }
         .route-dot {
           width: 10px; height: 10px;
           border-radius: 50%;
           flex-shrink: 0;
         }
-        .route-dot.origin { background: var(--gold); }
+        .route-dot.origin { background: var(--h-gold); }
         .route-dot.dest {
           background: transparent;
-          border: 2px solid var(--gold);
+          border: 2px solid var(--h-gold);
         }
         .route-select {
           flex: 1;
@@ -524,7 +427,7 @@ export default function HeroSection() {
           font-family: 'DM Sans', sans-serif;
           font-size: 13.5px;
           font-weight: 300;
-          color: var(--ivory);
+          color: var(--h-ivory);
           appearance: none;
           -webkit-appearance: none;
           cursor: pointer;
@@ -535,13 +438,12 @@ export default function HeroSection() {
           font-weight: 500;
           letter-spacing: 0.16em;
           text-transform: uppercase;
-          color: var(--ivory-faint);
+          color: var(--h-ivory-faint);
           flex-shrink: 0;
           width: 36px;
           text-align: right;
         }
 
-        /* swap icon between rows */
         .route-swap {
           display: flex;
           justify-content: center;
@@ -555,18 +457,18 @@ export default function HeroSection() {
           right: 14px;
           width: 26px; height: 26px;
           border-radius: 50%;
-          background: var(--ink-soft);
-          border: 1px solid var(--stroke-gold);
+          background: var(--h-ink-soft);
+          border: 1px solid var(--h-stroke-gold);
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
           transition: background 0.2s, transform 0.2s;
         }
-        .route-swap-btn:hover { background: var(--gold-pale); transform: rotate(180deg); }
-        .route-swap-btn svg { width: 12px; height: 12px; fill: var(--gold); }
+        .route-swap-btn:hover { background: var(--h-gold-pale); transform: rotate(180deg); }
+        .route-swap-btn svg { width: 12px; height: 12px; fill: var(--h-gold); }
 
-        /* ── datetime + pax row ── */
+        /* datetime + pax row */
         .card-row {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -576,7 +478,7 @@ export default function HeroSection() {
 
         .mini-field {
           background: rgba(255,255,255,0.04);
-          border: 1px solid var(--stroke);
+          border: 1px solid var(--h-stroke);
           border-radius: 12px;
           padding: 10px 14px;
           display: flex;
@@ -585,14 +487,14 @@ export default function HeroSection() {
           transition: border-color 0.2s;
         }
         .mini-field:focus-within {
-          border-color: var(--stroke-gold);
+          border-color: var(--h-stroke-gold);
         }
         .mini-field-label {
           font-size: 9.5px;
           font-weight: 500;
           letter-spacing: 0.18em;
           text-transform: uppercase;
-          color: var(--ivory-faint);
+          color: var(--h-ivory-faint);
         }
         .mini-field input,
         .mini-field select {
@@ -602,7 +504,7 @@ export default function HeroSection() {
           font-family: 'DM Sans', sans-serif;
           font-size: 13px;
           font-weight: 400;
-          color: var(--ivory);
+          color: var(--h-ivory);
           width: 100%;
           appearance: none;
           -webkit-appearance: none;
@@ -610,7 +512,7 @@ export default function HeroSection() {
         }
         .mini-field select option { background: #16181d; }
 
-        /* ── pax counter ── */
+        /* pax counter */
         .pax-row {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -619,7 +521,7 @@ export default function HeroSection() {
         }
         .pax-block {
           background: rgba(255,255,255,0.04);
-          border: 1px solid var(--stroke);
+          border: 1px solid var(--h-stroke);
           border-radius: 12px;
           padding: 10px 14px;
           display: flex;
@@ -627,28 +529,28 @@ export default function HeroSection() {
           justify-content: space-between;
           transition: border-color 0.2s;
         }
-        .pax-block:focus-within { border-color: var(--stroke-gold); }
+        .pax-block:focus-within { border-color: var(--h-stroke-gold); }
         .pax-info { display: flex; flex-direction: column; gap: 2px; }
         .pax-label {
           font-size: 9.5px;
           font-weight: 500;
           letter-spacing: 0.16em;
           text-transform: uppercase;
-          color: var(--ivory-faint);
+          color: var(--h-ivory-faint);
         }
         .pax-val {
           font-size: 16px;
           font-weight: 500;
-          color: var(--ivory);
+          color: var(--h-ivory);
           font-family: 'Cormorant Garamond', serif;
         }
         .pax-controls { display: flex; gap: 4px; align-items: center; }
         .pax-btn {
           width: 24px; height: 24px;
           border-radius: 50%;
-          border: 1px solid var(--stroke-gold);
+          border: 1px solid var(--h-stroke-gold);
           background: transparent;
-          color: var(--gold);
+          color: var(--h-gold);
           font-size: 16px;
           line-height: 1;
           cursor: pointer;
@@ -658,14 +560,14 @@ export default function HeroSection() {
           transition: background 0.18s, transform 0.15s;
           font-family: 'DM Sans', sans-serif;
         }
-        .pax-btn:hover { background: var(--gold-pale); transform: scale(1.1); }
+        .pax-btn:hover { background: var(--h-gold-pale); transform: scale(1.1); }
         .pax-btn:active { transform: scale(0.92); }
 
-        /* ── submit ── */
+        /* submit */
         .card-submit {
           width: 100%;
           padding: 14px;
-          background: var(--gold);
+          background: var(--h-gold);
           border: none;
           border-radius: 12px;
           font-family: 'DM Sans', sans-serif;
@@ -673,7 +575,7 @@ export default function HeroSection() {
           font-weight: 700;
           letter-spacing: 0.18em;
           text-transform: uppercase;
-          color: var(--ink);
+          color: var(--h-ink);
           cursor: pointer;
           display: flex;
           align-items: center;
@@ -683,15 +585,7 @@ export default function HeroSection() {
           position: relative;
           overflow: hidden;
         }
-        .card-submit::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: rgba(255,255,255,0);
-          transition: background 0.22s;
-        }
-        .card-submit:hover { background: var(--gold-light); transform: translateY(-2px); }
-        .card-submit:hover::before { background: rgba(255,255,255,0.08); }
+        .card-submit:hover { background: var(--h-gold-light); transform: translateY(-2px); }
         .card-submit:active { transform: translateY(0); }
         .card-submit svg { width: 16px; height: 16px; flex-shrink: 0; }
 
@@ -707,21 +601,21 @@ export default function HeroSection() {
           align-items: center;
           gap: 5px;
           font-size: 10.5px;
-          color: var(--ivory-faint);
+          color: var(--h-ivory-faint);
         }
-        .card-note-item svg { width: 12px; height: 12px; fill: var(--gold); }
+        .card-note-item svg { width: 12px; height: 12px; fill: var(--h-gold); }
 
-        /* ── price reveal panel ── */
+        /* price reveal panel */
         .price-panel {
           background: rgba(201,168,76,0.08);
-          border: 1px solid var(--stroke-gold);
+          border: 1px solid var(--h-stroke-gold);
           border-radius: 12px;
           padding: 14px 18px;
           margin-bottom: 12px;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          animation: priceFade 0.35s var(--ease) both;
+          animation: priceFade 0.35s var(--h-ease) both;
         }
         @keyframes priceFade {
           from { opacity: 0; transform: translateY(6px); }
@@ -732,13 +626,13 @@ export default function HeroSection() {
           font-weight: 500;
           letter-spacing: 0.14em;
           text-transform: uppercase;
-          color: var(--ivory-faint);
+          color: var(--h-ivory-faint);
         }
         .price-panel-amount {
           font-family: 'Cormorant Garamond', serif;
           font-size: 34px;
           font-weight: 600;
-          color: var(--gold);
+          color: var(--h-gold);
           line-height: 1;
         }
         .price-panel-amount sup {
@@ -749,33 +643,33 @@ export default function HeroSection() {
         }
         .price-panel-note {
           font-size: 10px;
-          color: var(--ivory-faint);
+          color: var(--h-ivory-faint);
           margin-top: 2px;
         }
 
-        /* book-now button — slightly different style to feel like a second step */
         .card-submit-book {
           width: 100%;
           padding: 14px;
           background: transparent;
-          border: 1.5px solid var(--gold);
+          border: 1.5px solid var(--h-gold);
           border-radius: 12px;
           font-family: 'DM Sans', sans-serif;
           font-size: 12px;
           font-weight: 700;
           letter-spacing: 0.18em;
           text-transform: uppercase;
-          color: var(--gold);
+          color: var(--h-gold);
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 10px;
           transition: background 0.22s, color 0.22s, transform 0.2s;
+          text-decoration: none;
         }
         .card-submit-book:hover {
-          background: var(--gold);
-          color: var(--ink);
+          background: var(--h-gold);
+          color: var(--h-ink);
           transform: translateY(-2px);
         }
         .card-submit-book svg { width: 16px; height: 16px; flex-shrink: 0; }
@@ -785,7 +679,7 @@ export default function HeroSection() {
           position: relative;
           z-index: 1;
           padding: 22px 5vw;
-          border-top: 1px solid var(--stroke);
+          border-top: 1px solid var(--h-stroke);
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -801,23 +695,23 @@ export default function HeroSection() {
           align-items: center;
           gap: 12px;
           text-decoration: none;
-          color: var(--ivory);
+          color: var(--h-ivory);
           transition: color 0.2s;
         }
-        .foot-phone:hover { color: var(--gold); }
+        .foot-phone:hover { color: var(--h-gold); }
         .phone-icon {
           width: 36px;
           height: 36px;
-          border: 1px solid var(--stroke-gold);
+          border: 1px solid var(--h-stroke-gold);
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
         }
-        .phone-icon svg { width: 16px; height: 16px; fill: var(--gold); }
+        .phone-icon svg { width: 16px; height: 16px; fill: var(--h-gold); }
         .phone-detail { display: flex; flex-direction: column; }
-        .phone-detail-label { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ivory-faint); }
+        .phone-detail-label { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--h-ivory-faint); }
         .phone-detail-number { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 500; }
 
         .foot-badges {
@@ -830,9 +724,9 @@ export default function HeroSection() {
           align-items: center;
           gap: 6px;
           font-size: 11.5px;
-          color: var(--ivory-faint);
+          color: var(--h-ivory-faint);
         }
-        .foot-badge svg { width: 14px; height: 14px; fill: var(--gold); }
+        .foot-badge svg { width: 14px; height: 14px; fill: var(--h-gold); }
 
         .foot-rating {
           display: flex;
@@ -843,8 +737,8 @@ export default function HeroSection() {
           display: flex;
           gap: 2px;
         }
-        .stars svg { width: 13px; height: 13px; fill: var(--gold); }
-        .rating-text { font-size: 12px; color: var(--ivory-faint); }
+        .stars svg { width: 13px; height: 13px; fill: var(--h-gold); }
+        .rating-text { font-size: 12px; color: var(--h-ivory-faint); }
 
         /* ─── WhatsApp Float ─── */
         .wa-float {
@@ -880,10 +774,9 @@ export default function HeroSection() {
           .booking-wrap { width: 100%; max-width: 480px; }
         }
         @media (max-width: 768px) {
-          .nav-links { display: none; }
           .pillars { display: grid; grid-template-columns: repeat(2, 1fr); }
-          .pillar { border-right: none; border-bottom: 1px solid var(--stroke); }
-          .pillar:nth-child(odd) { border-right: 1px solid var(--stroke); }
+          .pillar { border-right: none; border-bottom: 1px solid var(--h-stroke); }
+          .pillar:nth-child(odd) { border-right: 1px solid var(--h-stroke); }
           .pillar:nth-last-child(-n+2) { border-bottom: none; }
           .foot-badges { display: none; }
         }
@@ -893,23 +786,6 @@ export default function HeroSection() {
           .cta-primary, .cta-ghost { justify-content: center; }
         }
       `}</style>
-
-      {/* ── NAV ── */}
-      <nav className="nav">
-        <a href="/" className="nav-logo">
-          <div className="nav-logo-mark">
-            <svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
-          </div>
-          <span className="nav-logo-text">Paris <span>Elite</span> Transfer</span>
-        </a>
-        <div className="nav-links">
-          <a href="/services">Services</a>
-          <a href="/fleet">Fleet</a>
-          <a href="/rates">Rates</a>
-          <a href="/about">About</a>
-        </div>
-        <a href="/reservation" className="nav-reserve">Reserve</a>
-      </nav>
 
       {/* ── HERO ── */}
       <section className="hero">
@@ -950,7 +826,7 @@ export default function HeroSection() {
                 <span className="pillar-label">Guest Rating</span>
               </div>
               <div className="pillar">
-                <span className="pillar-value">0€</span>
+                <span className="pillar-value">Free</span>
                 <span className="pillar-label">Child Seats</span>
               </div>
               <div className="pillar">
@@ -958,12 +834,10 @@ export default function HeroSection() {
                 <span className="pillar-label">Fare · No Surprises</span>
               </div>
               <div className="pillar">
-                <span className="pillar-value">Pay</span>
-                <span className="pillar-label">On Arrival</span>
+                <span className="pillar-value">24/7</span>
+                <span className="pillar-label">Support</span>
               </div>
             </div>
-
-
           </div>
 
           {/* BOOKING CARD */}
@@ -991,7 +865,7 @@ export default function HeroSection() {
 
               <div className="card-body">
 
-                {/* Route block with origin / destination */}
+                {/* Route block */}
                 <div className="route-block">
                   <div className="route-row">
                     <div className="route-dot origin" />
@@ -1009,7 +883,6 @@ export default function HeroSection() {
                     </select>
                   </div>
 
-                  {/* Swap button sits between the two rows */}
                   <div className="route-swap">
                     <div className="route-swap-btn" onClick={() => {
                       const tmp = pickup;
@@ -1051,7 +924,7 @@ export default function HeroSection() {
                   </div>
                 </div>
 
-                {/* Passengers — +/- counters */}
+                {/* Passengers */}
                 <div className="pax-row">
                   <div className="pax-block">
                     <div className="pax-info">
@@ -1111,7 +984,7 @@ export default function HeroSection() {
                   </span>
                   <span className="card-note-item">
                     <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
-                    Pay on arrival
+                    Pay on card or cash on arrival
                   </span>
                 </div>
 
@@ -1128,6 +1001,6 @@ export default function HeroSection() {
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.198-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.297-.497.099-.198.05-.371-.025-.52-.074-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.29.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
         </svg>
       </a>
-    </>
+    </div>
   );
 }

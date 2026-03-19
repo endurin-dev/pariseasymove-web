@@ -17,24 +17,8 @@ export default function Header() {
   }, []);
 
   const t = {
-    en: {
-      home: "Home",
-      destinations: "Destinations",
-      rates: "Rates",
-      reservation: "Reservation",
-      contact: "Contact",
-      bookNow: "Reserve Your Journey",
-      callUs: "Speak With Us",
-    },
-    fr: {
-      home: "Accueil",
-      destinations: "Destinations",
-      rates: "Tarifs",
-      reservation: "Réservation",
-      contact: "Contact",
-      bookNow: "Réservez Votre Voyage",
-      callUs: "Contactez-nous",
-    },
+    en: { home: "Home", destinations: "Destinations", rates: "Rates", reservation: "Reservation", contact: "Contact", bookNow: "Reserve Your Journey", callUs: "Speak With Us" },
+    fr: { home: "Accueil", destinations: "Destinations", rates: "Tarifs", reservation: "Réservation", contact: "Contact", bookNow: "Réservez Votre Voyage", callUs: "Contactez-nous" },
   };
 
   const navLinks = [
@@ -45,448 +29,147 @@ export default function Header() {
     { href: "/contact-us", label: t[lang].contact },
   ];
 
+  const GOLD = "#c9a347";
+  const TEXT = "#f8f8f8";
+  const TEXT_DIM = "rgba(248,248,248,0.78)";
+  const BORDER = "rgba(255,255,255,0.085)";
+  const SURFACE = "rgba(255,255,255,0.035)";
+
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Montserrat:wght@400;500;600;700&display=swap');
 
-        :root {
-          --bg:            #0a1425;
-          --surface:       rgba(255,255,255,0.035);
-          --surface2:      rgba(255,255,255,0.07);
-          --border:        rgba(255,255,255,0.085);
-          --gold:          #c9a347;
-          --gold-dim:      rgba(201,163,71,0.16);
-          --gold-glow:     rgba(201,163,71,0.26);
-          --text:          #f8f8f8;
-          --text-dim:      rgba(248,248,248,0.78);
-          --emerald:       #1a6b52;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-
-        .h-root {
-          position: fixed;
-          top: 0; left: 0; right: 0;
-          z-index: 9999;
-          background: var(--bg);
-          backdrop-filter: blur(18px) saturate(1.85);
-          border-bottom: 1px solid var(--border);
-          transition: all 0.5s ease;
-        }
-
-        .h-root.scrolled {
-          background: rgba(10,20,37,0.94);
-          border-bottom-color: rgba(201,163,71,0.22);
-          box-shadow: 0 6px 32px rgba(0,0,0,0.42);
-        }
-
-        .h-inner {
-          max-width: 1520px;
-          margin: 0 auto;
-          padding: 0 4vw;
-          height: 92px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-
-        /* Logo */
-        .h-logo {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          text-decoration: none;
-          transition: transform 0.4s ease;
-        }
-
-        .h-logo:hover { transform: translateY(-1px); }
-
-        .h-logo-mark {
-          position: relative;
-          width: 42px;
-          height: 42px;
-          flex-shrink: 0;
-        }
-
-        .h-logo-mark-ring {
-          position: absolute;
-          inset: -5px;
-          border: 1px solid var(--gold-dim);
-          border-radius: 50%;
-          opacity: 0.5;
-          transition: all 0.6s cubic-bezier(0.23,1,0.32,1);
-        }
-
-        .h-logo:hover .h-logo-mark-ring {
-          inset: -9px;
-          opacity: 0.75;
-          transform: scale(1.12);
-        }
-
-        .h-logo-mark-inner {
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(circle at 30% 30%, var(--gold-dim) 0%, transparent 70%);
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .h-logo-mark svg {
-          width: 20px;
-          height: 20px;
-          color: var(--gold);
-          stroke-width: 1.7;
-        }
-
-        .h-logo-text {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-        }
-
-        .h-logo-name {
-          font-family: 'Playfair Display', serif;
-          font-size: 29px;
-          font-weight: 600;
-          color: var(--text);
-          letter-spacing: -0.025em;
-          line-height: 1;
-          white-space: nowrap;
-        }
-
-        .h-logo-name em {
-          font-style: italic;
-          color: var(--gold);
-          font-weight: 500;
-        }
-
-        .h-logo-sub {
-          font-family: 'Montserrat', sans-serif;
-          font-size: 9.5px;
-          font-weight: 500;
-          letter-spacing: 0.24em;
-          text-transform: uppercase;
-          color: var(--text-dim);
-          white-space: nowrap;
-        }
-
-        /* Navigation – luxury serif font */
-        .h-nav {
-          display: none;
-          align-items: center;
-          gap: 6px;           /* slightly increased from previous tight version for better readability */
-        }
-
-        @media (min-width: 1080px) {
-          .h-nav { display: flex; }
-        }
-
-        .h-navlink {
-          font-family: 'Cormorant Garamond', serif;
-          font-size: 16px;
-          font-weight: 500;
-          font-style: normal;
-          color: var(--text-dim);
-          text-decoration: none;
-          padding: 6px 14px;
-          letter-spacing: 0.05em;
-          transition: all 0.3s ease;
-          border-radius: 6px;
-          white-space: nowrap;
-          position: relative;
-        }
-
-        .h-navlink:hover {
-          color: var(--text);
-          background: var(--surface);
-          letter-spacing: 0.07em;
-        }
-
-        .h-navlink::after {
+        .h-navlink-u::after {
           content: '';
           position: absolute;
           width: 0;
           height: 1px;
           bottom: 4px;
           left: 50%;
-          background: var(--gold);
+          background: #c9a347;
           transition: width 0.4s ease;
           transform: translateX(-50%);
         }
+        .h-navlink-u:hover::after { width: 65%; }
+        .h-navlink-u:hover { background: rgba(255,255,255,0.035) !important; color: #f8f8f8 !important; }
 
-        .h-navlink:hover::after {
-          width: 65%;
-        }
+        .h-burger-line { height: 1.8px; background: rgba(248,248,248,0.78); border-radius: 1px; transition: all 0.4s; }
+        .h-burger-line:nth-child(1) { width: 20px; }
+        .h-burger-line:nth-child(2) { width: 14px; }
+        .h-burger-line:nth-child(3) { width: 20px; }
 
-        /* Right controls – no social icons */
-        .h-controls {
-          display: flex;
-          align-items: center;
-          gap: 18px;
-          flex-shrink: 0;
-        }
+        .h-lang-btn-s { background: none; border: none; padding: 5px 11px; font-family: 'Montserrat', sans-serif; font-size: 10.8px; font-weight: 600; color: rgba(248,248,248,0.78); cursor: pointer; text-transform: uppercase; letter-spacing: 0.09em; }
+        .h-lang-btn-s.active { background: rgba(201,163,71,0.16); color: #c9a347; border-radius: 5px; }
 
-        @media (max-width: 1079px) {
-          .h-controls { display: none; }
-        }
+        @keyframes h-pulse { 0%,100%{box-shadow:0 0 6px rgba(26,107,82,0.35)} 50%{box-shadow:0 0 16px rgba(26,107,82,0.7)} }
 
-        .h-divider {
-          width: 1px;
-          height: 28px;
-          background: linear-gradient(to bottom, transparent, var(--border), transparent);
-          opacity: 0.5;
-        }
-
-        .h-lang {
-          display: flex;
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: 7px;
-          padding: 2px;
-        }
-
-        .h-lang-btn {
-          background: none;
-          border: none;
-          padding: 5px 11px;
-          font-family: 'Montserrat', sans-serif;
-          font-size: 10.8px;
-          font-weight: 600;
-          color: var(--text-dim);
-          cursor: pointer;
-          transition: all 0.25s ease;
-          text-transform: uppercase;
-          letter-spacing: 0.09em;
-        }
-
-        .h-lang-btn.active {
-          background: var(--gold-dim);
-          color: var(--gold);
-        }
-
-        .h-phone {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 8px 17px;
-          border: 1px solid var(--border);
-          border-radius: 9px;
-          text-decoration: none;
-          transition: all 0.32s ease;
-          white-space: nowrap;
-        }
-
-        .h-phone:hover {
-          border-color: var(--gold-dim);
-          background: var(--surface2);
-        }
-
-        .h-phone-pulse {
-          width: 8px;
-          height: 8px;
-          background: var(--emerald);
-          border-radius: 50%;
-          box-shadow: 0 0 12px rgba(26,107,82,0.5);
-          animation: pulse-lux 2.8s infinite ease-in-out;
-        }
-
-        @keyframes pulse-lux {
-          0%, 100% { box-shadow: 0 0 6px rgba(26,107,82,0.35); }
-          50%      { box-shadow: 0 0 16px rgba(26,107,82,0.7); }
-        }
-
-        .h-phone-label {
-          font-family: 'Montserrat', sans-serif;
-          font-size: 9px;
-          font-weight: 600;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
-          color: var(--text-dim);
-        }
-
-        .h-phone-num {
-          font-family: 'Playfair Display', serif;
-          font-size: 16.5px;
-          font-weight: 500;
-          color: var(--text);
-          letter-spacing: -0.01em;
-        }
-
-        .h-cta {
-          display: inline-flex;
-          align-items: center;
-          gap: 10px;
-          padding: 0 26px;
-          height: 46px;
-          background: var(--gold);
-          color: #0a1425;
-          font-family: 'Montserrat', sans-serif;
-          font-size: 13.2px;
-          font-weight: 600;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          border-radius: 9px;
-          text-decoration: none;
-          box-shadow: 0 4px 18px var(--gold-dim);
-          transition: all 0.38s cubic-bezier(0.22,1,0.36,1);
-        }
-
-        .h-cta:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 12px 34px rgba(201,163,71,0.36);
-        }
-
-        /* Mobile burger */
-        .h-burger {
-          display: flex;
-          flex-direction: column;
-          gap: 5px;
-          width: 42px;
-          height: 42px;
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: 9px;
-          cursor: pointer;
-          transition: all 0.3s;
-        }
-
-        @media (min-width: 1080px) {
-          .h-burger { display: none; }
-        }
-
-        .h-burger:hover {
-          background: var(--surface2);
-          border-color: var(--gold-dim);
-        }
-
-        .h-bline {
-          height: 1.8px;
-          background: var(--text-dim);
-          border-radius: 1px;
-          transition: all 0.4s;
-        }
-
-        .h-bline:nth-child(1) { width: 20px; }
-        .h-bline:nth-child(2) { width: 14px; }
-        .h-bline:nth-child(3) { width: 20px; }
-
-        .h-burger.open .h-bline:nth-child(1) {
-          transform: translateY(6.5px) rotate(45deg);
-          width: 20px;
-        }
-
-        .h-burger.open .h-bline:nth-child(2) {
-          opacity: 0;
-          width: 0;
-        }
-
-        .h-burger.open .h-bline:nth-child(3) {
-          transform: translateY(-6.5px) rotate(-45deg);
-          width: 20px;
-        }
-
-        /* Mobile menu placeholder */
-        .h-mobile {
-          position: fixed;
-          top: 92px;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: var(--bg);
-          transform: translateY(-100%);
-          transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
-          overflow-y: auto;
-        }
-
-        .h-mobile.open {
-          transform: translateY(0);
-        }
+        @media (max-width: 1079px) { .h-desktop { display: none !important; } }
+        @media (min-width: 1080px) { .h-mobile-btn { display: none !important; } }
       `}</style>
 
-      <header className={`h-root${scrolled ? " scrolled" : ""}`}>
-        <div className="h-inner">
+      <header style={{
+        position: "fixed",
+        top: 0, left: 0, right: 0,
+        zIndex: 9999,
+        background: scrolled ? "rgba(10,10,10,0.5)" : "#0a0a0a",
+        backdropFilter: scrolled ? "blur(20px)" : "none",
+        WebkitBackdropFilter: scrolled ? "blur(20px)" : "none",
+        borderBottom: `1px solid ${scrolled ? "rgba(201,163,71,0.2)" : BORDER}`,
+        boxShadow: scrolled ? "0 6px 32px rgba(0,0,0,0.4)" : "none",
+        transition: "all 0.4s ease",
+        fontFamily: "'Montserrat', sans-serif",
+      }}>
+        <div style={{
+          maxWidth: 1520,
+          margin: "0 auto",
+          padding: "0 4vw",
+          height: 92,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          boxSizing: "border-box",
+        }}>
+
           {/* Logo */}
-          <Link href="/" className="h-logo">
-            <div className="h-logo-mark">
-              <div className="h-logo-mark-ring" />
-              <div className="h-logo-mark-inner">
-                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.7">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
-                  />
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none" }}>
+            <div style={{ position: "relative", width: 42, height: 42, flexShrink: 0 }}>
+              <div style={{ position: "absolute", inset: -5, border: "1px solid rgba(201,163,71,0.16)", borderRadius: "50%", opacity: 0.5 }} />
+              <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at 30% 30%, rgba(201,163,71,0.16) 0%, transparent 70%)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg fill="none" viewBox="0 0 24 24" stroke={GOLD} strokeWidth="1.7" width={20} height={20}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
                 </svg>
               </div>
             </div>
-            <div className="h-logo-text">
-              <span className="h-logo-name">
-                Paris <em>Easy</em> Move
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 29, fontWeight: 600, color: TEXT, letterSpacing: "-0.025em", lineHeight: 1, whiteSpace: "nowrap" }}>
+                Paris <em style={{ fontStyle: "italic", color: GOLD, fontWeight: 500 }}>Easy</em> Move
               </span>
-              <span className="h-logo-sub">Luxury Relocation · Paris</span>
+              <span style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 9.5, fontWeight: 500, letterSpacing: "0.24em", textTransform: "uppercase", color: TEXT_DIM, whiteSpace: "nowrap" }}>
+                Paris journey starts here
+              </span>
             </div>
           </Link>
 
-          {/* Desktop Navigation – luxury serif */}
-          <nav className="h-nav">
+          {/* Desktop Nav */}
+          <nav className="h-desktop" style={{ display: "flex", alignItems: "center", gap: 6 }}>
             {navLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="h-navlink">
+              <Link key={link.href} href={link.href} className="h-navlink-u" style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 16, fontWeight: 500, color: TEXT_DIM, textDecoration: "none", padding: "6px 14px", letterSpacing: "0.05em", borderRadius: 6, whiteSpace: "nowrap", position: "relative", transition: "all 0.3s ease" }}>
                 {link.label}
               </Link>
             ))}
           </nav>
 
-          {/* Right Controls – NO social icons */}
-          <div className="h-controls">
-            <div className="h-lang">
-              <button
-                onClick={() => setLang("en")}
-                className={`h-lang-btn${lang === "en" ? " active" : ""}`}
-              >
-                EN
-              </button>
-              <button
-                onClick={() => setLang("fr")}
-                className={`h-lang-btn${lang === "fr" ? " active" : ""}`}
-              >
-                FR
-              </button>
+          {/* Right Controls */}
+          <div className="h-desktop" style={{ display: "flex", alignItems: "center", gap: 18, flexShrink: 0 }}>
+            {/* Lang */}
+            <div style={{ display: "flex", background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 7, padding: 2 }}>
+              <button onClick={() => setLang("en")} className={`h-lang-btn-s${lang === "en" ? " active" : ""}`}>EN</button>
+              <button onClick={() => setLang("fr")} className={`h-lang-btn-s${lang === "fr" ? " active" : ""}`}>FR</button>
             </div>
 
-            <div className="h-divider" />
+            {/* Divider */}
+            <div style={{ width: 1, height: 28, background: `linear-gradient(to bottom, transparent, ${BORDER}, transparent)`, opacity: 0.5 }} />
 
-            <a href="tel:+33123456789" className="h-phone">
-              <span className="h-phone-pulse" />
+            {/* Phone */}
+            <a href="tel:+33123456789" style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 17px", border: `1px solid ${BORDER}`, borderRadius: 9, textDecoration: "none", whiteSpace: "nowrap" }}>
+              <span style={{ width: 8, height: 8, background: "#1a6b52", borderRadius: "50%", boxShadow: "0 0 12px rgba(26,107,82,0.5)", animation: "h-pulse 2.8s infinite ease-in-out", flexShrink: 0 }} />
               <div>
-                <div className="h-phone-label">{t[lang].callUs}</div>
-                <div className="h-phone-num">+33 1 23 45 67 89</div>
+                <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 9, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: TEXT_DIM }}>{t[lang].callUs}</div>
+                <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 16.5, fontWeight: 500, color: TEXT, letterSpacing: "-0.01em" }}>+33 1 23 45 67 89</div>
               </div>
             </a>
 
-            <Link href="/reservation" className="h-cta">
+            {/* CTA */}
+            <Link href="/reservation" style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "0 26px", height: 46, background: GOLD, color: "#0a0a0a", fontFamily: "'Montserrat', sans-serif", fontSize: 13.2, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", borderRadius: 9, textDecoration: "none", boxShadow: "0 4px 18px rgba(201,163,71,0.25)", whiteSpace: "nowrap" }}>
               {t[lang].bookNow}
             </Link>
           </div>
 
           {/* Mobile Burger */}
-          <button
-            className={`h-burger${isOpen ? " open" : ""}`}
-            onClick={() => setIsOpen(!isOpen)}
-            aria-label="Toggle menu"
-          >
-            <span className="h-bline" />
-            <span className="h-bline" />
-            <span className="h-bline" />
+          <button className="h-mobile-btn" onClick={() => setIsOpen(!isOpen)} aria-label="Toggle menu" style={{ display: "flex", flexDirection: "column", gap: 5, width: 42, height: 42, alignItems: "center", justifyContent: "center", background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 9, cursor: "pointer" }}>
+            <span className="h-burger-line" />
+            <span className="h-burger-line" />
+            <span className="h-burger-line" />
           </button>
         </div>
 
-        {/* Mobile Menu – placeholder (add your mobile nav content here) */}
-        <div className={`h-mobile${isOpen ? " open" : ""}`}>
-          {/* Your mobile menu content goes here */}
-        </div>
+        {/* Mobile Menu */}
+        {isOpen && (
+          <div style={{ position: "fixed", top: 92, left: 0, right: 0, bottom: 0, background: "#0a0a0a", overflowY: "auto", padding: "32px 6vw" }}>
+            {navLinks.map((link) => (
+              <Link key={link.href} href={link.href} onClick={() => setIsOpen(false)} style={{ display: "block", fontFamily: "'Cormorant Garamond', serif", fontSize: 28, fontWeight: 400, color: TEXT, textDecoration: "none", padding: "16px 0", borderBottom: `1px solid ${BORDER}` }}>
+                {link.label}
+              </Link>
+            ))}
+            <div style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 16 }}>
+              <a href="tel:+33123456789" style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, color: TEXT, textDecoration: "none" }}>+33 1 23 45 67 89</a>
+              <Link href="/reservation" onClick={() => setIsOpen(false)} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "14px 28px", background: GOLD, color: "#0a0a0a", fontFamily: "'Montserrat', sans-serif", fontSize: 13, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", borderRadius: 9, textDecoration: "none" }}>
+                {t[lang].bookNow}
+              </Link>
+            </div>
+          </div>
+        )}
       </header>
     </>
   );

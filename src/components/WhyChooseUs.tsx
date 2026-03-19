@@ -7,12 +7,12 @@ const benefits = [
     num: "01",
     icon: (
       <svg viewBox="0 0 24 24" width={36} height={36} fill="none" stroke="currentColor" strokeWidth={1.6}>
-        <circle cx="12" cy="12" r="10" />
-        <polyline points="12 6 12 12 16 14" />
+        <path d="M12 2C8 2 4.5 5 4.5 9c0 5.25 7.5 13 7.5 13s7.5-7.75 7.5-13c0-4-3.5-7-7.5-7z" />
+        <path d="M9 9l2 2 4-4" />
       </svg>
     ),
-    title: "Precision Timing",
-    desc: "Live flight tracking and punctual chauffeurs — never a minute lost.",
+    title: "Punctual Every Time",
+    desc: "We monitor your flight live — your driver is always there, on time, no matter what.",
     featured: true,
   },
   {
@@ -58,7 +58,7 @@ const benefits = [
       </svg>
     ),
     title: "Family & Group Comfort",
-    desc: "Complimentary child seats • Mercedes vans up to 8 passengers.",
+    desc: "Free child seats · Mercedes vans up to 8 passengers · Disney films on board for the little ones.",
   },
   {
     num: "06",
@@ -70,6 +70,41 @@ const benefits = [
     title: "24/7 Concierge",
     desc: "Personal human support — changes, requests, questions, anytime.",
   },
+  {
+    num: "07",
+    icon: (
+      <svg viewBox="0 0 24 24" width={36} height={36} fill="none" stroke="currentColor" strokeWidth={1.6}>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20M12 2a15.3 15.3 0 0 0 0 20" />
+      </svg>
+    ),
+    title: "English-Speaking Drivers",
+    desc: "Fluent English-speaking chauffeurs — communicate comfortably from the moment you land.",
+  },
+  {
+    num: "08",
+    icon: (
+      <svg viewBox="0 0 24 24" width={36} height={36} fill="none" stroke="currentColor" strokeWidth={1.6}>
+        <rect x="2" y="4" width="20" height="14" rx="2" />
+        <path d="M8 20h8M12 18v2" />
+        <path d="M10 9l5 3-5 3V9z" />
+      </svg>
+    ),
+    title: "Disney Films On Board",
+    desc: "In-vehicle screen with Disney films to keep the little ones entertained throughout the journey.",
+  },
+  {
+    num: "09",
+    icon: (
+      <svg viewBox="0 0 24 24" width={36} height={36} fill="none" stroke="currentColor" strokeWidth={1.6}>
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+        <path d="M16 11l1.5 1.5L20 10" />
+      </svg>
+    ),
+    title: "Friendly & Welcoming Service",
+    desc: "Warm, attentive chauffeurs who go the extra mile — making every passenger feel at home.",
+  },
 ];
 
 const stats = [
@@ -77,6 +112,46 @@ const stats = [
   { value: "4,200+", label: "Journeys" },
   { value: "24/7", label: "Concierge" },
   { value: "€0", label: "Hidden Fees" },
+];
+
+const paymentMethods = [
+  {
+    label: "Credit Card",
+    icon: (
+      <svg viewBox="0 0 24 24" width={28} height={28} fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <rect x="2" y="5" width="20" height="14" rx="2" />
+        <line x1="2" y1="10" x2="22" y2="10" />
+      </svg>
+    ),
+  },
+  {
+    label: "Cash",
+    icon: (
+      <svg viewBox="0 0 24 24" width={28} height={28} fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <rect x="2" y="6" width="20" height="12" rx="2" />
+        <circle cx="12" cy="12" r="3" />
+        <line x1="6" y1="12" x2="6" y2="12" strokeLinecap="round" strokeWidth={2} />
+        <line x1="18" y1="12" x2="18" y2="12" strokeLinecap="round" strokeWidth={2} />
+      </svg>
+    ),
+  },
+  {
+    label: "PayPal",
+    icon: (
+      <svg viewBox="0 0 24 24" width={28} height={28} fill="currentColor">
+        <path d="M7.076 21.337H4.23a.641.641 0 0 1-.633-.74L6.54 3.67a.77.77 0 0 1 .761-.65h5.358c2.42 0 4.1.835 4.76 2.43.295.71.37 1.43.24 2.23-.02.11-.04.22-.07.34l-.01.06c-.6 3.08-2.65 4.65-6.08 4.65H9.19a.64.64 0 0 0-.632.54l-.81 5.13a.64.64 0 0 1-.633.54H7.08l-.004.367zm9.196-12.18c-.7 3.6-3.18 5.43-7.39 5.43H6.73l-1.1 6.96h1.9l.81-5.13a1.28 1.28 0 0 1 1.264-1.08h2.31c3.88 0 6.21-1.88 6.9-5.6.34-1.78.02-3.15-.86-4.07.47.79.63 1.76.32 3.49z" />
+      </svg>
+    ),
+  },
+  {
+    label: "Amex",
+    icon: (
+      <svg viewBox="0 0 24 24" width={28} height={28} fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <rect x="2" y="5" width="20" height="14" rx="2" />
+        <path d="M6 12h3l1-2 1 4 1-2h3" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
 ];
 
 export default function WhyChooseUs() {
@@ -131,6 +206,52 @@ export default function WhyChooseUs() {
           text-align: center;
         }
 
+        .payment-section {
+          padding: 50px 5vw;
+          border-top: 1px solid rgba(201,163,71,0.1);
+          border-bottom: 1px solid rgba(201,163,71,0.1);
+          text-align: center;
+        }
+
+        .payment-label {
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.24em;
+          text-transform: uppercase;
+          color: #c9a347;
+          margin-bottom: 28px;
+        }
+
+        .payment-methods {
+          display: flex;
+          justify-content: center;
+          flex-wrap: wrap;
+          gap: 14px;
+        }
+
+        .payment-pill {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 12px 22px;
+          border: 1px solid rgba(201,163,71,0.25);
+          border-radius: 50px;
+          background: #fafaf8;
+          color: #0a1f44;
+          font-size: 13px;
+          font-weight: 500;
+          transition: all 0.25s ease;
+        }
+
+        .payment-pill:hover {
+          border-color: #c9a347;
+          background: #fdfaf4;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 18px rgba(201,163,71,0.15);
+        }
+
+        .payment-pill svg { color: #c9a347; flex-shrink: 0; }
+
         .cta-btn {
           padding: 14px 48px;
           background: #0a1f44;
@@ -152,30 +273,28 @@ export default function WhyChooseUs() {
         }
 
         @media (max-width: 1024px) {
-          .hero { grid-template-columns: 1fr; padding: 70px 5vw 40px; }
           .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
-          .benefits-grid { gap: 24px; }
         }
 
         @media (max-width: 640px) {
           .benefit-card { padding: 32px 24px 24px; }
           .benefit-num { left: 24px; width: 46px; height: 46px; font-size: 1.2rem; }
           .stat-card { padding: 24px 16px; }
+          .payment-methods { gap: 10px; }
+          .payment-pill { padding: 10px 16px; font-size: 12px; }
         }
       `}</style>
 
-      {/* Hero – reduced padding */}
+      {/* Hero */}
       <div style={styles.hero}>
-        <div style={styles.heroContent}>
-          <div style={styles.eyebrow}>Paris Private Transfers</div>
-          <h1 style={styles.heroTitle}>Luxury Redefined</h1>
-        </div>
+        <div style={styles.eyebrow}>Paris Private Transfers</div>
+        <h1 style={styles.heroTitle}>Luxury Redefined</h1>
         <p style={styles.heroDesc}>
           Discreet, punctual, elegantly executed airport transfers — CDG & ORY
         </p>
       </div>
 
-      {/* Stats – tighter */}
+      {/* Stats */}
       <div style={styles.statsGrid}>
         {stats.map((s, i) => (
           <div key={i} className="stat-card">
@@ -185,16 +304,16 @@ export default function WhyChooseUs() {
         ))}
       </div>
 
-      {/* Benefits – reduced padding & gap */}
+      {/* Benefits */}
       <div style={styles.benefitsGrid}>
         {benefits.map((b, i) => (
           <div
             key={i}
-            className={`benefit-card ${b.featured ? 'featured' : ''}`}
+            className={`benefit-card${b.featured ? " featured" : ""}`}
             style={styles.benefitCard}
           >
             <div className="benefit-num">{b.num}</div>
-            <div style={{ ...styles.iconContainer, color: '#c9a347' }}>
+            <div style={{ ...styles.iconContainer, color: "#c9a347" }}>
               {b.icon}
             </div>
             <h3 style={styles.benefitTitle}>{b.title}</h3>
@@ -203,7 +322,20 @@ export default function WhyChooseUs() {
         ))}
       </div>
 
-      {/* CTA – much tighter */}
+      {/* Payment Methods */}
+      <div className="payment-section">
+        <div className="payment-label">Accepted Payment Methods</div>
+        <div className="payment-methods">
+          {paymentMethods.map((p, i) => (
+            <div key={i} className="payment-pill">
+              {p.icon}
+              {p.label}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* CTA */}
       <div style={styles.ctaSection}>
         <p style={styles.ctaText}>Begin your journey with effortless elegance</p>
         <button className="cta-btn">Reserve Your Transfer</button>
@@ -225,7 +357,6 @@ const styles: Record<string, React.CSSProperties> = {
     margin: "0 auto",
     borderBottom: "1px solid rgba(201,163,71,0.1)",
   },
-  heroContent: {},
   eyebrow: {
     fontSize: "clamp(13px, 1vw, 14px)",
     fontWeight: 600,

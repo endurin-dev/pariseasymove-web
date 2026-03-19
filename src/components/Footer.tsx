@@ -30,7 +30,7 @@ const NAV_LINKS = {
 const SOCIALS = [
   {
     label: "Facebook",
-    href: "https://facebook.com",
+    href: "https://facebook.com/ParisEasyMove",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
         <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
@@ -39,7 +39,7 @@ const SOCIALS = [
   },
   {
     label: "Instagram",
-    href: "https://instagram.com",
+    href: "https://instagram.com/ParisEasyMove",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
@@ -64,8 +64,8 @@ const SOCIALS = [
       <svg width="18" height="18" viewBox="0 0 40 40" fill="none">
         <circle cx="14" cy="20" r="5" fill="currentColor" opacity="0.9"/>
         <circle cx="26" cy="20" r="5" fill="currentColor" opacity="0.9"/>
-        <circle cx="14" cy="20" r="2.2" fill="#080808"/>
-        <circle cx="26" cy="20" r="2.2" fill="#080808"/>
+        <circle cx="14" cy="20" r="2.2" fill="#0a1f44"/>
+        <circle cx="26" cy="20" r="2.2" fill="#0a1f44"/>
         <path d="M8 16 Q14 9 20 13 Q26 9 32 16" stroke="currentColor" strokeWidth="2.2" fill="none" strokeLinecap="round"/>
       </svg>
     ),
@@ -89,27 +89,29 @@ export default function Footer() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@400;500;600;700&display=swap');
 
         .ft-root {
           background: #080808;
-          font-family: 'Space Grotesk', sans-serif;
-          color: rgba(255,255,255,0.75);
+          font-family: 'Montserrat', sans-serif;
+          color: rgba(245,240,232,0.65);
           position: relative;
           overflow: hidden;
         }
 
-        /* subtle dot grid */
         .ft-root::before {
           content: ''; position: absolute; inset: 0;
-          background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
-          background-size: 28px 28px; pointer-events: none;
+          background-image:
+            linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+          background-size: 48px 48px;
+          pointer-events: none;
         }
 
-        /* green top border */
         .ft-topbar {
-          height: 3px;
-          background: linear-gradient(to right, transparent 0%, #00A854 30%, #00A854 70%, transparent 100%);
+          height: 2px;
+          background: linear-gradient(to right, transparent 0%, #c9a347 30%, #c9a347 70%, transparent 100%);
+          opacity: 0.7;
         }
 
         .ft-main {
@@ -118,197 +120,219 @@ export default function Footer() {
           position: relative;
         }
 
+        /* registration image — small card */
+        .ft-reg-card {
+          display: flex; align-items: center; gap: 20px;
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(201,163,71,0.2);
+          border-radius: 14px; padding: 18px 24px;
+          margin-bottom: 56px;
+        }
+        .ft-reg-img {
+          width: 90px; height: 64px; border-radius: 8px;
+          object-fit: cover; object-position: center;
+          flex-shrink: 0;
+          border: 1px solid rgba(201,163,71,0.15);
+        }
+        .ft-reg-label {
+          font-size: 9px; font-weight: 600; letter-spacing: 0.22em;
+          text-transform: uppercase; color: #c9a347; margin-bottom: 4px;
+        }
+        .ft-reg-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 18px; font-weight: 500; color: #f5f0e8; line-height: 1.2;
+        }
+        .ft-reg-sub {
+          font-size: 11px; font-weight: 500; color: rgba(245,240,232,0.4);
+          margin-top: 3px; letter-spacing: 0.03em;
+        }
+
         /* Top row: brand + newsletter */
         .ft-top {
           display: grid;
           grid-template-columns: 1.4fr 1fr;
           gap: 64px;
           padding-bottom: 52px;
-          border-bottom: 1px solid rgba(255,255,255,0.08);
+          border-bottom: 1px solid rgba(245,240,232,0.08);
           margin-bottom: 52px;
         }
         @media (max-width: 860px) { .ft-top { grid-template-columns: 1fr; gap: 40px; } }
 
-        /* Brand */
         .ft-brand-logo {
-          display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
+          display: flex; align-items: center; gap: 12px; margin-bottom: 18px;
         }
         .ft-brand-icon {
           width: 40px; height: 40px; border-radius: 10px;
-          background: #00A854;
-          display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0;
+          background: rgba(201,163,71,0.15);
+          border: 1px solid rgba(201,163,71,0.3);
+          display: flex; align-items: center; justify-content: center; flex-shrink: 0;
         }
-        .ft-brand-icon svg { width: 20px; height: 20px; color: white; }
+        .ft-brand-icon svg { width: 20px; height: 20px; color: #c9a347; }
         .ft-brand-name {
-          font-size: 20px; font-weight: 800; color: white; letter-spacing: -0.03em;
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 24px; font-weight: 600; color: #f5f0e8; letter-spacing: -0.01em;
         }
-        .ft-brand-name span { color: #00A854; }
+        .ft-brand-name span { color: #c9a347; font-style: italic; }
         .ft-brand-desc {
-          font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.45);
+          font-size: 13.5px; font-weight: 500; color: rgba(245,240,232,0.42);
           line-height: 1.75; max-width: 380px; margin-bottom: 28px;
         }
 
-        /* Ratings row */
-        .ft-ratings { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
+        .ft-ratings { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
         .ft-rating-chip {
           display: flex; align-items: center; gap: 7px;
-          background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+          background: rgba(245,240,232,0.04); border: 1px solid rgba(245,240,232,0.1);
           border-radius: 10px; padding: 8px 14px;
-          font-family: 'Space Mono', monospace; font-size: 9px; font-weight: 700;
-          letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.5);
+          font-size: 9px; font-weight: 600;
+          letter-spacing: 0.1em; text-transform: uppercase; color: rgba(245,240,232,0.4);
           transition: border-color 0.2s;
         }
-        .ft-rating-chip:hover { border-color: rgba(255,255,255,0.25); }
-        .ft-rating-num { font-size: 15px; font-weight: 800; color: white; letter-spacing: -0.02em; }
+        .ft-rating-chip:hover { border-color: rgba(201,163,71,0.3); }
+        .ft-rating-num { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 600; color: #c9a347; letter-spacing: -0.02em; line-height: 1; }
         .ft-stars { display: flex; gap: 1px; }
         .ft-stars svg { width: 11px; height: 11px; }
 
-        /* Socials */
         .ft-socials { display: flex; gap: 10px; }
         .ft-social {
           width: 38px; height: 38px; border-radius: 10px;
-          background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+          background: rgba(245,240,232,0.04); border: 1px solid rgba(245,240,232,0.1);
           display: flex; align-items: center; justify-content: center;
-          color: rgba(255,255,255,0.5); text-decoration: none;
+          color: rgba(245,240,232,0.45); text-decoration: none;
           transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
         }
         .ft-social:hover {
-          background: #00A854; color: white; border-color: #00A854;
+          background: rgba(201,163,71,0.15); color: #c9a347; border-color: rgba(201,163,71,0.4);
           transform: translateY(-2px);
         }
 
         /* Newsletter */
         .ft-newsletter-label {
-          font-family: 'Space Mono', monospace; font-size: 9px; font-weight: 700;
-          letter-spacing: 0.18em; text-transform: uppercase; color: #00A854;
+          font-size: 9px; font-weight: 600;
+          letter-spacing: 0.22em; text-transform: uppercase; color: #c9a347;
           margin-bottom: 10px; display: block;
         }
         .ft-newsletter-heading {
-          font-size: 22px; font-weight: 800; color: white;
-          letter-spacing: -0.03em; line-height: 1.2; margin-bottom: 8px;
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 28px; font-weight: 500; color: #f5f0e8;
+          letter-spacing: -0.01em; line-height: 1.15; margin-bottom: 8px;
         }
         .ft-newsletter-sub {
-          font-size: 13.5px; font-weight: 500; color: rgba(255,255,255,0.4);
+          font-size: 13px; font-weight: 500; color: rgba(245,240,232,0.38);
           line-height: 1.65; margin-bottom: 22px;
         }
-        .ft-newsletter-form {
-          display: flex; gap: 8px; flex-wrap: wrap;
-        }
+        .ft-newsletter-form { display: flex; gap: 8px; flex-wrap: wrap; }
         .ft-newsletter-input {
           flex: 1; min-width: 180px;
-          background: rgba(255,255,255,0.07); border: 1.5px solid rgba(255,255,255,0.12);
-          border-radius: 10px; padding: 13px 16px;
-          font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 500;
-          color: white; outline: none;
+          background: rgba(245,240,232,0.05); border: 1px solid rgba(245,240,232,0.12);
+          border-radius: 8px; padding: 13px 16px;
+          font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 500;
+          color: #f5f0e8; outline: none;
           transition: border-color 0.2s, background 0.2s;
         }
-        .ft-newsletter-input::placeholder { color: rgba(255,255,255,0.25); }
-        .ft-newsletter-input:focus { border-color: #00A854; background: rgba(0,168,84,0.06); }
+        .ft-newsletter-input::placeholder { color: rgba(245,240,232,0.22); }
+        .ft-newsletter-input:focus { border-color: rgba(201,163,71,0.5); background: rgba(201,163,71,0.05); }
         .ft-newsletter-btn {
-          background: #00A854; color: white; border: none; border-radius: 10px;
-          padding: 13px 22px; font-family: 'Space Grotesk', sans-serif;
-          font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap;
-          transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+          background: #c9a347; color: #0a1f44; border: none; border-radius: 8px;
+          padding: 13px 22px; font-family: 'Montserrat', sans-serif;
+          font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;
+          transition: background 0.2s, transform 0.15s;
         }
-        .ft-newsletter-btn:hover {
-          background: #008F47; transform: translateY(-1px);
-          box-shadow: 0 4px 16px rgba(0,168,84,0.35);
-        }
+        .ft-newsletter-btn:hover { background: #e8c97a; transform: translateY(-1px); }
 
-        /* Nav links grid */
+        /* Nav */
         .ft-nav {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 40px;
-          padding-bottom: 52px;
-          border-bottom: 1px solid rgba(255,255,255,0.08);
+          display: grid; grid-template-columns: repeat(3, 1fr);
+          gap: 40px; padding-bottom: 52px;
+          border-bottom: 1px solid rgba(245,240,232,0.08);
           margin-bottom: 40px;
         }
         @media (max-width: 700px) { .ft-nav { grid-template-columns: 1fr 1fr; } }
         @media (max-width: 440px) { .ft-nav { grid-template-columns: 1fr; } }
 
-        .ft-nav-col {}
         .ft-nav-heading {
-          font-family: 'Space Mono', monospace; font-size: 9px; font-weight: 700;
-          letter-spacing: 0.18em; text-transform: uppercase;
-          color: white; margin-bottom: 18px; display: block;
+          font-size: 9px; font-weight: 700;
+          letter-spacing: 0.2em; text-transform: uppercase;
+          color: #c9a347; margin-bottom: 18px; display: block;
         }
-        .ft-nav-list { display: flex; flex-direction: column; gap: 10px; list-style: none; }
+        .ft-nav-list { display: flex; flex-direction: column; gap: 10px; list-style: none; padding: 0; margin: 0; }
         .ft-nav-link {
-          font-size: 13.5px; font-weight: 500; color: rgba(255,255,255,0.45);
-          text-decoration: none; transition: color 0.18s; display: flex; align-items: center; gap: 6px;
+          font-size: 13px; font-weight: 500; color: rgba(245,240,232,0.42);
+          text-decoration: none; transition: color 0.18s;
+          display: flex; align-items: center; gap: 6px;
         }
         .ft-nav-link::before {
           content: ''; width: 4px; height: 4px; border-radius: 50%;
-          background: #00A854; flex-shrink: 0; opacity: 0;
+          background: #c9a347; flex-shrink: 0; opacity: 0;
           transition: opacity 0.18s, transform 0.18s; transform: scale(0);
         }
-        .ft-nav-link:hover { color: white; }
+        .ft-nav-link:hover { color: #f5f0e8; }
         .ft-nav-link:hover::before { opacity: 1; transform: scale(1); }
 
-        /* Contact row */
+        /* Contact */
         .ft-contact {
-          display: flex; gap: 24px; flex-wrap: wrap;
+          display: flex; gap: 16px; flex-wrap: wrap;
           padding-bottom: 52px;
-          border-bottom: 1px solid rgba(255,255,255,0.08);
+          border-bottom: 1px solid rgba(245,240,232,0.08);
           margin-bottom: 36px;
         }
         .ft-contact-item {
           display: flex; align-items: center; gap: 12px;
-          background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+          background: rgba(245,240,232,0.03); border: 1px solid rgba(245,240,232,0.08);
           border-radius: 12px; padding: 14px 20px; text-decoration: none;
           transition: background 0.2s, border-color 0.2s;
         }
-        .ft-contact-item:hover { background: rgba(0,168,84,0.08); border-color: rgba(0,168,84,0.25); }
+        .ft-contact-item:hover { background: rgba(201,163,71,0.07); border-color: rgba(201,163,71,0.25); }
         .ft-contact-icon {
           width: 36px; height: 36px; border-radius: 9px;
-          background: rgba(0,168,84,0.12); border: 1px solid rgba(0,168,84,0.2);
+          background: rgba(201,163,71,0.1); border: 1px solid rgba(201,163,71,0.2);
           display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-          color: #00A854;
+          color: #c9a347;
         }
         .ft-contact-icon svg { width: 16px; height: 16px; }
         .ft-contact-label {
-          font-family: 'Space Mono', monospace; font-size: 8px; font-weight: 700;
-          letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.3);
+          font-size: 8px; font-weight: 600;
+          letter-spacing: 0.16em; text-transform: uppercase; color: rgba(245,240,232,0.28);
           margin-bottom: 3px;
         }
-        .ft-contact-value { font-size: 14px; font-weight: 700; color: white; letter-spacing: -0.01em; }
+        .ft-contact-value { font-size: 14px; font-weight: 600; color: #f5f0e8; letter-spacing: -0.01em; }
 
-        /* Bottom bar */
+        /* Bottom */
         .ft-bottom {
           display: flex; align-items: center; justify-content: space-between;
           gap: 20px; flex-wrap: wrap;
         }
         .ft-copy {
-          font-family: 'Space Mono', monospace; font-size: 9.5px;
-          color: rgba(255,255,255,0.3); letter-spacing: 0.06em;
+          font-size: 11px; font-weight: 500;
+          color: rgba(245,240,232,0.28); letter-spacing: 0.04em;
         }
-        .ft-copy a { color: rgba(255,255,255,0.45); text-decoration: none; transition: color 0.18s; }
-        .ft-copy a:hover { color: #00A854; }
+        .ft-copy a { color: rgba(245,240,232,0.4); text-decoration: none; transition: color 0.18s; }
+        .ft-copy a:hover { color: #c9a347; }
         .ft-bottom-links { display: flex; gap: 20px; flex-wrap: wrap; }
         .ft-bottom-link {
-          font-family: 'Space Mono', monospace; font-size: 9px; font-weight: 700;
-          letter-spacing: 0.12em; text-transform: uppercase;
-          color: rgba(255,255,255,0.3); text-decoration: none;
+          font-size: 10px; font-weight: 600;
+          letter-spacing: 0.14em; text-transform: uppercase;
+          color: rgba(245,240,232,0.28); text-decoration: none;
           transition: color 0.18s;
         }
-        .ft-bottom-link:hover { color: #00A854; }
+        .ft-bottom-link:hover { color: #c9a347; }
 
-        /* Payment icons strip */
-        .ft-pay {
-          display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-        }
+        .ft-pay { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .ft-pay-label {
-          font-family: 'Space Mono', monospace; font-size: 8px; font-weight: 700;
-          letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.25);
+          font-size: 9px; font-weight: 600;
+          letter-spacing: 0.14em; text-transform: uppercase; color: rgba(245,240,232,0.25);
           margin-right: 4px;
         }
         .ft-pay-chip {
-          background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+          background: rgba(245,240,232,0.05); border: 1px solid rgba(245,240,232,0.1);
           border-radius: 6px; padding: 4px 10px;
-          font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.4);
+          font-size: 11px; font-weight: 600; color: rgba(245,240,232,0.38);
           letter-spacing: 0.02em;
+        }
+
+        @media (max-width: 640px) {
+          .ft-main { padding: 48px 24px 40px; }
+          .ft-reg-card { flex-direction: column; align-items: flex-start; gap: 14px; }
+          .ft-reg-img { width: 100%; height: 80px; }
         }
       `}</style>
 
@@ -316,23 +340,32 @@ export default function Footer() {
         <div className="ft-topbar" />
         <div className="ft-main">
 
+          {/* Registration image — small card */}
+          <div className="ft-reg-card">
+            <img src="/images/registration.webp" alt="Official VTC registration" className="ft-reg-img" />
+            <div>
+              <div className="ft-reg-label">Officially Licensed & Insured</div>
+              <div className="ft-reg-title">Registered VTC Operator</div>
+              <div className="ft-reg-sub">Île-de-France · SIRET verified · VTC licensed</div>
+            </div>
+          </div>
+
           {/* Top: Brand + Newsletter */}
           <div className="ft-top">
             <div>
               <div className="ft-brand-logo">
                 <div className="ft-brand-icon">
-                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                   </svg>
                 </div>
-                <span className="ft-brand-name">Paris Easy<span>Move</span></span>
+                <span className="ft-brand-name">Paris <span>Easy</span> Move</span>
               </div>
               <p className="ft-brand-desc">
                 Premium private transfers across Paris and Île-de-France. Airport pickups, Disney runs, Versailles day trips — handled with care, fixed pricing, and a driver who actually shows up.
               </p>
 
-              {/* Rating chips */}
               <div className="ft-ratings">
                 <div className="ft-rating-chip">
                   <GoogleLogo />
@@ -361,7 +394,6 @@ export default function Footer() {
                 </div>
               </div>
 
-              {/* Socials */}
               <div className="ft-socials">
                 {SOCIALS.map(s => (
                   <a key={s.label} href={s.href} className="ft-social" aria-label={s.label} target="_blank" rel="noopener noreferrer">
@@ -388,7 +420,7 @@ export default function Footer() {
           {/* Nav columns */}
           <div className="ft-nav">
             {Object.entries(NAV_LINKS).map(([section, links]) => (
-              <div key={section} className="ft-nav-col">
+              <div key={section}>
                 <span className="ft-nav-heading">{section}</span>
                 <ul className="ft-nav-list">
                   {links.map(link => (
@@ -403,6 +435,19 @@ export default function Footer() {
 
           {/* Contact */}
           <div className="ft-contact">
+            <div className="ft-contact-item" style={{ cursor: "default" }}>
+              <div className="ft-contact-icon">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+              </div>
+              <div>
+                <div className="ft-contact-label">Address</div>
+                <div className="ft-contact-value">10 rue Pierre Sarrazin</div>
+                <div style={{ fontSize: 11, color: "rgba(245,240,232,0.4)", marginTop: 2 }}>95190 Goussainville · CDG Airport · Paris, France</div>
+              </div>
+            </div>
             <a href="tel:+33652466694" className="ft-contact-item">
               <div className="ft-contact-icon">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -414,7 +459,7 @@ export default function Footer() {
                 <div className="ft-contact-value">+33 6 52 46 66 94</div>
               </div>
             </a>
-            <a href="mailto:info@pariseasymove.com" className="ft-contact-item">
+            <a href="mailto:booking@pariseasymove.com" className="ft-contact-item">
               <div className="ft-contact-icon">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
@@ -422,7 +467,18 @@ export default function Footer() {
               </div>
               <div>
                 <div className="ft-contact-label">Email</div>
-                <div className="ft-contact-value">info@pariseasymove.com</div>
+                <div className="ft-contact-value">booking@pariseasymove.com</div>
+              </div>
+            </a>
+            <a href="https://pariseasymove.com" target="_blank" rel="noopener noreferrer" className="ft-contact-item">
+              <div className="ft-contact-icon">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/>
+                </svg>
+              </div>
+              <div>
+                <div className="ft-contact-label">Website</div>
+                <div className="ft-contact-value">pariseasymove.com</div>
               </div>
             </a>
             <div className="ft-contact-item" style={{ cursor: "default" }}>
@@ -434,18 +490,6 @@ export default function Footer() {
               <div>
                 <div className="ft-contact-label">Availability</div>
                 <div className="ft-contact-value">24 / 7 — Every day</div>
-              </div>
-            </div>
-            <div className="ft-contact-item" style={{ cursor: "default" }}>
-              <div className="ft-contact-icon">
-                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-              </div>
-              <div>
-                <div className="ft-contact-label">Base</div>
-                <div className="ft-contact-value">Paris, Île-de-France</div>
               </div>
             </div>
           </div>

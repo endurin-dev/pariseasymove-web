@@ -9,7 +9,6 @@ const packages = [
     title: "CDG Airport to Disneyland",
     desc: "Experience a seamless transition from the terminal to the magic. Includes professional meet-and-greet and flight synchronization.",
     time: "≈ 45 min",
-    fare: "€105",
     bg: "https://private-driver-paris-airport-transfer.com/wp-content/uploads/2025/10/mercedes-v-class-van-private-driver-paris-luxury-fleet.jpeg",
   },
   {
@@ -18,7 +17,6 @@ const packages = [
     title: "Orly Airport to Disneyland",
     desc: "The swiftest gateway for families. Door-to-door service in premium vehicles with ample space for all your luggage and strollers.",
     time: "≈ 40 min",
-    fare: "€95",
     bg: "https://www.parisride.com/wp-content/uploads/2025/10/Disneyland-Paris.png",
   },
   {
@@ -27,16 +25,14 @@ const packages = [
     title: "Beauvais to Disneyland",
     desc: "Transform a long trek into a relaxing retreat. Our executive vans offer climate control and refreshments for the 90-minute journey.",
     time: "≈ 90 min",
-    fare: "€145",
     bg: "https://www.pelago.com/img/products/FR-France/private-transfer-disneyland-to-paris-airport-cdg-by-luxury-van/2d5e5a21-23a2-4879-aa4c-f5d835d4478b_private-transfer-disneyland-to-paris-airport-cdg-by-luxury-van.jpg",
   },
   {
     num: "04",
     tag: "Royal Heritage",
     title: "Paris to Palace of Versailles",
-    desc: "Arrive at the Sun King’s gates in style. Avoid the crowds of the RER and enjoy a private, narrated approach to the Château.",
+    desc: "Arrive at the Sun King's gates in style. Avoid the crowds of the RER and enjoy a private, narrated approach to the Château.",
     time: "≈ 50 min",
-    fare: "€110",
     bg: "https://parisprestigecab.com/assets/versailles-BzoH0iLQ.jpg",
   },
   {
@@ -45,7 +41,6 @@ const packages = [
     title: "CDG Airport to Paris City Center",
     desc: "Effortless entry into the heart of Paris. Meet & greet at arrivals, direct hotel drop-off with luxury sedan or van — no queues, no stress.",
     time: "≈ 45–60 min",
-    fare: "€95–€125",
     bg: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=2070",
   },
   {
@@ -54,7 +49,6 @@ const packages = [
     title: "Paris City Center to CDG Airport",
     desc: "Seamless departure with timed pickup from your hotel. Flight monitoring, luggage assistance, and premium comfort for your journey home.",
     time: "≈ 45–60 min",
-    fare: "€95–€125",
     bg: "https://images.unsplash.com/photo-1499856871958-5b9627545d1a?auto=format&fit=crop&q=80&w=2070",
   },
 ];
@@ -63,6 +57,8 @@ export default function PremiumPackages() {
   return (
     <section style={styles.section}>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700&display=swap');
+
         .package-card {
           background: white;
           border: 1px solid rgba(201,163,71,0.12);
@@ -124,14 +120,11 @@ export default function PremiumPackages() {
 
         .meta {
           display: flex;
-          justify-content: space-between;
+          justify-content: flex-start;
           align-items: center;
           padding-top: 20px;
           border-top: 1px solid rgba(201,163,71,0.12);
-        }
-
-        .meta-item {
-          text-align: center;
+          gap: 8px;
         }
 
         .meta-label {
@@ -139,17 +132,12 @@ export default function PremiumPackages() {
           text-transform: uppercase;
           letter-spacing: 1.2px;
           color: #64748b;
-          margin-bottom: 4px;
         }
 
         .meta-value {
-          font-size: 1.35rem;
+          font-size: 1.1rem;
           font-weight: 600;
           color: #0f1e3d;
-        }
-
-        .meta-value.gold {
-          color: #c9a347;
         }
 
         .book-btn {
@@ -195,13 +183,6 @@ export default function PremiumPackages() {
           box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
 
-        @media (max-width: 1024px) {
-          .packages-grid {
-            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-            gap: 28px;
-          }
-        }
-
         @media (max-width: 640px) {
           .image-wrapper { height: 220px; }
           .content { padding: 28px 24px 32px; }
@@ -237,14 +218,8 @@ export default function PremiumPackages() {
               <p className="desc">{pkg.desc}</p>
 
               <div className="meta">
-                <div className="meta-item">
-                  <div className="meta-label">Duration</div>
-                  <div className="meta-value">{pkg.time}</div>
-                </div>
-                <div className="meta-item">
-                  <div className="meta-label">Fare</div>
-                  <div className="meta-value gold">{pkg.fare}</div>
-                </div>
+                <span className="meta-label">Duration</span>
+                <span className="meta-value">{pkg.time}</span>
               </div>
 
               <div style={{ marginTop: 28 }}>
@@ -265,6 +240,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: "#ffffff",
     padding: "clamp(60px, 8vh, 90px) 5vw",
     color: "#0f1e3d",
+    fontFamily: "'Inter', system-ui, sans-serif",
   },
   header: {
     textAlign: "center",

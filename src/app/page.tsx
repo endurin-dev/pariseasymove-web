@@ -17,7 +17,6 @@ export default function Home() {
         <Reviews/>
         <ReadyToBook/>
       </main>
-      <Footer />
     </>
   );
 }
