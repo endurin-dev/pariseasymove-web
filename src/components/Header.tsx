@@ -103,7 +103,7 @@ export default function Header() {
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 29, fontWeight: 600, color: TEXT, letterSpacing: "-0.025em", lineHeight: 1, whiteSpace: "nowrap" }}>
-                Paris <em style={{ fontStyle: "italic", color: GOLD, fontWeight: 500 }}>Easy</em> Move
+                Paris <em style={{ fontStyle: "italic", color: GOLD, fontWeight: 500 }}>Easy</em> Dan
               </span>
               <span style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 9.5, fontWeight: 500, letterSpacing: "0.24em", textTransform: "uppercase", color: TEXT_DIM, whiteSpace: "nowrap" }}>
                 Paris journey starts here
