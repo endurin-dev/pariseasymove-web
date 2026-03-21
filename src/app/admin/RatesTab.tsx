@@ -71,12 +71,10 @@ export default function RatesTab({
   const [form, setForm] = useState<typeof emptyForm>(emptyForm);
   const f = (k: string, v: any) => setForm(p => ({ ...p, [k]: v }));
 
-  // Bulk add — add a route for ALL vehicles at once
-  const [bulkForm, setBulkForm] = useState({
-    fromLocId:"", toLocId:"",
-    sedan_price:"", van_price:"", suv_price:"", minibus_price:"",
-    onDemand: false, active: true,
-  });
+  // Bulk add — add a route for ALL registered vehicles at once
+  // vehiclePrices: { [vehicleId]: priceString }
+  const [bulkRoute,  setBulkRoute]  = useState({ fromLocId:"", toLocId:"", onDemand:false, active:true });
+  const [vehiclePrices, setVehiclePrices] = useState<Record<string, string>>({});
 
   const openAdd  = () => { setForm(emptyForm); setEdit(null); setModal("add"); };
   const openEdit = (r: Rate) => {
@@ -84,7 +82,11 @@ export default function RatesTab({
     setEdit(r); setModal("edit");
   };
   const openBulk = () => {
-    setBulkForm({ fromLocId:"", toLocId:"", sedan_price:"", van_price:"", suv_price:"", minibus_price:"", onDemand:false, active:true });
+    setBulkRoute({ fromLocId:"", toLocId:"", onDemand:false, active:true });
+    // Pre-populate with empty strings for every active vehicle
+    const init: Record<string,string> = {};
+    vehicles.filter(v => v.active).forEach(v => { init[v.id] = ""; });
+    setVehiclePrices(init);
     setModal("bulk");
   };
 
@@ -111,40 +113,42 @@ export default function RatesTab({
   };
 
   const saveBulk = async () => {
-    if (!bulkForm.fromLocId||!bulkForm.toLocId) return showToast("From and To required","error");
-    if (bulkForm.fromLocId===bulkForm.toLocId)  return showToast("Cannot be the same location","error");
-    if (!bulkForm.onDemand && !bulkForm.sedan_price && !bulkForm.van_price && !bulkForm.suv_price && !bulkForm.minibus_price)
-      return showToast("Enter at least one price","error");
+    if (!bulkRoute.fromLocId||!bulkRoute.toLocId) return showToast("From and To required","error");
+    if (bulkRoute.fromLocId===bulkRoute.toLocId)  return showToast("Cannot be the same location","error");
 
-    const entries = [
-      { vehicleId:"sedan",   price: bulkForm.sedan_price },
-      { vehicleId:"van",     price: bulkForm.van_price },
-      { vehicleId:"suv",     price: bulkForm.suv_price },
-      { vehicleId:"minibus", price: bulkForm.minibus_price },
-    ];
+    const activeVehicles = vehicles.filter(v => v.active);
+
+    // When on-demand: all vehicles get saved. When priced: skip blank entries.
+    const hasAnyPrice = activeVehicles.some(v => vehiclePrices[v.id]?.trim());
+    if (!bulkRoute.onDemand && !hasAnyPrice)
+      return showToast("Enter at least one price, or enable On Demand","error");
 
     let added = 0;
-    for (const e of entries) {
-      const priceVal = e.price ? parseInt(e.price) : null;
-      if (!bulkForm.onDemand && !priceVal) continue; // skip blank prices unless on_demand
+    for (const v of activeVehicles) {
+      const priceStr = vehiclePrices[v.id] ?? "";
+      const priceVal = priceStr.trim() ? parseInt(priceStr) : null;
+      // Skip vehicles with no price unless on-demand
+      if (!bulkRoute.onDemand && !priceVal) continue;
       try {
         const saved = await api("/api/rates","POST",{
-          id: uid(),
-          fromLocId:  bulkForm.fromLocId,
-          toLocId:    bulkForm.toLocId,
-          vehicleId:  e.vehicleId,
-          price:      priceVal,
-          onDemand:   bulkForm.onDemand,
-          active:     bulkForm.active,
+          id:        uid(),
+          fromLocId: bulkRoute.fromLocId,
+          toLocId:   bulkRoute.toLocId,
+          vehicleId: v.id,
+          price:     priceVal,
+          onDemand:  bulkRoute.onDemand,
+          active:    bulkRoute.active,
         });
         setRates(rs => {
-          const exists = rs.find(r => r.fromLocId===bulkForm.fromLocId && r.toLocId===bulkForm.toLocId && r.vehicleId===e.vehicleId);
-          return exists ? rs.map(r => r.fromLocId===bulkForm.fromLocId && r.toLocId===bulkForm.toLocId && r.vehicleId===e.vehicleId ? saved : r) : [...rs, saved];
+          const exists = rs.find(r => r.fromLocId===bulkRoute.fromLocId && r.toLocId===bulkRoute.toLocId && r.vehicleId===v.id);
+          return exists
+            ? rs.map(r => r.fromLocId===bulkRoute.fromLocId && r.toLocId===bulkRoute.toLocId && r.vehicleId===v.id ? saved : r)
+            : [...rs, saved];
         });
         added++;
       } catch {}
     }
-    showToast(`Added/updated ${added} rates`);
+    showToast(`Added/updated ${added} rate${added!==1?"s":""}`);
     setModal(null);
   };
 
@@ -315,76 +319,123 @@ export default function RatesTab({
         </div>
       </div>
 
-      {/* ── BULK ADD MODAL (route × all vehicles) ── */}
+      {/* ── BULK ADD MODAL (route × all registered vehicles) ── */}
       {modal==="bulk" && (
         <div style={{ position:"fixed", inset:0, zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
           <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,.55)", backdropFilter:"blur(4px)" }} onClick={()=>setModal(null)}/>
-          <div style={{ position:"relative", background:"#fff", borderRadius:16, width:"100%", maxWidth:560, maxHeight:"92vh", overflow:"auto", boxShadow:"0 24px 80px rgba(0,0,0,.2)" }}>
+          <div style={{ position:"relative", background:"#fff", borderRadius:16, width:"100%", maxWidth:580, maxHeight:"92vh", overflow:"auto", boxShadow:"0 24px 80px rgba(0,0,0,.2)" }}>
+
+            {/* Modal header */}
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"18px 24px", borderBottom:"1px solid #f0f0f0", position:"sticky", top:0, background:"#fff", zIndex:1 }}>
-              <h3 style={{ fontSize:16, fontWeight:700, color:"#111827", margin:0 }}>Add Route — All Vehicles</h3>
+              <div>
+                <h3 style={{ fontSize:16, fontWeight:700, color:"#111827", margin:0 }}>Add Route — All Vehicles</h3>
+                <div style={{ fontSize:11, color:"#9ca3af", marginTop:2 }}>
+                  {vehicles.filter(v=>v.active).length} vehicle{vehicles.filter(v=>v.active).length!==1?"s":""} registered
+                </div>
+              </div>
               <button onClick={()=>setModal(null)} style={{ background:"none", border:"none", fontSize:22, cursor:"pointer", color:"#9ca3af" }}>×</button>
             </div>
+
             <div style={{ padding:24 }}>
-              {/* Route */}
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:14 }}>
+              {/* Route selects */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
                 <div>
                   <label style={LS}>Departure *</label>
-                  <select style={IS} value={bulkForm.fromLocId} onChange={e=>setBulkForm(f=>({...f,fromLocId:e.target.value}))}>
+                  <select style={IS} value={bulkRoute.fromLocId} onChange={e=>setBulkRoute(r=>({...r,fromLocId:e.target.value}))}>
                     <option value="">— Select —</option>
                     {locations.filter(l=>l.active).map(l=><option key={l.id} value={l.id}>{l.categoryIcon} {l.name}</option>)}
                   </select>
                 </div>
                 <div>
                   <label style={LS}>Destination *</label>
-                  <select style={IS} value={bulkForm.toLocId} onChange={e=>setBulkForm(f=>({...f,toLocId:e.target.value}))}>
+                  <select style={IS} value={bulkRoute.toLocId} onChange={e=>setBulkRoute(r=>({...r,toLocId:e.target.value}))}>
                     <option value="">— Select —</option>
-                    {locations.filter(l=>l.active).map(l=><option key={l.id} value={l.id} disabled={l.id===bulkForm.fromLocId}>{l.categoryIcon} {l.name}</option>)}
+                    {locations.filter(l=>l.active).map(l=><option key={l.id} value={l.id} disabled={l.id===bulkRoute.fromLocId}>{l.categoryIcon} {l.name}</option>)}
                   </select>
                 </div>
               </div>
 
               {/* On Demand toggle */}
-              <label style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16, cursor:"pointer" }}>
-                <Toggle on={bulkForm.onDemand} onChange={()=>setBulkForm(f=>({...f,onDemand:!f.onDemand}))}/>
-                <span style={{ fontSize:13, fontWeight:600, color:bulkForm.onDemand?"#d97706":"#374151" }}>On Demand — contact us for price</span>
+              <label style={{ display:"flex", alignItems:"center", gap:10, marginBottom:18, cursor:"pointer", padding:"10px 14px", background: bulkRoute.onDemand?"#fffbeb":"#f8f9fb", borderRadius:10, border:`1.5px solid ${bulkRoute.onDemand?"#fde68a":"#e5e7eb"}` }}>
+                <Toggle on={bulkRoute.onDemand} onChange={()=>setBulkRoute(r=>({...r,onDemand:!r.onDemand}))}/>
+                <div>
+                  <div style={{ fontSize:13, fontWeight:700, color:bulkRoute.onDemand?"#d97706":"#374151" }}>On Demand</div>
+                  <div style={{ fontSize:11, color:"#9ca3af", marginTop:1 }}>No fixed price — customer contacts for quote</div>
+                </div>
               </label>
 
-              {/* Price per vehicle */}
-              {!bulkForm.onDemand && (
-                <>
-                  <div style={{ fontSize:11, fontWeight:700, letterSpacing:".08em", textTransform:"uppercase" as const, color:"#9ca3af", marginBottom:10 }}>
-                    Price per vehicle (€) — leave blank to skip that vehicle
+              {/* Dynamic vehicle price inputs */}
+              {!bulkRoute.onDemand && (() => {
+                const activeVehicles = vehicles.filter(v => v.active);
+                if (activeVehicles.length === 0) return (
+                  <div style={{ padding:"14px 16px", background:"#fef2f2", border:"1px solid #fecaca", borderRadius:10, fontSize:13, color:"#dc2626", marginBottom:14 }}>
+                    No active vehicles found. Please add vehicles in the Vehicles tab first.
                   </div>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:14 }}>
-                    {[
-                      { key:"sedan_price",   label:"Business Class Car",  color:"#2563eb" },
-                      { key:"van_price",     label:"Business Class Van",  color:"#16a34a" },
-                      { key:"suv_price",     label:"Luxury SUV",          color:"#d97706" },
-                      { key:"minibus_price", label:"Minibus",             color:"#7c3aed" },
-                    ].map(v=>(
-                      <div key={v.key}>
-                        <label style={{ ...LS, color:v.color }}>{v.label}</label>
-                        <input
-                          style={{ ...IS, textAlign:"center" as const }}
-                          type="number" min={0} placeholder="€"
-                          value={(bulkForm as any)[v.key]}
-                          onChange={e=>setBulkForm(f=>({...f,[v.key]:e.target.value}))}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
+                );
 
-              {/* Active */}
+                // Cycle through colors for visual variety
+                const colors = ["#2563eb","#16a34a","#d97706","#7c3aed","#0891b2","#db2777","#ea580c","#65a30d"];
+
+                return (
+                  <>
+                    <div style={{ fontSize:11, fontWeight:700, letterSpacing:".08em", textTransform:"uppercase" as const, color:"#9ca3af", marginBottom:10 }}>
+                      Price per vehicle (€) — leave blank to skip that vehicle
+                    </div>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:16 }}>
+                      {activeVehicles.map((v, i) => {
+                        const color = colors[i % colors.length];
+                        const existing = rates.find(r =>
+                          r.fromLocId === bulkRoute.fromLocId &&
+                          r.toLocId   === bulkRoute.toLocId   &&
+                          r.vehicleId === v.id
+                        );
+                        return (
+                          <div key={v.id} style={{ position:"relative" }}>
+                            <label style={{ ...LS, color }}>
+                              {v.name}
+                              {v.tag && <span style={{ marginLeft:5, fontWeight:500, color:"#9ca3af", textTransform:"none" as const, fontSize:10 }}>({v.tag})</span>}
+                            </label>
+                            <div style={{ position:"relative" }}>
+                              <span style={{ position:"absolute", left:11, top:"50%", transform:"translateY(-50%)", fontSize:13, fontWeight:700, color:color, pointerEvents:"none" }}>€</span>
+                              <input
+                                style={{ ...IS, paddingLeft:24, textAlign:"left" as const }}
+                                type="number" min={0} placeholder="0"
+                                value={vehiclePrices[v.id] ?? ""}
+                                onChange={e => setVehiclePrices(p => ({ ...p, [v.id]: e.target.value }))}
+                              />
+                            </div>
+                            {/* Show existing rate as hint */}
+                            {existing && !existing.onDemand && existing.price && (
+                              <div style={{ fontSize:10, color:"#9ca3af", marginTop:3 }}>
+                                Current: €{existing.price} — will be overwritten
+                              </div>
+                            )}
+                            {existing?.onDemand && (
+                              <div style={{ fontSize:10, color:"#d97706", marginTop:3 }}>
+                                Currently On Demand
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
+
+              {/* Active toggle */}
               <label style={{ display:"flex", alignItems:"center", gap:10, marginBottom:20, cursor:"pointer" }}>
-                <Toggle on={bulkForm.active} onChange={()=>setBulkForm(f=>({...f,active:!f.active}))}/>
+                <Toggle on={bulkRoute.active} onChange={()=>setBulkRoute(r=>({...r,active:!r.active}))}/>
                 <span style={{ fontSize:13, fontWeight:500 }}>Active (visible on rates page)</span>
               </label>
 
               <div style={{ display:"flex", gap:8 }}>
-                <button onClick={()=>setModal(null)} style={{ flex:1, padding:"12px", borderRadius:9, fontSize:13, fontWeight:600, cursor:"pointer", background:"#f3f4f6", color:"#374151", border:"none" }}>Cancel</button>
-                <button onClick={saveBulk} style={{ flex:2, padding:"12px", borderRadius:9, fontSize:13, fontWeight:700, cursor:"pointer", background:"#111827", color:"#fff", border:"none" }}>Add Rates for All Vehicles</button>
+                <button onClick={()=>setModal(null)} style={{ flex:1, padding:"12px", borderRadius:9, fontSize:13, fontWeight:600, cursor:"pointer", background:"#f3f4f6", color:"#374151", border:"none" }}>
+                  Cancel
+                </button>
+                <button onClick={saveBulk} style={{ flex:2, padding:"12px", borderRadius:9, fontSize:13, fontWeight:700, cursor:"pointer", background:"#111827", color:"#fff", border:"none" }}>
+                  Save Rates for All Vehicles
+                </button>
               </div>
             </div>
           </div>
