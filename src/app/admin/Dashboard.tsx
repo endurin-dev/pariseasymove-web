@@ -3,14 +3,56 @@
 
 import { useState, useEffect, useRef } from "react";
 import RatesTab from "./RatesTab";
+import CalendarTab from "./CalendarTab";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Category { id:string; name:string; icon:string; sortOrder:number; active:boolean; }
 interface Location { id:string; name:string; categoryId:string|null; categoryName:string; categoryIcon:string; active:boolean; }
 interface Vehicle  { id:string; name:string; model:string; maxPassengers:number; maxLuggage:number; img:string; price:number; tag:string; special:string; active:boolean; sortOrder:number; }
 interface Feature  { id:string; text:string; active:boolean; sort_order:number; }
-interface Rate     { id:string; fromLocId:string; toLocId:string; vehicleId:string; fromLocName:string; toLocName:string; vehicleName:string; price:number|null; onDemand:boolean; active:boolean; }
-interface Booking  { id:string; from:string; to:string; fromLocId?:string; toLocId?:string; date:string; time:string; passengers:number; kids:number; bags:number; vehicleId:string; name:string; country:string; whatsapp:string; email:string; notes:string; status:"new"|"confirmed"|"cancelled"; createdAt:string; }
+interface Rate     {
+  id:string; fromLocId:string; toLocId:string; vehicleId:string;
+  fromLocName:string; toLocName:string; vehicleName:string;
+  p1:number|null; p2:number|null; p3:number|null; p4:number|null;
+  p5:number|null; p6:number|null; p7:number|null; p8:number|null;
+  onDemand:boolean; active:boolean;
+}
+interface Booking  {
+  id:string; from:string; to:string; fromLocId?:string; toLocId?:string;
+  date:string; time:string; passengers:number; kids:number; bags:number;
+  vehicleId:string; name:string; country:string; whatsapp:string;
+  email:string; notes:string; status:"new"|"confirmed"|"cancelled"; createdAt:string;
+}
+
+// ─── Price calculator (matches reservation page) ──────────────
+const calcPrice = (rate: Rate, pax: number): number | null => {
+  if (rate.onDemand) return null;
+  if (pax >= 9) return rate.p8 ? rate.p8 * 2 : null;
+  const map: Record<number, number|null> = {
+    1:rate.p1, 2:rate.p2, 3:rate.p3, 4:rate.p4,
+    5:rate.p5, 6:rate.p6, 7:rate.p7, 8:rate.p8,
+  };
+  return map[pax] ?? null;
+};
+
+// ─── Parse booking notes for structured fields ────────────────
+// Notes are stored as: "ROUND TRIP | Flight/Train: AF1234 | Address: 10 Rue... | Free text"
+function parseNotes(notes: string) {
+  const parts = notes.split("|").map(s => s.trim()).filter(Boolean);
+  let isRoundTrip = false;
+  let flightTrain = "";
+  let address     = "";
+  const freeText: string[] = [];
+
+  parts.forEach(p => {
+    if (p === "ROUND TRIP")             isRoundTrip = true;
+    else if (p.startsWith("Flight/Train: ")) flightTrain = p.replace("Flight/Train: ", "");
+    else if (p.startsWith("Address: "))     address     = p.replace("Address: ", "");
+    else                                    freeText.push(p);
+  });
+
+  return { isRoundTrip, flightTrain, address, freeText: freeText.join(" | ") };
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -53,6 +95,7 @@ function Chip({ color, children }: { color: string; children: React.ReactNode })
     green: ["#dcfce7","#16a34a"], red:  ["#fee2e2","#dc2626"],
     amber: ["#fef3c7","#d97706"], blue: ["#dbeafe","#2563eb"],
     purple:["#ede9fe","#7c3aed"], gray: ["#f3f4f6","#6b7280"],
+    orange:["#fff7ed","#ea580c"],
   };
   const [bg, c] = map[color] ?? map.gray;
   return <span style={{ background:bg, color:c, fontSize:11, fontWeight:700, padding:"3px 9px", borderRadius:999, whiteSpace:"nowrap" }}>{children}</span>;
@@ -82,11 +125,11 @@ function Toast({ msg, type }: { msg:string; type:"success"|"error" }) {
 }
 
 // ─── DASHBOARD ───────────────────────────────────────────────────────────────
-type Tab = "overview"|"bookings"|"categories"|"locations"|"vehicles"|"features"|"rates"|"settings";
+type Tab = "overview"|"bookings"|"calendar"|"categories"|"locations"|"vehicles"|"features"|"rates"|"settings";
 
 export default function Dashboard({ onLogout }: { onLogout: () => void }) {
-  const [tab, setTab]             = useState<Tab>("overview");
-  const [toast, setToast]         = useState<{ msg:string; type:"success"|"error" } | null>(null);
+  const [tab, setTab]               = useState<Tab>("overview");
+  const [toast, setToast]           = useState<{ msg:string; type:"success"|"error" } | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [locations,  setLocations]  = useState<Location[]>([]);
   const [vehicles,   setVehicles]   = useState<Vehicle[]>([]);
@@ -118,6 +161,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
   const NAV: { id: Tab; label: string; icon: string }[] = [
     { id:"overview",   label:"Overview",    icon:"M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
     { id:"bookings",   label:"Bookings",    icon:"M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" },
+    { id:"calendar",   label:"Calendar",    icon:"M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
     { id:"categories", label:"Categories",  icon:"M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" },
     { id:"locations",  label:"Locations",   icon:"M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z" },
     { id:"vehicles",   label:"Vehicles",    icon:"M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0zM13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1" },
@@ -167,13 +211,11 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
       <div className="db">
         {toast && <Toast msg={toast.msg} type={toast.type} />}
 
-        {/* ── Sidebar ── */}
         <aside className="db-side">
           <div className="slogo" style={{ padding:"18px 16px 14px", borderBottom:"1px solid rgba(255,255,255,.07)" }}>
             <div style={{ fontSize:15, fontWeight:800, color:"#f5f0e8" }}>Paris <span style={{ color:"#c9a347" }}>Easy</span> Move</div>
             <div style={{ fontSize:9, color:"rgba(255,255,255,.25)", letterSpacing:".14em", textTransform:"uppercase", marginTop:2 }}>Admin Panel</div>
           </div>
-
           <nav style={{ padding:"10px 0", flex:1 }}>
             <div className="nlabel" style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,.2)", letterSpacing:".14em", textTransform:"uppercase", padding:"6px 20px 4px" }}>Management</div>
             {NAV.map(n => (
@@ -188,7 +230,6 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
               </div>
             ))}
           </nav>
-
           <div style={{ padding:"10px 8px", borderTop:"1px solid rgba(255,255,255,.07)" }}>
             <div className="ni" onClick={onLogout}>
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" style={{ width:15, height:15 }}>
@@ -199,7 +240,6 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
           </div>
         </aside>
 
-        {/* ── Main ── */}
         <div className="db-main">
           <div className="db-topbar">
             <div>
@@ -211,24 +251,16 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
               <div style={{ width:32, height:32, borderRadius:"50%", background:"#c9a347", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:700, color:"#0a0f1a" }}>A</div>
             </div>
           </div>
-
           <div className="db-body">
             {!loaded && <div style={{ padding:48, textAlign:"center", color:"#9ca3af", fontSize:14 }}>Loading data from database…</div>}
             {loaded && tab === "overview"   && <OverviewTab   bookings={bookings} locations={locations} vehicles={vehicles} rates={rates} features={features} categories={categories} />}
-            {loaded && tab === "bookings"   && <BookingsTab   bookings={bookings}  setBookings={setBookings}   vehicles={vehicles}  rates={rates}  showToast={showToast} />}
+            {loaded && tab === "bookings"   && <BookingsTab   bookings={bookings} setBookings={setBookings} vehicles={vehicles} rates={rates} showToast={showToast} />}
+            {loaded && tab === "calendar"   && <CalendarTab   bookings={bookings} vehicles={vehicles} />}
             {loaded && tab === "categories" && <CategoriesTab categories={categories} setCategories={setCategories} showToast={showToast} />}
-            {loaded && tab === "locations"  && <LocationsTab  locations={locations}   setLocations={setLocations}   categories={categories} showToast={showToast} />}
-            {loaded && tab === "vehicles"   && <VehiclesTab   vehicles={vehicles}     setVehicles={setVehicles}     showToast={showToast} />}
-            {loaded && tab === "features"   && <FeaturesTab   features={features}     setFeatures={setFeatures}     showToast={showToast} />}
-            {loaded && tab === "rates"      && (
-              <RatesTab
-                rates={rates}
-                setRates={setRates}
-                locations={locations}
-                vehicles={vehicles}
-                showToast={showToast}
-              />
-            )}
+            {loaded && tab === "locations"  && <LocationsTab  locations={locations} setLocations={setLocations} categories={categories} showToast={showToast} />}
+            {loaded && tab === "vehicles"   && <VehiclesTab   vehicles={vehicles} setVehicles={setVehicles} showToast={showToast} />}
+            {loaded && tab === "features"   && <FeaturesTab   features={features} setFeatures={setFeatures} showToast={showToast} />}
+            {loaded && tab === "rates"      && <RatesTab rates={rates} setRates={setRates} locations={locations} vehicles={vehicles} showToast={showToast} />}
             {loaded && tab === "settings"   && <SettingsTab   showToast={showToast} />}
           </div>
         </div>
@@ -244,11 +276,11 @@ function OverviewTab({ bookings, locations, vehicles, rates, features, categorie
   const sc: Record<string, string> = { new:"amber", confirmed:"green", cancelled:"red" };
   const stats = [
     { label:"Total Bookings",   val:bookings.length,                              sub:`${bookings.filter((b:any)=>b.status==="new").length} awaiting confirmation`, color:"#111827" },
-    { label:"Active Locations", val:locations.filter((l:any)=>l.active).length,   sub:`of ${locations.length} total`,     color:"#2563eb" },
-    { label:"Active Vehicles",  val:vehicles.filter((v:any)=>v.active).length,    sub:`of ${vehicles.length} total`,      color:"#16a34a" },
-    { label:"Active Routes",    val:rates.filter((r:any)=>r.active).length,       sub:`of ${rates.length} total`,         color:"#d97706" },
-    { label:"Categories",       val:categories.filter((c:any)=>c.active).length,  sub:`${categories.length} total`,       color:"#7c3aed" },
-    { label:"Features",         val:features.filter((f:any)=>f.active).length,    sub:"shown on vehicle cards",           color:"#0891b2" },
+    { label:"Active Locations", val:locations.filter((l:any)=>l.active).length,   sub:`of ${locations.length} total`,   color:"#2563eb" },
+    { label:"Active Vehicles",  val:vehicles.filter((v:any)=>v.active).length,    sub:`of ${vehicles.length} total`,    color:"#16a34a" },
+    { label:"Active Routes",    val:rates.filter((r:any)=>r.active).length,       sub:`of ${rates.length} total`,       color:"#d97706" },
+    { label:"Categories",       val:categories.filter((c:any)=>c.active).length,  sub:`${categories.length} total`,     color:"#7c3aed" },
+    { label:"Features",         val:features.filter((f:any)=>f.active).length,    sub:"shown on vehicle cards",         color:"#0891b2" },
   ];
   return (
     <div>
@@ -268,14 +300,20 @@ function OverviewTab({ bookings, locations, vehicles, rates, features, categorie
             <thead><tr><th>Client</th><th>Route</th><th>Date & Time</th><th>Status</th></tr></thead>
             <tbody>
               {bookings.length === 0 && <tr><td colSpan={4} style={{ padding:28, textAlign:"center", color:"#9ca3af" }}>No bookings yet</td></tr>}
-              {bookings.slice(0, 8).map((b: Booking) => (
-                <tr key={b.id}>
-                  <td><div style={{ fontWeight:600 }}>{b.name}</div><div style={{ fontSize:11, color:"#9ca3af" }}>{b.email}</div></td>
-                  <td style={{ fontSize:12 }}>{b.from} → {b.to}</td>
-                  <td style={{ fontSize:12 }}>{b.date} {b.time}</td>
-                  <td><Chip color={sc[b.status]}>{b.status}</Chip></td>
-                </tr>
-              ))}
+              {bookings.slice(0, 8).map((b: Booking) => {
+                const { isRoundTrip } = parseNotes(b.notes ?? "");
+                return (
+                  <tr key={b.id}>
+                    <td><div style={{ fontWeight:600 }}>{b.name}</div><div style={{ fontSize:11, color:"#9ca3af" }}>{b.email}</div></td>
+                    <td style={{ fontSize:12 }}>
+                      {b.from} → {b.to}
+                      {isRoundTrip && <span style={{ marginLeft:6, fontSize:10, background:"#fff7ed", color:"#ea580c", padding:"1px 6px", borderRadius:4, fontWeight:700 }}>RT</span>}
+                    </td>
+                    <td style={{ fontSize:12 }}>{b.date} {b.time}</td>
+                    <td><Chip color={sc[b.status]}>{b.status}</Chip></td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -300,17 +338,24 @@ function BookingsTab({ bookings, setBookings, vehicles, rates, showToast }: { bo
 
   const vName  = (id: string) => vehicles.find(v => v.id === id)?.name ?? id;
   const vModel = (id: string) => vehicles.find(v => v.id === id)?.model ?? "";
-  const vImg   = (id: string) => vehicles.find(v => v.id === id)?.img ?? "/images/car.png";
 
-  // Look up price from rates table for a booking
+  // Get price for a booking using p1–p8 per-pax pricing
   const getPrice = (b: Booking): string => {
-    const rate = rates.find(r => r.fromLocId === (b as any).fromLocId && r.toLocId === (b as any).toLocId && r.vehicleId === b.vehicleId);
+    const totalPax = b.passengers + b.kids;
+    const rate = rates.find(r =>
+      r.fromLocId === (b as any).fromLocId &&
+      r.toLocId   === (b as any).toLocId   &&
+      r.vehicleId === b.vehicleId
+    );
     if (!rate) return "—";
     if (rate.onDemand) return "On Demand";
-    return rate.price ? `€${rate.price}` : "—";
+    const { isRoundTrip } = parseNotes(b.notes ?? "");
+    const base = calcPrice(rate, totalPax);
+    if (base === null) return "—";
+    const final = isRoundTrip ? base * 2 : base;
+    return `€${final}${isRoundTrip ? " (RT)" : ""}`;
   };
 
-  // Short ref from booking ID
   const ref = (id: string) => id.slice(0,8).toUpperCase();
 
   const rows = bookings.filter(b => {
@@ -329,7 +374,6 @@ function BookingsTab({ bookings, setBookings, vehicles, rates, showToast }: { bo
     catch { showToast("Delete failed","error"); }
   };
 
-  // Stats bar
   const stats = [
     { label:"Total",     val:bookings.length,                                  color:"#111827", bg:"#f8f9fb" },
     { label:"New",       val:bookings.filter(b=>b.status==="new").length,       color:"#d97706", bg:"#fffbeb" },
@@ -339,7 +383,6 @@ function BookingsTab({ bookings, setBookings, vehicles, rates, showToast }: { bo
 
   return (
     <div>
-      {/* ── Stats row ── */}
       <div style={{ display:"flex", gap:10, marginBottom:18, flexWrap:"wrap" }}>
         {stats.map(s => (
           <div key={s.label} style={{ background:s.bg, border:"1px solid #f0f0f0", borderRadius:12, padding:"12px 20px", flex:"1 1 100px", cursor:"pointer" }}
@@ -350,7 +393,6 @@ function BookingsTab({ bookings, setBookings, vehicles, rates, showToast }: { bo
         ))}
       </div>
 
-      {/* ── Toolbar ── */}
       <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:14, alignItems:"center" }}>
         <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search name, ref, route, email…"
           style={{...IS, width:240, padding:"8px 11px"}}/>
@@ -369,33 +411,26 @@ function BookingsTab({ bookings, setBookings, vehicles, rates, showToast }: { bo
         <span style={{ marginLeft:"auto", fontSize:11, color:"#9ca3af" }}>{rows.length} result{rows.length!==1?"s":""}</span>
       </div>
 
-      {/* ── Table ── */}
       <div className="card">
         <div style={{ overflowX:"auto" }}>
           <table className="t">
             <thead>
               <tr>
-                <th>Ref</th>
-                <th>Client</th>
-                <th>Route</th>
-                <th>Date / Time</th>
-                <th>Vehicle</th>
-                <th>Pax</th>
-                <th style={{textAlign:"right"}}>Price</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>Ref</th><th>Client</th><th>Route</th><th>Date / Time</th>
+                <th>Vehicle</th><th>Pax</th><th style={{textAlign:"right"}}>Price</th>
+                <th>Status</th><th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {rows.length===0 && (
                 <tr><td colSpan={9} style={{ padding:40, textAlign:"center", color:"#9ca3af" }}>
-                  <div style={{ fontSize:32, marginBottom:8 }}>📭</div>
-                  No bookings found
+                  <div style={{ fontSize:32, marginBottom:8 }}>📭</div>No bookings found
                 </td></tr>
               )}
               {rows.map(b => {
                 const s = sc[b.status];
                 const price = getPrice(b);
+                const { isRoundTrip } = parseNotes(b.notes ?? "");
                 return (
                   <tr key={b.id} style={{ borderLeft:`3px solid ${s.bar}` }}>
                     <td>
@@ -408,14 +443,17 @@ function BookingsTab({ bookings, setBookings, vehicles, rates, showToast }: { bo
                       <div style={{ fontSize:11, color:"#9ca3af" }}>{b.email}</div>
                     </td>
                     <td>
-                      <div style={{ fontSize:12, fontWeight:500 }}>{b.from}</div>
+                      <div style={{ fontSize:12, fontWeight:500, display:"flex", alignItems:"center", gap:5 }}>
+                        {b.from}
+                        {isRoundTrip && <span style={{ fontSize:9, background:"#fff7ed", color:"#ea580c", padding:"1px 5px", borderRadius:4, fontWeight:700, flexShrink:0 }}>RT</span>}
+                      </div>
                       <div style={{ fontSize:11, color:"#9ca3af" }}>→ {b.to}</div>
                     </td>
                     <td>
                       <div style={{ fontSize:12 }}>{b.date}</div>
                       <div style={{ fontSize:11, color:"#9ca3af" }}>{b.time}</div>
                     </td>
-                    <td style={{ fontSize:11, maxWidth:130 }}>
+                    <td>
                       <div style={{ fontWeight:600, fontSize:12 }}>{vName(b.vehicleId)}</div>
                       <div style={{ fontSize:10, color:"#9ca3af" }}>{vModel(b.vehicleId)}</div>
                     </td>
@@ -447,48 +485,43 @@ function BookingsTab({ bookings, setBookings, vehicles, rates, showToast }: { bo
         </div>
       </div>
 
-      {/* ── BOOKING DETAIL MODAL — luxury voucher style ── */}
+      {/* ── BOOKING DETAIL MODAL ── */}
       {sel && (() => {
-        const s   = sc[sel.status];
+        const s    = sc[sel.status];
         const price = getPrice(sel);
-        const veh = vehicles.find(v => v.id === sel.vehicleId);
+        const veh   = vehicles.find(v => v.id === sel.vehicleId);
+        const totalPax = sel.passengers + sel.kids;
+        const { isRoundTrip, flightTrain, address, freeText } = parseNotes(sel.notes ?? "");
+
         return (
           <div style={{ position:"fixed", inset:0, zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
             <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,.65)", backdropFilter:"blur(6px)" }} onClick={()=>setSel(null)}/>
+            <div style={{ position:"relative", width:"100%", maxWidth:600, maxHeight:"94vh", overflow:"auto", borderRadius:20, boxShadow:"0 32px 100px rgba(0,0,0,.35)" }}>
 
-            <div style={{ position:"relative", width:"100%", maxWidth:580, maxHeight:"94vh", overflow:"auto", borderRadius:20, boxShadow:"0 32px 100px rgba(0,0,0,.35)" }}>
-
-              {/* ── Header band ── */}
+              {/* Header */}
               <div style={{ background:"linear-gradient(135deg,#0a1f44 0%,#1a3a6e 100%)", padding:"28px 28px 22px", position:"relative", overflow:"hidden" }}>
-                {/* decorative circles */}
                 <div style={{ position:"absolute", top:-40, right:-40, width:160, height:160, borderRadius:"50%", background:"rgba(255,255,255,.04)" }}/>
                 <div style={{ position:"absolute", bottom:-30, left:60, width:100, height:100, borderRadius:"50%", background:"rgba(201,163,71,.08)" }}/>
-
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", position:"relative" }}>
                   <div>
-                    <div style={{ fontSize:10, fontWeight:700, letterSpacing:".14em", textTransform:"uppercase", color:"rgba(255,255,255,.4)", marginBottom:6 }}>
-                      Booking Voucher
-                    </div>
-                    <div style={{ fontSize:22, fontWeight:800, color:"#fff", lineHeight:1.2, marginBottom:4 }}>
-                      {sel.name}
-                    </div>
+                    <div style={{ fontSize:10, fontWeight:700, letterSpacing:".14em", textTransform:"uppercase", color:"rgba(255,255,255,.4)", marginBottom:6 }}>Booking Voucher</div>
+                    <div style={{ fontSize:22, fontWeight:800, color:"#fff", lineHeight:1.2, marginBottom:4 }}>{sel.name}</div>
                     <div style={{ fontSize:12, color:"rgba(255,255,255,.5)" }}>{sel.email}</div>
                   </div>
                   <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:8 }}>
-                    <button onClick={()=>setSel(null)} style={{ background:"rgba(255,255,255,.1)", border:"none", color:"rgba(255,255,255,.7)", width:30, height:30, borderRadius:"50%", fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", lineHeight:1 }}>×</button>
-                    <div style={{ background: s.bar, color:"#fff", fontSize:11, fontWeight:700, padding:"4px 12px", borderRadius:999, letterSpacing:".06em", textTransform:"uppercase" }}>
-                      {s.icon} {s.label}
+                    <button onClick={()=>setSel(null)} style={{ background:"rgba(255,255,255,.1)", border:"none", color:"rgba(255,255,255,.7)", width:30, height:30, borderRadius:"50%", fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>×</button>
+                    <div style={{ display:"flex", gap:6, flexWrap:"wrap", justifyContent:"flex-end" }}>
+                      {isRoundTrip && <div style={{ background:"#ea580c", color:"#fff", fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:999, letterSpacing:".06em" }}>🔄 ROUND TRIP</div>}
+                      <div style={{ background:s.bar, color:"#fff", fontSize:11, fontWeight:700, padding:"4px 12px", borderRadius:999, letterSpacing:".06em", textTransform:"uppercase" }}>{s.icon} {s.label}</div>
                     </div>
                   </div>
                 </div>
 
-                {/* Ref + price strip */}
-                <div style={{ display:"flex", gap:0, marginTop:20, background:"rgba(0,0,0,.2)", borderRadius:12, overflow:"hidden" }}>
+                {/* Ref + price + date strip */}
+                <div style={{ display:"flex", marginTop:20, background:"rgba(0,0,0,.2)", borderRadius:12, overflow:"hidden" }}>
                   <div style={{ flex:1, padding:"12px 18px", borderRight:"1px solid rgba(255,255,255,.07)" }}>
                     <div style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,.35)", letterSpacing:".12em", textTransform:"uppercase", marginBottom:4 }}>Reference</div>
-                    <div style={{ fontFamily:"monospace", fontSize:15, fontWeight:800, color:"#c9a347", letterSpacing:".1em" }}>
-                      PEM-{ref(sel.id)}
-                    </div>
+                    <div style={{ fontFamily:"monospace", fontSize:15, fontWeight:800, color:"#c9a347", letterSpacing:".1em" }}>PEM-{ref(sel.id)}</div>
                   </div>
                   <div style={{ flex:1, padding:"12px 18px", borderRight:"1px solid rgba(255,255,255,.07)" }}>
                     <div style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,.35)", letterSpacing:".12em", textTransform:"uppercase", marginBottom:4 }}>Total Fare</div>
@@ -503,12 +536,12 @@ function BookingsTab({ bookings, setBookings, vehicles, rates, showToast }: { bo
                 </div>
               </div>
 
-              {/* ── Body ── */}
+              {/* Body */}
               <div style={{ background:"#fff", padding:"0 0 24px" }}>
 
-                {/* Route card */}
+                {/* Route */}
                 <div style={{ background:"linear-gradient(135deg,#f8faff,#f0f4ff)", borderBottom:"1px solid #e8edf5", padding:"18px 28px" }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:0 }}>
+                  <div style={{ display:"flex", alignItems:"center" }}>
                     <div style={{ flex:1 }}>
                       <div style={{ fontSize:9, fontWeight:700, color:"#9ca3af", letterSpacing:".1em", textTransform:"uppercase", marginBottom:4 }}>From</div>
                       <div style={{ fontWeight:800, fontSize:15, color:"#111827" }}>{sel.from}</div>
@@ -519,6 +552,7 @@ function BookingsTab({ bookings, setBookings, vehicles, rates, showToast }: { bo
                           <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
                         </svg>
                       </div>
+                      {isRoundTrip && <div style={{ fontSize:9, color:"#ea580c", fontWeight:700, textTransform:"uppercase", letterSpacing:".06em" }}>+ Return</div>}
                     </div>
                     <div style={{ flex:1, textAlign:"right" }}>
                       <div style={{ fontSize:9, fontWeight:700, color:"#9ca3af", letterSpacing:".1em", textTransform:"uppercase", marginBottom:4 }}>To</div>
@@ -528,27 +562,31 @@ function BookingsTab({ bookings, setBookings, vehicles, rates, showToast }: { bo
                 </div>
 
                 <div style={{ padding:"20px 28px 0" }}>
-                  {/* Two-col trip info */}
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
+
+                  {/* Trip info grid */}
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
                     {[
                       { icon:"📅", label:"Date",        val:sel.date },
                       { icon:"🕐", label:"Pickup Time",  val:sel.time },
-                      { icon:"👤", label:"Passengers",   val:`${sel.passengers} adults · ${sel.kids} children` },
+                      { icon:"👤", label:"Passengers",   val:`${sel.passengers} adult${sel.passengers!==1?"s":""} · ${sel.kids} child${sel.kids!==1?"ren":""}` },
                       { icon:"🧳", label:"Luggage",       val:`${sel.bags} bag${sel.bags!==1?"s":""}` },
+                      { icon:"🔄", label:"Trip Type",     val:isRoundTrip ? "Round Trip (×2 price)" : "One Way" },
+                      ...(flightTrain ? [{ icon:"✈️", label:"Flight / Train No.", val:flightTrain }] : []),
+                      ...(address     ? [{ icon:"📍", label:"Address",            val:address }]     : []),
                     ].map(r => (
-                      <div key={r.label} style={{ background:"#f8f9fb", borderRadius:10, padding:"10px 14px", display:"flex", alignItems:"center", gap:10 }}>
-                        <span style={{ fontSize:18 }}>{r.icon}</span>
+                      <div key={r.label} style={{ background:"#f8f9fb", borderRadius:10, padding:"10px 14px", display:"flex", alignItems:"flex-start", gap:10 }}>
+                        <span style={{ fontSize:16, marginTop:1 }}>{r.icon}</span>
                         <div>
                           <div style={{ fontSize:9, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:".08em" }}>{r.label}</div>
-                          <div style={{ fontSize:13, fontWeight:600, color:"#111827", marginTop:1 }}>{r.val}</div>
+                          <div style={{ fontSize:13, fontWeight:600, color: r.label==="Trip Type" && isRoundTrip ? "#ea580c" : "#111827", marginTop:1 }}>{r.val}</div>
                         </div>
                       </div>
                     ))}
                   </div>
 
-                  {/* Vehicle card */}
+                  {/* Vehicle */}
                   {veh && (
-                    <div style={{ border:"1.5px solid #e5e7eb", borderRadius:12, overflow:"hidden", marginBottom:16, display:"flex", alignItems:"center" }}>
+                    <div style={{ border:"1.5px solid #e5e7eb", borderRadius:12, overflow:"hidden", marginBottom:14, display:"flex", alignItems:"center" }}>
                       <img src={veh.img} alt={veh.name} style={{ width:90, height:66, objectFit:"cover", flexShrink:0, background:"#f3f4f6" }}/>
                       <div style={{ padding:"10px 14px", flex:1 }}>
                         <div style={{ fontSize:11, fontWeight:800, textTransform:"uppercase", letterSpacing:".06em", color:"#111827" }}>{veh.name}</div>
@@ -556,29 +594,32 @@ function BookingsTab({ bookings, setBookings, vehicles, rates, showToast }: { bo
                         <div style={{ display:"flex", gap:10, marginTop:4, fontSize:10, color:"#6b7280", fontWeight:600 }}>
                           <span>👤 Max {veh.maxPassengers}</span>
                           <span>🧳 Max {veh.maxLuggage}</span>
+                          <span>Total: {totalPax} pax</span>
                         </div>
                       </div>
                       <div style={{ padding:"0 18px", textAlign:"center" }}>
                         <div style={{ fontSize:20, fontWeight:900, color:"#111827" }}>{price}</div>
-                        <div style={{ fontSize:9, color:"#9ca3af", marginTop:2, textTransform:"uppercase", letterSpacing:".06em" }}>Fixed fare</div>
+                        <div style={{ fontSize:9, color:"#9ca3af", marginTop:2, textTransform:"uppercase", letterSpacing:".06em" }}>
+                          {isRoundTrip ? "Round trip" : "Fixed fare"}
+                        </div>
                       </div>
                     </div>
                   )}
 
-                  {/* Divider with scissors */}
-                  <div style={{ display:"flex", alignItems:"center", gap:8, margin:"4px 0 16px", color:"#d1d5db", fontSize:11 }}>
+                  {/* Scissors divider */}
+                  <div style={{ display:"flex", alignItems:"center", gap:8, margin:"4px 0 14px", color:"#d1d5db" }}>
                     <div style={{ flex:1, height:1, background:"repeating-linear-gradient(90deg,#d1d5db 0,#d1d5db 6px,transparent 6px,transparent 12px)" }}/>
                     <span style={{ fontSize:14 }}>✂</span>
                     <div style={{ flex:1, height:1, background:"repeating-linear-gradient(90deg,#d1d5db 0,#d1d5db 6px,transparent 6px,transparent 12px)" }}/>
                   </div>
 
-                  {/* Contact info */}
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:16 }}>
+                  {/* Contact grid */}
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
                     {[
                       { label:"Country",  val:sel.country,  icon:"🌍" },
                       { label:"WhatsApp", val:sel.whatsapp, icon:"💬" },
                       { label:"Email",    val:sel.email,    icon:"✉️" },
-                      ...(sel.notes ? [{ label:"Notes", val:sel.notes, icon:"📝" }] : []),
+                      ...(freeText ? [{ label:"Special Requests", val:freeText, icon:"📝" }] : []),
                     ].map(r => (
                       <div key={r.label} style={{ display:"flex", alignItems:"flex-start", gap:8, padding:"8px 12px", background:"#fafafa", borderRadius:9, border:"1px solid #f0f0f0" }}>
                         <span style={{ fontSize:14, marginTop:1 }}>{r.icon}</span>
@@ -590,23 +631,17 @@ function BookingsTab({ bookings, setBookings, vehicles, rates, showToast }: { bo
                     ))}
                   </div>
 
-                  {/* Action buttons */}
+                  {/* Actions */}
                   <div style={{ display:"flex", gap:8 }}>
                     {sel.status!=="confirmed" && (
                       <button className="btn b-dark" style={{ flex:1, justifyContent:"center", padding:"11px" }}
-                        onClick={()=>{upd(sel.id,"confirmed");setSel(null);}}>
-                        ✓ Confirm Booking
-                      </button>
+                        onClick={()=>{upd(sel.id,"confirmed");setSel(null);}}>✓ Confirm Booking</button>
                     )}
                     {sel.status!=="cancelled" && (
                       <button className="btn" style={{ flex:1, justifyContent:"center", padding:"11px", background:"#fff7ed", color:"#c2410c", border:"1.5px solid #fed7aa" }}
-                        onClick={()=>{upd(sel.id,"cancelled");setSel(null);}}>
-                        ✗ Cancel
-                      </button>
+                        onClick={()=>{upd(sel.id,"cancelled");setSel(null);}}>✗ Cancel</button>
                     )}
-                    <button className="btn b-red" style={{ padding:"11px 14px" }} onClick={()=>del(sel.id)}>
-                      🗑
-                    </button>
+                    <button className="btn b-red" style={{ padding:"11px 14px" }} onClick={()=>del(sel.id)}>🗑</button>
                   </div>
                 </div>
               </div>
@@ -622,9 +657,9 @@ function BookingsTab({ bookings, setBookings, vehicles, rates, showToast }: { bo
 //  CATEGORIES
 // ════════════════════════════════════════════════════════════════
 function CategoriesTab({ categories, setCategories, showToast }: { categories:Category[]; setCategories:any; showToast:any }) {
-  const [modal, setModal]   = useState<"add"|"edit"|null>(null);
-  const [edit,  setEdit]    = useState<Category|null>(null);
-  const [form,  setForm]    = useState({ name:"", icon:"📍", sortOrder:0 });
+  const [modal, setModal] = useState<"add"|"edit"|null>(null);
+  const [edit,  setEdit]  = useState<Category|null>(null);
+  const [form,  setForm]  = useState({ name:"", icon:"📍", sortOrder:0 });
 
   const openAdd  = () => { setForm({ name:"", icon:"📍", sortOrder:categories.length }); setEdit(null); setModal("add"); };
   const openEdit = (c:Category) => { setForm({ name:c.name, icon:c.icon, sortOrder:c.sortOrder }); setEdit(c); setModal("edit"); };

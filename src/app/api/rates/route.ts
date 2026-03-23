@@ -1,4 +1,4 @@
-// app/api/rates/route.ts — v2 with vehicle_id
+// app/api/rates/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 
@@ -10,9 +10,11 @@ const shape = (r: any) => ({
   fromLocName: r.from_loc_name,
   toLocName:   r.to_loc_name,
   vehicleName: r.vehicle_name,
-  price:       r.price,
-  onDemand:    r.on_demand,
-  active:      r.active,
+  p1:  r.p1,  p2: r.p2,  p3: r.p3,  p4: r.p4,
+  p5:  r.p5,  p6: r.p6,  p7: r.p7,  p8: r.p8,
+  // p9+ = p8 * 2 (calculated on client, not stored)
+  onDemand: r.on_demand,
+  active:   r.active,
 });
 
 const JOIN = `
@@ -27,33 +29,29 @@ const JOIN = `
 `;
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const fromId    = searchParams.get("from");
-  const toId      = searchParams.get("to");
-  const vehicleId = searchParams.get("vehicle");
-
+  const sp = new URL(req.url).searchParams;
   let q = JOIN + " WHERE 1=1";
   const params: any[] = [];
-  if (fromId)    { params.push(fromId);    q += ` AND r.from_loc_id=$${params.length}`; }
-  if (toId)      { params.push(toId);      q += ` AND r.to_loc_id=$${params.length}`; }
-  if (vehicleId) { params.push(vehicleId); q += ` AND r.vehicle_id=$${params.length}`; }
+  if (sp.get("from"))    { params.push(sp.get("from"));    q += ` AND r.from_loc_id=$${params.length}`; }
+  if (sp.get("to"))      { params.push(sp.get("to"));      q += ` AND r.to_loc_id=$${params.length}`; }
+  if (sp.get("vehicle")) { params.push(sp.get("vehicle")); q += ` AND r.vehicle_id=$${params.length}`; }
   q += " ORDER BY fl.name, tl.name, v.name";
-
   const { rows } = await pool.query(q, params);
   return NextResponse.json(rows.map(shape));
 }
 
 export async function POST(req: NextRequest) {
   const b = await req.json();
+  const vals = b.onDemand
+    ? [null,null,null,null,null,null,null,null]
+    : [b.p1||null,b.p2||null,b.p3||null,b.p4||null,b.p5||null,b.p6||null,b.p7||null,b.p8||null];
   const { rows } = await pool.query(
-    `INSERT INTO rates (id, from_loc_id, to_loc_id, vehicle_id, price, on_demand, active)
-     VALUES ($1,$2,$3,$4,$5,$6,$7)
-     ON CONFLICT (from_loc_id, to_loc_id, vehicle_id) DO UPDATE
-       SET price=$5, on_demand=$6, active=$7
+    `INSERT INTO rates (id,from_loc_id,to_loc_id,vehicle_id,p1,p2,p3,p4,p5,p6,p7,p8,on_demand,active)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+     ON CONFLICT (from_loc_id,to_loc_id,vehicle_id) DO UPDATE
+       SET p1=$5,p2=$6,p3=$7,p4=$8,p5=$9,p6=$10,p7=$11,p8=$12,on_demand=$13,active=$14
      RETURNING id`,
-    [b.id, b.fromLocId, b.toLocId, b.vehicleId,
-     b.onDemand ? null : (b.price || null),
-     b.onDemand ?? false, b.active ?? true]
+    [b.id,b.fromLocId,b.toLocId,b.vehicleId,...vals,b.onDemand??false,b.active??true]
   );
   const { rows: full } = await pool.query(JOIN + " WHERE r.id=$1", [rows[0].id]);
   return NextResponse.json(shape(full[0]));
@@ -61,12 +59,16 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   const b = await req.json();
+  const vals = b.onDemand
+    ? [null,null,null,null,null,null,null,null]
+    : [b.p1||null,b.p2||null,b.p3||null,b.p4||null,b.p5||null,b.p6||null,b.p7||null,b.p8||null];
   await pool.query(
-    `UPDATE rates SET from_loc_id=$2, to_loc_id=$3, vehicle_id=$4,
-     price=$5, on_demand=$6, active=$7 WHERE id=$1`,
-    [b.id, b.fromLocId, b.toLocId, b.vehicleId,
-     b.onDemand ? null : (b.price || null),
-     b.onDemand ?? false, b.active ?? true]
+    `UPDATE rates SET
+       from_loc_id=$2,to_loc_id=$3,vehicle_id=$4,
+       p1=$5,p2=$6,p3=$7,p4=$8,p5=$9,p6=$10,p7=$11,p8=$12,
+       on_demand=$13,active=$14
+     WHERE id=$1`,
+    [b.id,b.fromLocId,b.toLocId,b.vehicleId,...vals,b.onDemand??false,b.active??true]
   );
   const { rows } = await pool.query(JOIN + " WHERE r.id=$1", [b.id]);
   return NextResponse.json(shape(rows[0]));
