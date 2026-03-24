@@ -36,7 +36,6 @@ const calcPrice = (rate: Rate, pax: number): number | null => {
 };
 
 // ─── Parse booking notes for structured fields ────────────────
-// Notes are stored as: "ROUND TRIP | Flight/Train: AF1234 | Address: 10 Rue... | Free text"
 function parseNotes(notes: string) {
   const parts = notes.split("|").map(s => s.trim()).filter(Boolean);
   let isRoundTrip = false;
@@ -205,6 +204,8 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
         .fg2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
         input:focus,select:focus,textarea:focus{border-color:#c9a347!important;box-shadow:0 0 0 3px rgba(201,163,71,.12)!important;outline:none!important}
         @keyframes toastIn{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+        @keyframes backupSpin{to{transform:rotate(360deg)}}
+        @keyframes backupFadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
         @media(max-width:768px){.db-side{width:54px;min-width:54px}.nlabel{display:none}.slogo{display:none}}
       `}</style>
 
@@ -339,7 +340,6 @@ function BookingsTab({ bookings, setBookings, vehicles, rates, showToast }: { bo
   const vName  = (id: string) => vehicles.find(v => v.id === id)?.name ?? id;
   const vModel = (id: string) => vehicles.find(v => v.id === id)?.model ?? "";
 
-  // Get price for a booking using p1–p8 per-pax pricing
   const getPrice = (b: Booking): string => {
     const totalPax = b.passengers + b.kids;
     const rate = rates.find(r =>
@@ -498,7 +498,6 @@ function BookingsTab({ bookings, setBookings, vehicles, rates, showToast }: { bo
             <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,.65)", backdropFilter:"blur(6px)" }} onClick={()=>setSel(null)}/>
             <div style={{ position:"relative", width:"100%", maxWidth:600, maxHeight:"94vh", overflow:"auto", borderRadius:20, boxShadow:"0 32px 100px rgba(0,0,0,.35)" }}>
 
-              {/* Header */}
               <div style={{ background:"linear-gradient(135deg,#0a1f44 0%,#1a3a6e 100%)", padding:"28px 28px 22px", position:"relative", overflow:"hidden" }}>
                 <div style={{ position:"absolute", top:-40, right:-40, width:160, height:160, borderRadius:"50%", background:"rgba(255,255,255,.04)" }}/>
                 <div style={{ position:"absolute", bottom:-30, left:60, width:100, height:100, borderRadius:"50%", background:"rgba(201,163,71,.08)" }}/>
@@ -517,7 +516,6 @@ function BookingsTab({ bookings, setBookings, vehicles, rates, showToast }: { bo
                   </div>
                 </div>
 
-                {/* Ref + price + date strip */}
                 <div style={{ display:"flex", marginTop:20, background:"rgba(0,0,0,.2)", borderRadius:12, overflow:"hidden" }}>
                   <div style={{ flex:1, padding:"12px 18px", borderRight:"1px solid rgba(255,255,255,.07)" }}>
                     <div style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,.35)", letterSpacing:".12em", textTransform:"uppercase", marginBottom:4 }}>Reference</div>
@@ -536,10 +534,7 @@ function BookingsTab({ bookings, setBookings, vehicles, rates, showToast }: { bo
                 </div>
               </div>
 
-              {/* Body */}
               <div style={{ background:"#fff", padding:"0 0 24px" }}>
-
-                {/* Route */}
                 <div style={{ background:"linear-gradient(135deg,#f8faff,#f0f4ff)", borderBottom:"1px solid #e8edf5", padding:"18px 28px" }}>
                   <div style={{ display:"flex", alignItems:"center" }}>
                     <div style={{ flex:1 }}>
@@ -562,8 +557,6 @@ function BookingsTab({ bookings, setBookings, vehicles, rates, showToast }: { bo
                 </div>
 
                 <div style={{ padding:"20px 28px 0" }}>
-
-                  {/* Trip info grid */}
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
                     {[
                       { icon:"📅", label:"Date",        val:sel.date },
@@ -584,7 +577,6 @@ function BookingsTab({ bookings, setBookings, vehicles, rates, showToast }: { bo
                     ))}
                   </div>
 
-                  {/* Vehicle */}
                   {veh && (
                     <div style={{ border:"1.5px solid #e5e7eb", borderRadius:12, overflow:"hidden", marginBottom:14, display:"flex", alignItems:"center" }}>
                       <img src={veh.img} alt={veh.name} style={{ width:90, height:66, objectFit:"cover", flexShrink:0, background:"#f3f4f6" }}/>
@@ -606,14 +598,12 @@ function BookingsTab({ bookings, setBookings, vehicles, rates, showToast }: { bo
                     </div>
                   )}
 
-                  {/* Scissors divider */}
                   <div style={{ display:"flex", alignItems:"center", gap:8, margin:"4px 0 14px", color:"#d1d5db" }}>
                     <div style={{ flex:1, height:1, background:"repeating-linear-gradient(90deg,#d1d5db 0,#d1d5db 6px,transparent 6px,transparent 12px)" }}/>
                     <span style={{ fontSize:14 }}>✂</span>
                     <div style={{ flex:1, height:1, background:"repeating-linear-gradient(90deg,#d1d5db 0,#d1d5db 6px,transparent 6px,transparent 12px)" }}/>
                   </div>
 
-                  {/* Contact grid */}
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
                     {[
                       { label:"Country",  val:sel.country,  icon:"🌍" },
@@ -631,7 +621,6 @@ function BookingsTab({ bookings, setBookings, vehicles, rates, showToast }: { bo
                     ))}
                   </div>
 
-                  {/* Actions */}
                   <div style={{ display:"flex", gap:8 }}>
                     {sel.status!=="confirmed" && (
                       <button className="btn b-dark" style={{ flex:1, justifyContent:"center", padding:"11px" }}
@@ -913,11 +902,56 @@ function FeaturesTab({ features, setFeatures, showToast }: { features:Feature[];
 }
 
 // ════════════════════════════════════════════════════════════════
-//  SETTINGS
+//  SETTINGS  (includes DB Backup card)
 // ════════════════════════════════════════════════════════════════
 function SettingsTab({ showToast }: { showToast:any }) {
   const [pw, setPw] = useState({ cur:"", nw:"", cf:"" });
   const [co, setCo] = useState({ name:"Paris Easy Move", phone:"+33 6 52 46 66 94", email:"booking@pariseasymove.com", address:"10 rue Pierre Sarrazin, 95190 Goussainville" });
+
+  // ── Backup state ──────────────────────────────────────────────
+  type BackupStatus = "idle"|"loading"|"success"|"error";
+  const [backupStatus,  setBackupStatus]  = useState<BackupStatus>("idle");
+  const [backupMessage, setBackupMessage] = useState("");
+  const [lastBackup,    setLastBackup]    = useState<string|null>(null);
+
+  const triggerBackup = async () => {
+    setBackupStatus("loading");
+    setBackupMessage("");
+    try {
+      const secret = process.env.NEXT_PUBLIC_BACKUP_SECRET ?? "";
+      const url    = `/api/db-backup${secret ? `?secret=${secret}` : ""}`;
+      const res    = await fetch(url);
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.details || err.error || "Backup request failed");
+      }
+
+      const disposition = res.headers.get("Content-Disposition") ?? "";
+      const match       = disposition.match(/filename="?([^"]+)"?/);
+      const filename    = match?.[1] ?? "backup.sql";
+
+      const blob        = await res.blob();
+      const dlUrl       = URL.createObjectURL(blob);
+      const a           = document.createElement("a");
+      a.href            = dlUrl;
+      a.download        = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(dlUrl);
+
+      setLastBackup(`${filename} — ${new Date().toLocaleString()}`);
+      setBackupStatus("success");
+      setBackupMessage("Backup downloaded successfully");
+      showToast("Database backup downloaded");
+    } catch (err: any) {
+      setBackupStatus("error");
+      setBackupMessage(err.message ?? "An unexpected error occurred");
+      showToast("Backup failed", "error");
+    }
+  };
+  // ─────────────────────────────────────────────────────────────
 
   const changePw = () => {
     if (pw.cur !== "paris2024") return showToast("Current password incorrect","error");
@@ -929,6 +963,8 @@ function SettingsTab({ showToast }: { showToast:any }) {
 
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:18, maxWidth:560 }}>
+
+      {/* ── Company Info ── */}
       <div className="card">
         <div className="card-hdr"><span style={{ fontWeight:700 }}>Company Information</span></div>
         <div style={{ padding:20, display:"flex", flexDirection:"column", gap:10 }}>
@@ -941,6 +977,8 @@ function SettingsTab({ showToast }: { showToast:any }) {
           <button className="btn b-dark" style={{ alignSelf:"flex-start", marginTop:4 }} onClick={()=>showToast("Saved")}>Save Info</button>
         </div>
       </div>
+
+      {/* ── Change Password ── */}
       <div className="card">
         <div className="card-hdr"><span style={{ fontWeight:700 }}>Change Password</span></div>
         <div style={{ padding:20, display:"flex", flexDirection:"column", gap:10 }}>
@@ -953,6 +991,105 @@ function SettingsTab({ showToast }: { showToast:any }) {
           <button className="btn b-dark" style={{ alignSelf:"flex-start", marginTop:4 }} onClick={changePw}>Update Password</button>
         </div>
       </div>
+
+      {/* ── Database Backup ── */}
+      <div className="card">
+        <div className="card-hdr" style={{ background:"#f0fdf4" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{ width:32, height:32, borderRadius:8, background:"#dcfce7", border:"1px solid #bbf7d0", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2">
+                <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                <path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/>
+                <path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/>
+              </svg>
+            </div>
+            <div>
+              <div style={{ fontWeight:700, fontSize:14, color:"#111827" }}>Database Backup</div>
+              <div style={{ fontSize:11, color:"#6b7280" }}>pariseasymove · PostgreSQL</div>
+            </div>
+          </div>
+          <div style={{ display:"flex", alignItems:"center", gap:6, background:"#dcfce7", border:"1px solid #bbf7d0", padding:"4px 10px", borderRadius:999 }}>
+            <span style={{ width:6, height:6, borderRadius:"50%", background:"#16a34a", display:"inline-block", animation:"backupSpin 0s, pulse 2s infinite" }}/>
+            <span style={{ fontSize:11, fontWeight:700, color:"#16a34a", letterSpacing:".04em" }}>CONNECTED</span>
+          </div>
+        </div>
+
+        <div style={{ padding:20 }}>
+          {/* Info rows */}
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:16 }}>
+            {[
+              { label:"Database",  val:"pariseasymove" },
+              { label:"Format",    val:"Plain SQL (.sql)" },
+              { label:"Host",      val:"localhost:5432" },
+              { label:"Includes",  val:"Schema + All Data" },
+            ].map(r => (
+              <div key={r.label} style={{ background:"#f8f9fb", borderRadius:8, padding:"8px 12px" }}>
+                <div style={{ fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:".06em", marginBottom:2 }}>{r.label}</div>
+                <div style={{ fontSize:12, fontWeight:600, color:"#374151", fontFamily:"monospace" }}>{r.val}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Button */}
+          {backupStatus === "loading" ? (
+            <button disabled style={{ width:"100%", background:"#f3f4f6", border:"1.5px solid #e5e7eb", borderRadius:8, padding:"11px", display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontSize:13, fontWeight:600, color:"#9ca3af", cursor:"not-allowed" }}>
+              <span style={{ width:14, height:14, border:"2px solid #d1d5db", borderTopColor:"#9ca3af", borderRadius:"50%", display:"inline-block", animation:"backupSpin .7s linear infinite" }}/>
+              Generating backup…
+            </button>
+          ) : (
+            <button
+              onClick={triggerBackup}
+              style={{ width:"100%", background:"#111827", color:"#fff", border:"none", borderRadius:8, padding:"11px", display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontSize:13, fontWeight:700, cursor:"pointer", transition:"all .15s", fontFamily:"'Sora',sans-serif" }}
+              onMouseEnter={e=>(e.currentTarget.style.background="#1f2937")}
+              onMouseLeave={e=>(e.currentTarget.style.background="#111827")}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                <polyline points="7,10 12,15 17,10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Download Backup Now
+            </button>
+          )}
+
+          {/* Status message */}
+          {(backupStatus === "success" || backupStatus === "error") && (
+            <div
+              onClick={() => { setBackupStatus("idle"); setBackupMessage(""); }}
+              title="Click to dismiss"
+              style={{
+                marginTop:10, padding:"9px 12px", borderRadius:8, fontSize:12, fontWeight:600,
+                display:"flex", alignItems:"center", gap:8, cursor:"pointer",
+                animation:"backupFadeIn .2s ease",
+                ...(backupStatus === "success"
+                  ? { background:"#f0fdf4", border:"1px solid #bbf7d0", color:"#16a34a" }
+                  : { background:"#fef2f2", border:"1px solid #fecaca", color:"#dc2626" })
+              }}
+            >
+              {backupStatus === "success"
+                ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20,6 9,17 4,12"/></svg>
+                : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              }
+              {backupMessage}
+              <span style={{ marginLeft:"auto", fontSize:10, opacity:.6 }}>click to dismiss</span>
+            </div>
+          )}
+
+          {/* Last backup */}
+          {lastBackup && (
+            <div style={{ marginTop:12, paddingTop:12, borderTop:"1px solid #f0f0f0" }}>
+              <div style={{ fontSize:10, fontWeight:700, color:"#9ca3af", textTransform:"uppercase", letterSpacing:".06em", marginBottom:3 }}>Last backup</div>
+              <div style={{ fontSize:11, color:"#6b7280", fontFamily:"monospace", wordBreak:"break-all" }}>{lastBackup}</div>
+            </div>
+          )}
+
+          <p style={{ fontSize:11, color:"#9ca3af", marginTop:12, lineHeight:1.5 }}>
+            Runs <code style={{ background:"#f3f4f6", padding:"1px 5px", borderRadius:4, fontSize:10 }}>pg_dump</code> on the server and streams the file directly to your browser. No files are stored on the server.
+          </p>
+        </div>
+      </div>
+
+      {/* ── Danger Zone ── */}
       <div className="card" style={{ border:"1px solid #fecaca" }}>
         <div className="card-hdr" style={{ background:"#fef2f2" }}><span style={{ fontWeight:700, color:"#dc2626" }}>Danger Zone</span></div>
         <div style={{ padding:20 }}>
@@ -962,6 +1099,7 @@ function SettingsTab({ showToast }: { showToast:any }) {
           </code>
         </div>
       </div>
+
     </div>
   );
 }
