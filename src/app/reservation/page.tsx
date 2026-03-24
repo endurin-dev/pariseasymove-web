@@ -30,6 +30,14 @@ interface Personal {
   name: string; country: string; whatsapp: string; email: string; notes: string;
 }
 
+const NIGHT_SURCHARGE = 15;
+
+const isNightTime = (time: string): boolean => {
+  if (!time) return false;
+  const [h] = time.split(":").map(Number);
+  return h >= 22 || h < 6;
+};
+
 const calcPrice = (rate: Rate, pax: number): number | null => {
   if (rate.onDemand) return null;
   if (pax >= 9) return rate.p8 ? rate.p8 * 2 : null;
@@ -158,6 +166,7 @@ export default function ReservationPage() {
   });
   const [vehicleId,setVehicleId] = useState("");
   const [personal, setPersonal]  = useState<Personal>({ name:"",country:"",whatsapp:"",email:"",notes:"" });
+  const [paymentMethod, setPaymentMethod] = useState<"cash"|"card"|"">("");
   const [sending,  setSending]   = useState(false);
   const [done,     setDone]      = useState(false);
   const [bookingRef,setBookingRef]= useState("");
@@ -177,7 +186,6 @@ export default function ReservationPage() {
         if (fr.ok) { const d=await fr.json(); const a=d.filter((f:any)=>f.active).map((f:any)=>f.text); if(a.length) setFeatures(a); }
         if (rr.ok) { const d=await rr.json(); setAllRates(d); }
 
-        // ── Read URL params from hero booking card ────────────
         const sp = new URLSearchParams(window.location.search);
         const fromParam  = sp.get("from");
         const toParam    = sp.get("to");
@@ -214,6 +222,7 @@ export default function ReservationPage() {
 
   const totalPax    = trip.passengers + trip.kids;
   const isRoundTrip = trip.tripType === "round-trip";
+  const nightSurcharge = isNightTime(trip.time) ? NIGHT_SURCHARGE : 0;
 
   const getRateRecord = (vId:string): Rate|null => {
     if (!trip.fromId||!trip.toId) return null;
@@ -225,14 +234,16 @@ export default function ReservationPage() {
     const lugExceeded = trip.bags>v.maxLuggage;
     if (!trip.fromId||!trip.toId) {
       const base=v.price;
-      return {...v,routePrice:isRoundTrip?base*2:base as number|null,onDemand:false,noRate:false,paxExceeded,lugExceeded,isDoubled:false};
+      const routeBase = isRoundTrip?base*2:base as number;
+      return {...v,routePrice:routeBase + nightSurcharge,baseRoutePrice:routeBase,onDemand:false,noRate:false,paxExceeded,lugExceeded,isDoubled:false};
     }
     const rate=getRateRecord(v.id);
-    if (!rate) return {...v,routePrice:null,onDemand:false,noRate:true,paxExceeded,lugExceeded,isDoubled:false};
-    if (rate.onDemand) return {...v,routePrice:null,onDemand:true,noRate:false,paxExceeded,lugExceeded,isDoubled:false};
+    if (!rate) return {...v,routePrice:null,baseRoutePrice:null,onDemand:false,noRate:true,paxExceeded,lugExceeded,isDoubled:false};
+    if (rate.onDemand) return {...v,routePrice:null,baseRoutePrice:null,onDemand:true,noRate:false,paxExceeded,lugExceeded,isDoubled:false};
     const base=calcPrice(rate,totalPax);
-    const final=base!==null&&isRoundTrip?base*2:base;
-    return {...v,routePrice:final,onDemand:false,noRate:false,paxExceeded,lugExceeded,isDoubled:totalPax>=9};
+    const routeBase=base!==null&&isRoundTrip?base*2:base;
+    const final=routeBase!==null?routeBase+nightSurcharge:null;
+    return {...v,routePrice:final,baseRoutePrice:routeBase,onDemand:false,noRate:false,paxExceeded,lugExceeded,isDoubled:totalPax>=9};
   }).filter(v=>!v.noRate);
 
   const recommendedVehicle = vehiclesWithPrice
@@ -288,6 +299,7 @@ export default function ReservationPage() {
       if (!personal.whatsapp.trim())e.whatsapp="Required";
       if (!personal.email.trim())   e.email="Required";
       else if (!/\S+@\S+\.\S+/.test(personal.email)) e.email="Invalid email";
+      if (!paymentMethod) e.paymentMethod="Please select a payment method";
     }
     setErrors(e);
     return Object.keys(e).length===0;
@@ -314,6 +326,8 @@ export default function ReservationPage() {
             trip.tripType==="round-trip"?"ROUND TRIP":"",
             trip.flightOrTrain?`Flight/Train: ${trip.flightOrTrain}`:"",
             trip.dropoffAddress?`Address: ${trip.dropoffAddress}`:"",
+            nightSurcharge>0?"NIGHT SURCHARGE (+€15)":"",
+            `Payment: ${paymentMethod==="cash"?"Cash to driver":"Card to driver"}`,
             personal.notes,
           ].filter(Boolean).join(" | "),
           status:"new",
@@ -371,12 +385,19 @@ export default function ReservationPage() {
             ["Date & Time",`${trip.date} at ${trip.time}`],
             ["Vehicle",vehicle?.name??"—"],
             ["Passengers",`${totalPax} pax${vehicle?.isDoubled?" (×2 rate)":""}`],
+            ["Payment",paymentMethod==="cash"?"💵 Cash to driver":"💳 Card to driver"],
           ] as [string,string][]).map(([l,v])=>(
             <div key={l} style={{ display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #e5e7eb",fontSize:14 }}>
               <span style={{ color:"#6b7280" }}>{l}</span>
               <span style={{ fontWeight:600,color:DARK }}>{v}</span>
             </div>
           ))}
+          {nightSurcharge>0&&(
+            <div style={{ display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #e5e7eb",fontSize:14 }}>
+              <span style={{ color:"#6b7280" }}>🌙 Night Surcharge</span>
+              <span style={{ fontWeight:600,color:"#7c3aed" }}>+€{NIGHT_SURCHARGE}</span>
+            </div>
+          )}
           <div style={{ display:"flex",justifyContent:"space-between",paddingTop:12,fontSize:18,fontWeight:800 }}>
             <span>Total</span>
             <span style={{ color:GREEN }}>{vehicle?.onDemand?"On Demand":`€${confirmedPrice}`}</span>
@@ -430,6 +451,12 @@ export default function ReservationPage() {
         optgroup{font-weight:700;color:#374151}
         option{font-weight:400;color:#111827}
         .dial-prefix{display:flex;align-items:center;padding:0 12px;background:#f9fafb;border-right:1px solid #e5e7eb;font-size:14px;font-weight:700;color:#374151;white-space:nowrap;flex-shrink:0;min-width:56px;justify-content:center}
+        .rp-payment-opt{display:flex;align-items:center;gap:14px;border:2px solid #e5e7eb;border-radius:12px;padding:16px 20px;cursor:pointer;background:#fff;transition:all .2s;flex:1;min-width:0}
+        .rp-payment-opt:hover{border-color:#d1d5db;background:#f9fafb}
+        .rp-payment-opt.selected{border-color:#111827;background:#f9fafb;box-shadow:0 0 0 3px rgba(17,24,39,0.08)}
+        .rp-night-banner{background:linear-gradient(135deg,#1e1b4b,#312e81);border:1.5px solid #4338ca;border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:14px;margin-top:8px}
+        @keyframes nightPulse{0%,100%{opacity:1}50%{opacity:.7}}
+        .rp-night-star{animation:nightPulse 2s ease-in-out infinite}
       `}</style>
 
       <div className="rp">
@@ -453,6 +480,14 @@ export default function ReservationPage() {
               <div style={{ marginBottom:16,padding:"8px 12px",borderRadius:9,background:isRoundTrip?"rgba(245,158,11,.15)":"rgba(22,163,74,.1)",border:`1px solid ${isRoundTrip?"rgba(245,158,11,.3)":"rgba(22,163,74,.25)"}`,fontSize:12,fontWeight:700,color:isRoundTrip?"#f59e0b":"#4ade80",display:"flex",alignItems:"center",gap:6 }}>
                 {isRoundTrip?"🔄 Round Trip":"→ One Way"}
                 {isRoundTrip&&<span style={{ fontSize:10,color:"rgba(245,158,11,.7)",marginLeft:"auto" }}>×2 price</span>}
+              </div>
+            )}
+
+            {/* Night surcharge indicator in sidebar */}
+            {nightSurcharge>0&&(
+              <div style={{ marginBottom:16,padding:"8px 12px",borderRadius:9,background:"rgba(99,102,241,.15)",border:"1px solid rgba(99,102,241,.3)",fontSize:12,fontWeight:700,color:"#a5b4fc",display:"flex",alignItems:"center",gap:6 }}>
+                <span className="rp-night-star">🌙</span>
+                Night surcharge <span style={{ marginLeft:"auto",color:"#c4b5fd" }}>+€{NIGHT_SURCHARGE}</span>
               </div>
             )}
 
@@ -603,6 +638,22 @@ export default function ReservationPage() {
                         <input type="time" value={trip.time} onChange={e=>setTrip(t=>({...t,time:e.target.value}))} style={S.input}/>
                       </div>
                       {errEl(errors.time)}
+                      {/* Night surcharge banner — shows right under the time picker */}
+                      {isNightTime(trip.time)&&(
+                        <div className="rp-night-banner" style={{ marginTop:10 }}>
+                          <div style={{ fontSize:26,flexShrink:0,lineHeight:1 }} className="rp-night-star">🌙</div>
+                          <div style={{ flex:1 }}>
+                            <div style={{ fontSize:13,fontWeight:800,color:"#e0e7ff",marginBottom:3 }}>Night Surcharge Applied</div>
+                            <div style={{ fontSize:11,color:"rgba(196,181,253,.8)",lineHeight:1.5 }}>
+                              Pickups between <strong style={{ color:"#c4b5fd" }}>10:00 PM – 6:00 AM</strong> include a night surcharge of <strong style={{ color:"#a5f3fc" }}>+€{NIGHT_SURCHARGE}</strong> added to your fare.
+                            </div>
+                          </div>
+                          <div style={{ flexShrink:0,background:"rgba(165,243,252,.15)",border:"1px solid rgba(165,243,252,.3)",borderRadius:10,padding:"8px 14px",textAlign:"center" }}>
+                            <div style={{ fontSize:10,color:"rgba(165,243,252,.7)",fontWeight:700,letterSpacing:".08em",textTransform:"uppercase",marginBottom:2 }}>Extra</div>
+                            <div style={{ fontSize:22,fontWeight:900,color:"#a5f3fc",lineHeight:1 }}>+€{NIGHT_SURCHARGE}</div>
+                          </div>
+                        </div>
+                      )}
                     </>)}
                   </div>
 
@@ -669,6 +720,21 @@ export default function ReservationPage() {
                     </div>
                   )}
 
+                  {/* Night surcharge notice on vehicle step */}
+                  {nightSurcharge>0&&(
+                    <div className="rp-night-banner">
+                      <div style={{ fontSize:22,flexShrink:0 }} className="rp-night-star">🌙</div>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:13,fontWeight:800,color:"#e0e7ff",marginBottom:2 }}>Night Surcharge Included in All Prices</div>
+                        <div style={{ fontSize:11,color:"rgba(196,181,253,.8)" }}>+€{NIGHT_SURCHARGE} night fee (10 PM–6 AM) has been added to each fare shown below</div>
+                      </div>
+                      <div style={{ flexShrink:0,background:"rgba(165,243,252,.15)",border:"1px solid rgba(165,243,252,.3)",borderRadius:9,padding:"6px 12px",textAlign:"center" }}>
+                        <div style={{ fontSize:9,color:"rgba(165,243,252,.7)",fontWeight:700,letterSpacing:".08em",textTransform:"uppercase",marginBottom:1 }}>Added</div>
+                        <div style={{ fontSize:18,fontWeight:900,color:"#a5f3fc",lineHeight:1 }}>+€{NIGHT_SURCHARGE}</div>
+                      </div>
+                    </div>
+                  )}
+
                   {(()=>{
                     const locked=vehiclesWithPrice.filter(v=>v.paxExceeded||v.lugExceeded);
                     const available=vehiclesWithPrice.filter(v=>!v.paxExceeded&&!v.lugExceeded);
@@ -724,6 +790,7 @@ export default function ReservationPage() {
                           {isRecom&&!isLocked&&!sel&&<div style={{ position:"absolute",top:8,left:8,background:"#16a34a",color:"#fff",fontSize:9,fontWeight:800,padding:"3px 7px",borderRadius:5,letterSpacing:".08em",textTransform:"uppercase" }}>✦ Best fit</div>}
                           {v.isDoubled&&!isLocked&&<div style={{ position:"absolute",bottom:8,left:8,background:"#d97706",color:"#fff",fontSize:9,fontWeight:800,padding:"3px 7px",borderRadius:5 }}>×2 RATE</div>}
                           {isRoundTrip&&!isLocked&&<div style={{ position:"absolute",bottom:8,right:8,background:"#111827",color:"#f59e0b",fontSize:9,fontWeight:800,padding:"3px 7px",borderRadius:5 }}>RT ×2</div>}
+                          {nightSurcharge>0&&!isLocked&&<div style={{ position:"absolute",top:8,right:8,background:"#312e81",color:"#a5f3fc",fontSize:9,fontWeight:800,padding:"3px 7px",borderRadius:5 }}>🌙 +€{NIGHT_SURCHARGE}</div>}
                         </div>
                         <div style={{ flex:1,padding:"14px 18px",display:"flex",flexDirection:"column",justifyContent:"space-between",opacity:isLocked?.4:1,marginTop:sel?36:0 }}>
                           <div>
@@ -762,12 +829,13 @@ export default function ReservationPage() {
                             <div>
                               {v.onDemand?(<><div style={{ fontSize:16,fontWeight:800,color:"#d97706",lineHeight:1 }}>On Demand</div><div style={{ fontSize:10,color:"#9ca3af",marginTop:2 }}>Contact us for price</div></>):
                               v.routePrice!==null?(<>
-                                <div style={{ display:"flex",alignItems:"baseline",gap:6 }}>
+                                <div style={{ display:"flex",alignItems:"baseline",gap:6,flexWrap:"wrap" }}>
                                   <div style={{ fontSize:22,fontWeight:900,color:sel?"#d97706":DARK,lineHeight:1 }}>{v.routePrice} <span style={{ fontSize:13,fontWeight:700 }}>EUR</span></div>
                                   {v.isDoubled&&<span style={{ fontSize:10,fontWeight:700,background:"#fef3c7",color:"#d97706",padding:"2px 6px",borderRadius:5,border:"1px solid #fcd34d" }}>×2</span>}
                                   {isRoundTrip&&<span style={{ fontSize:10,fontWeight:700,background:"#fff7ed",color:"#ea580c",padding:"2px 6px",borderRadius:5,border:"1px solid #fed7aa" }}>RT</span>}
+                                  {nightSurcharge>0&&<span style={{ fontSize:10,fontWeight:700,background:"#ede9fe",color:"#7c3aed",padding:"2px 6px",borderRadius:5,border:"1px solid #ddd6fe" }}>🌙 +€{NIGHT_SURCHARGE}</span>}
                                 </div>
-                                <div style={{ fontSize:10,color:"#9ca3af",marginTop:2 }}>✓ {totalPax} pax · {isRoundTrip?"round trip":"one way"} · fixed · incl. VAT</div>
+                                <div style={{ fontSize:10,color:"#9ca3af",marginTop:2 }}>✓ {totalPax} pax · {isRoundTrip?"round trip":"one way"} · fixed · incl. VAT{nightSurcharge>0?" · incl. night fee":""}</div>
                               </>):(<div style={{ fontSize:14,color:"#9ca3af" }}>Price unavailable</div>)}
                             </div>
                             {!isLocked&&(
@@ -804,6 +872,57 @@ export default function ReservationPage() {
                     {field(<><label style={S.label}>Email Address <span style={{ color:GREEN }}>*</span></label><div className="rp-input-wrap" style={wrap(errors.email)}><input type="email" placeholder="you@example.com" value={personal.email} onChange={e=>setPersonal(p=>({...p,email:e.target.value}))} style={S.input}/></div>{errEl(errors.email)}</>)}
                   </div>
                   {field(<><label style={S.label}>Special Requests <span style={{ fontSize:12,color:"#9ca3af",fontWeight:400 }}>(optional)</span></label><textarea rows={4} placeholder="Return date/time for round trip, flight number, special assistance…" value={personal.notes} onChange={e=>setPersonal(p=>({...p,notes:e.target.value}))} style={{ width:"100%",border:"1.5px solid #e5e7eb",borderRadius:10,padding:"12px 14px",fontSize:14,color:DARK,resize:"none",outline:"none",fontFamily:"inherit",boxSizing:"border-box" }}/></>)}
+
+                  {/* ── Payment Method ── */}
+                  <div>
+                    <label style={{ ...S.label,marginBottom:10 }}>
+                      Payment Method <span style={{ color:GREEN }}>*</span>
+                    </label>
+                    <div style={{ display:"flex",gap:12,flexWrap:"wrap" }}>
+                      {/* Cash option */}
+                      <div
+                        className={`rp-payment-opt${paymentMethod==="cash"?" selected":""}`}
+                        onClick={()=>setPaymentMethod("cash")}
+                        style={{ border:`2px solid ${paymentMethod==="cash"?"#111827":"#e5e7eb"}` }}
+                      >
+                        <div style={{ width:44,height:44,borderRadius:12,background:paymentMethod==="cash"?"#111827":"#f3f4f6",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"background .2s",fontSize:22 }}>
+                          💵
+                        </div>
+                        <div style={{ flex:1,minWidth:0 }}>
+                          <div style={{ fontSize:14,fontWeight:700,color:DARK,marginBottom:2 }}>Cash to Driver</div>
+                          <div style={{ fontSize:11,color:"#6b7280",lineHeight:1.4 }}>Pay in cash on arrival — no card needed</div>
+                        </div>
+                        <div style={{ width:20,height:20,borderRadius:"50%",border:`2px solid ${paymentMethod==="cash"?"#111827":"#d1d5db"}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .2s" }}>
+                          {paymentMethod==="cash"&&<div style={{ width:10,height:10,borderRadius:"50%",background:"#111827" }}/>}
+                        </div>
+                      </div>
+
+                      {/* Card option */}
+                      <div
+                        className={`rp-payment-opt${paymentMethod==="card"?" selected":""}`}
+                        onClick={()=>setPaymentMethod("card")}
+                        style={{ border:`2px solid ${paymentMethod==="card"?"#111827":"#e5e7eb"}` }}
+                      >
+                        <div style={{ width:44,height:44,borderRadius:12,background:paymentMethod==="card"?"#111827":"#f3f4f6",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"background .2s",fontSize:22 }}>
+                          💳
+                        </div>
+                        <div style={{ flex:1,minWidth:0 }}>
+                          <div style={{ fontSize:14,fontWeight:700,color:DARK,marginBottom:2 }}>Card to Driver</div>
+                          <div style={{ fontSize:11,color:"#6b7280",lineHeight:1.4 }}>Pay by card on arrival — Visa, Mastercard accepted</div>
+                        </div>
+                        <div style={{ width:20,height:20,borderRadius:"50%",border:`2px solid ${paymentMethod==="card"?"#111827":"#d1d5db"}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .2s" }}>
+                          {paymentMethod==="card"&&<div style={{ width:10,height:10,borderRadius:"50%",background:"#111827" }}/>}
+                        </div>
+                      </div>
+                    </div>
+                    {errEl(errors.paymentMethod)}
+                    {paymentMethod&&(
+                      <div style={{ marginTop:10,padding:"8px 14px",background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:9,fontSize:12,color:"#166534",fontWeight:600,display:"flex",alignItems:"center",gap:8 }}>
+                        <svg width={14} height={14} fill="none" viewBox="0 0 24 24" stroke={GREEN} strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        {paymentMethod==="cash"?"You'll pay cash directly to your driver upon arrival.":"You'll pay by card directly to your driver upon arrival."}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -831,18 +950,45 @@ export default function ReservationPage() {
                   <SummaryCard title="Your Details" rows={[
                     ["Name",personal.name],["Country",personal.country],
                     ["WhatsApp",`${dialCode}${personal.whatsapp}`],["Email",personal.email],
+                    ["Payment",paymentMethod==="cash"?"💵 Cash to driver":"💳 Card to driver"],
                     ...(personal.notes?[["Notes",personal.notes] as [string,string]]:[]),
                   ]}/>
+
+                  {/* Fare breakdown */}
+                  <div style={{ border:"1px solid #e5e7eb",borderRadius:14,overflow:"hidden" }}>
+                    <div style={{ background:"#f9fafb",padding:"12px 20px",borderBottom:"1px solid #e5e7eb" }}>
+                      <span style={{ fontSize:13,fontWeight:700,color:DARK }}>Fare Breakdown</span>
+                    </div>
+                    <div style={{ padding:"4px 0" }}>
+                      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 20px",fontSize:14 }}>
+                        <span style={{ color:"#6b7280" }}>Base fare {isRoundTrip?"(×2 round trip)":""}{vehicle?.isDoubled?" (×2 9+ pax)":""}</span>
+                        <span style={{ fontWeight:600,color:DARK }}>{vehicle?.onDemand?"On Demand":vehicle?.baseRoutePrice!==null?`€${vehicle?.baseRoutePrice}`:"—"}</span>
+                      </div>
+                      {nightSurcharge>0&&(
+                        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 20px",fontSize:14,background:"#f5f3ff",borderTop:"1px dashed #ddd6fe",borderBottom:"1px dashed #ddd6fe" }}>
+                          <span style={{ color:"#7c3aed",display:"flex",alignItems:"center",gap:6,fontWeight:600 }}>
+                            <span>🌙</span> Night Surcharge (10 PM – 6 AM)
+                          </span>
+                          <span style={{ fontWeight:700,color:"#7c3aed" }}>+€{NIGHT_SURCHARGE}</span>
+                        </div>
+                      )}
+                      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 20px",fontSize:17,fontWeight:800,borderTop:"2px solid #e5e7eb" }}>
+                        <span style={{ color:DARK }}>Total</span>
+                        <span style={{ color:GREEN }}>{vehicle?.onDemand?"On Demand":`€${confirmedPrice}`}</span>
+                      </div>
+                    </div>
+                  </div>
+
                   <div style={{ background:DARK,borderRadius:14,padding:"18px 24px",display:"flex",justifyContent:"space-between",alignItems:"center" }}>
                     <div>
                       <div style={{ fontSize:13,color:"rgba(255,255,255,.45)",marginBottom:3 }}>Total Fare · {totalPax} pax · {isRoundTrip?"Round Trip":"One Way"}</div>
-                      <div style={{ fontSize:11,color:"rgba(255,255,255,.25)" }}>Fixed · incl. VAT · Pay on arrival{isRoundTrip?" · round trip ×2":""}{vehicle?.isDoubled?" · 9+ pax ×2":""}</div>
+                      <div style={{ fontSize:11,color:"rgba(255,255,255,.25)" }}>Fixed · incl. VAT · Pay on arrival{isRoundTrip?" · round trip ×2":""}{vehicle?.isDoubled?" · 9+ pax ×2":""}{nightSurcharge>0?" · incl. 🌙 night fee":""}</div>
                     </div>
                     <div style={{ textAlign:"right" }}>
                       <div style={{ fontSize:34,fontWeight:900,color:"#4ade80" }}>
                         {vehicle?.onDemand?<span style={{ fontSize:20 }}>On Demand</span>:`€${confirmedPrice}`}
                       </div>
-                      {(isRoundTrip||vehicle?.isDoubled)&&<div style={{ fontSize:10,color:"#f59e0b",marginTop:2 }}>{[isRoundTrip?"RT ×2":"",vehicle?.isDoubled?"9+pax ×2":""].filter(Boolean).join(" · ")}</div>}
+                      {(isRoundTrip||vehicle?.isDoubled||nightSurcharge>0)&&<div style={{ fontSize:10,color:"#f59e0b",marginTop:2 }}>{[isRoundTrip?"RT ×2":"",vehicle?.isDoubled?"9+pax ×2":"",nightSurcharge>0?"🌙 +€15":""].filter(Boolean).join(" · ")}</div>}
                     </div>
                   </div>
                 </div>

@@ -273,8 +273,12 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
 // ════════════════════════════════════════════════════════════════
 //  OVERVIEW
 // ════════════════════════════════════════════════════════════════
+// OverviewTab.tsx — drop-in replacement for the OverviewTab function in Dashboard.tsx
+// Paste this function in place of the existing OverviewTab function.
+
 function OverviewTab({ bookings, locations, vehicles, rates, features, categories }: any) {
   const sc: Record<string, string> = { new:"amber", confirmed:"green", cancelled:"red" };
+
   const stats = [
     { label:"Total Bookings",   val:bookings.length,                              sub:`${bookings.filter((b:any)=>b.status==="new").length} awaiting confirmation`, color:"#111827" },
     { label:"Active Locations", val:locations.filter((l:any)=>l.active).length,   sub:`of ${locations.length} total`,   color:"#2563eb" },
@@ -283,17 +287,291 @@ function OverviewTab({ bookings, locations, vehicles, rates, features, categorie
     { label:"Categories",       val:categories.filter((c:any)=>c.active).length,  sub:`${categories.length} total`,     color:"#7c3aed" },
     { label:"Features",         val:features.filter((f:any)=>f.active).length,    sub:"shown on vehicle cards",         color:"#0891b2" },
   ];
+
+  // ── Country chart data ──────────────────────────────────────
+  const countryCounts: Record<string, number> = {};
+  bookings.forEach((b: any) => {
+    const c = b.country || "Unknown";
+    countryCounts[c] = (countryCounts[c] || 0) + 1;
+  });
+  const topCountries = Object.entries(countryCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+  const maxCountryCount = topCountries[0]?.[1] || 1;
+
+  // ── Bookings by month (last 6 months) ──────────────────────
+  const now = new Date();
+  const monthLabels: string[] = [];
+  const monthData: number[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    monthLabels.push(d.toLocaleDateString("en-GB", { month: "short", year: "2-digit" }));
+    const count = bookings.filter((b: any) => {
+      if (!b.date) return false;
+      const bd = new Date(b.date);
+      return bd.getFullYear() === d.getFullYear() && bd.getMonth() === d.getMonth();
+    }).length;
+    monthData.push(count);
+  }
+  const maxMonthCount = Math.max(...monthData, 1);
+
+  // ── Top routes ──────────────────────────────────────────────
+  const routeCounts: Record<string, number> = {};
+  bookings.forEach((b: any) => {
+    if (!b.from || !b.to) return;
+    const key = `${b.from}|||${b.to}`;
+    routeCounts[key] = (routeCounts[key] || 0) + 1;
+  });
+  const topRoutes = Object.entries(routeCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([key, count]) => {
+      const [from, to] = key.split("|||");
+      return { from, to, count };
+    });
+
+  // ── Upcoming bookings (next 7 days, confirmed or new) ──────
+  const todayStr = new Date().toISOString().split("T")[0];
+  const in7 = new Date();
+  in7.setDate(in7.getDate() + 7);
+  const in7Str = in7.toISOString().split("T")[0];
+
+  const upcomingBookings = bookings
+    .filter((b: any) => b.date >= todayStr && b.date <= in7Str && b.status !== "cancelled")
+    .sort((a: any, b: any) => (a.date + a.time) > (b.date + b.time) ? 1 : -1)
+    .slice(0, 6);
+
+  const urgencyColor = (date: string) => {
+    const diff = Math.ceil((new Date(date).getTime() - new Date(todayStr).getTime()) / 86400000);
+    if (diff === 0) return { bg: "#fef2f2", border: "#fecaca", text: "#dc2626", label: "Today" };
+    if (diff === 1) return { bg: "#fff7ed", border: "#fed7aa", text: "#ea580c", label: "Tomorrow" };
+    return { bg: "#f0fdf4", border: "#bbf7d0", text: "#16a34a", label: `In ${diff}d` };
+  };
+
+  const countryBarColors = [
+    "#111827","#1f2937","#374151","#4b5563","#6b7280","#9ca3af","#d1d5db","#e5e7eb"
+  ];
+
   return (
-    <div>
-      <div style={{ display:"flex", gap:12, flexWrap:"wrap", marginBottom:24 }}>
+    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+
+      {/* ── Stat cards ── */}
+      <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
         {stats.map(s => (
-          <div key={s.label} style={{ background:"#fff", border:"1px solid #f0f0f0", borderRadius:12, padding:"16px 20px", flex:"1 1 160px" }}>
+          <div key={s.label} style={{ background:"#fff", border:"1px solid #f0f0f0", borderRadius:12, padding:"16px 20px", flex:"1 1 140px" }}>
             <div style={{ fontSize:28, fontWeight:800, color:s.color, lineHeight:1 }}>{s.val}</div>
             <div style={{ fontSize:13, fontWeight:600, color:"#111827", marginTop:6 }}>{s.label}</div>
             <div style={{ fontSize:11, color:"#9ca3af", marginTop:2 }}>{s.sub}</div>
           </div>
         ))}
       </div>
+
+      {/* ── Row: Country chart + Monthly trend ── */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+
+        {/* Bookings by Country */}
+        <div style={{ background:"#fff", border:"1px solid #f0f0f0", borderRadius:14, overflow:"hidden" }}>
+          <div style={{ padding:"14px 18px", borderBottom:"1px solid #f0f0f0", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+            <span style={{ fontWeight:700, fontSize:14, color:"#111827" }}>Bookings by Country</span>
+            <span style={{ fontSize:11, color:"#9ca3af" }}>{Object.keys(countryCounts).length} countries</span>
+          </div>
+          <div style={{ padding:"16px 18px" }}>
+            {topCountries.length === 0 ? (
+              <div style={{ textAlign:"center", color:"#9ca3af", fontSize:13, padding:24 }}>No booking data yet</div>
+            ) : (
+              <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                {topCountries.map(([country, count], i) => (
+                  <div key={country}>
+                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
+                      <span style={{ fontSize:12, fontWeight:600, color:"#374151" }}>{country}</span>
+                      <span style={{ fontSize:12, fontWeight:700, color:"#111827" }}>{count}</span>
+                    </div>
+                    <div style={{ height:7, background:"#f3f4f6", borderRadius:99, overflow:"hidden" }}>
+                      <div style={{
+                        height:"100%",
+                        width:`${(count / maxCountryCount) * 100}%`,
+                        background: countryBarColors[i] || "#e5e7eb",
+                        borderRadius:99,
+                        transition:"width .4s ease"
+                      }}/>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Monthly booking trend */}
+        <div style={{ background:"#fff", border:"1px solid #f0f0f0", borderRadius:14, overflow:"hidden" }}>
+          <div style={{ padding:"14px 18px", borderBottom:"1px solid #f0f0f0", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+            <span style={{ fontWeight:700, fontSize:14, color:"#111827" }}>Bookings — Last 6 Months</span>
+            <span style={{ fontSize:11, color:"#9ca3af" }}>{bookings.length} total</span>
+          </div>
+          <div style={{ padding:"16px 18px 8px" }}>
+            {/* Bar chart */}
+            <div style={{ display:"flex", alignItems:"flex-end", gap:6, height:120, marginBottom:8 }}>
+              {monthData.map((val, i) => {
+                const heightPct = maxMonthCount > 0 ? (val / maxMonthCount) : 0;
+                const isCurrentMonth = i === 5;
+                return (
+                  <div key={i} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
+                    <span style={{ fontSize:10, fontWeight:700, color:isCurrentMonth?"#c9a347":"#9ca3af", minHeight:16, display:"flex", alignItems:"center" }}>
+                      {val > 0 ? val : ""}
+                    </span>
+                    <div style={{
+                      width:"100%",
+                      height: Math.max(heightPct * 84, val > 0 ? 4 : 0),
+                      background: isCurrentMonth ? "#c9a347" : "#111827",
+                      borderRadius:"4px 4px 2px 2px",
+                      transition:"height .4s ease",
+                      opacity: isCurrentMonth ? 1 : 0.75
+                    }}/>
+                  </div>
+                );
+              })}
+            </div>
+            {/* X-axis labels */}
+            <div style={{ display:"flex", gap:6 }}>
+              {monthLabels.map((label, i) => (
+                <div key={i} style={{ flex:1, textAlign:"center", fontSize:10, color: i===5?"#c9a347":"#9ca3af", fontWeight: i===5?700:400 }}>
+                  {label}
+                </div>
+              ))}
+            </div>
+            {/* Status breakdown */}
+            <div style={{ display:"flex", gap:12, marginTop:14, paddingTop:12, borderTop:"1px solid #f0f0f0" }}>
+              {[
+                { label:"New",       count:bookings.filter((b:any)=>b.status==="new").length,       color:"#d97706" },
+                { label:"Confirmed", count:bookings.filter((b:any)=>b.status==="confirmed").length, color:"#16a34a" },
+                { label:"Cancelled", count:bookings.filter((b:any)=>b.status==="cancelled").length, color:"#dc2626" },
+              ].map(s => (
+                <div key={s.label} style={{ display:"flex", alignItems:"center", gap:6, fontSize:11 }}>
+                  <div style={{ width:8, height:8, borderRadius:2, background:s.color, flexShrink:0 }}/>
+                  <span style={{ color:"#6b7280" }}>{s.label}</span>
+                  <span style={{ fontWeight:700, color:"#111827" }}>{s.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Row: Top Routes + Upcoming Alerts ── */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+
+        {/* Top Routes */}
+        <div style={{ background:"#fff", border:"1px solid #f0f0f0", borderRadius:14, overflow:"hidden" }}>
+          <div style={{ padding:"14px 18px", borderBottom:"1px solid #f0f0f0" }}>
+            <span style={{ fontWeight:700, fontSize:14, color:"#111827" }}>Most Booked Routes</span>
+          </div>
+          <div style={{ padding:"8px 0" }}>
+            {topRoutes.length === 0 ? (
+              <div style={{ textAlign:"center", color:"#9ca3af", fontSize:13, padding:24 }}>No routes yet</div>
+            ) : (
+              topRoutes.map((route, i) => {
+                const maxCount = topRoutes[0]?.count || 1;
+                const pct = (route.count / maxCount) * 100;
+                const medals = ["🥇","🥈","🥉"];
+                return (
+                  <div key={i} style={{ padding:"10px 18px", borderBottom: i < topRoutes.length-1 ? "1px solid #f8f9fb" : "none" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6 }}>
+                      <span style={{ fontSize:14, flexShrink:0 }}>{medals[i] || `#${i+1}`}</span>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontSize:12, fontWeight:700, color:"#111827", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                          {route.from}
+                        </div>
+                        <div style={{ display:"flex", alignItems:"center", gap:4, fontSize:11, color:"#9ca3af", marginTop:1 }}>
+                          <span>→</span>
+                          <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{route.to}</span>
+                        </div>
+                      </div>
+                      <div style={{ flexShrink:0, textAlign:"right" }}>
+                        <div style={{ fontSize:16, fontWeight:800, color:"#111827", lineHeight:1 }}>{route.count}</div>
+                        <div style={{ fontSize:9, color:"#9ca3af", textTransform:"uppercase", letterSpacing:".06em", marginTop:1 }}>trips</div>
+                      </div>
+                    </div>
+                    <div style={{ height:4, background:"#f3f4f6", borderRadius:99, overflow:"hidden" }}>
+                      <div style={{
+                        height:"100%",
+                        width:`${pct}%`,
+                        background: i===0?"#c9a347":i===1?"#9ca3af":"#d1d5db",
+                        borderRadius:99
+                      }}/>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* Upcoming booking alerts */}
+        <div style={{ background:"#fff", border:"1px solid #f0f0f0", borderRadius:14, overflow:"hidden" }}>
+          <div style={{ padding:"14px 18px", borderBottom:"1px solid #f0f0f0", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+            <span style={{ fontWeight:700, fontSize:14, color:"#111827" }}>Upcoming — Next 7 Days</span>
+            {upcomingBookings.length > 0 && (
+              <span style={{ background:"#fee2e2", color:"#dc2626", fontSize:10, fontWeight:800, padding:"3px 9px", borderRadius:999 }}>
+                {upcomingBookings.length} trip{upcomingBookings.length !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+          <div style={{ padding:"8px 0", maxHeight:360, overflowY:"auto" }}>
+            {upcomingBookings.length === 0 ? (
+              <div style={{ textAlign:"center", color:"#9ca3af", fontSize:13, padding:24 }}>
+                <div style={{ fontSize:28, marginBottom:8 }}>🗓️</div>
+                No upcoming trips in next 7 days
+              </div>
+            ) : (
+              upcomingBookings.map((b: any, i: number) => {
+                const urg = urgencyColor(b.date);
+                const { isRoundTrip } = parseNotes(b.notes ?? "");
+                const veh = vehicles.find((v: any) => v.id === b.vehicleId);
+                return (
+                  <div key={b.id} style={{
+                    padding:"10px 18px",
+                    borderBottom: i < upcomingBookings.length-1 ? "1px solid #f8f9fb" : "none",
+                    borderLeft:`3px solid ${urg.border}`,
+                    background: i % 2 === 0 ? "#fff" : "#fafafa"
+                  }}>
+                    <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:8 }}>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:3 }}>
+                          <span style={{ fontSize:12, fontWeight:700, color:"#111827" }}>{b.name}</span>
+                          {isRoundTrip && (
+                            <span style={{ fontSize:9, background:"#fff7ed", color:"#ea580c", padding:"1px 5px", borderRadius:4, fontWeight:700, flexShrink:0 }}>RT</span>
+                          )}
+                          {b.status === "new" && (
+                            <span style={{ fontSize:9, background:"#fef3c7", color:"#d97706", padding:"1px 5px", borderRadius:4, fontWeight:700, flexShrink:0 }}>NEW</span>
+                          )}
+                        </div>
+                        <div style={{ fontSize:11, color:"#6b7280", marginBottom:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                          {b.from} → {b.to}
+                        </div>
+                        <div style={{ fontSize:10, color:"#9ca3af" }}>
+                          {veh?.name ?? b.vehicleId} · {b.passengers + b.kids} pax · {b.bags} bags
+                        </div>
+                      </div>
+                      <div style={{ flexShrink:0, textAlign:"right" }}>
+                        <div style={{
+                          fontSize:10, fontWeight:800, padding:"3px 8px", borderRadius:6,
+                          background:urg.bg, border:`1px solid ${urg.border}`, color:urg.text,
+                          marginBottom:3, whiteSpace:"nowrap"
+                        }}>
+                          {urg.label}
+                        </div>
+                        <div style={{ fontSize:11, fontWeight:600, color:"#374151" }}>{b.time}</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Recent Bookings table ── */}
       <div className="card">
         <div className="card-hdr"><span style={{ fontWeight:700, fontSize:14 }}>Recent Bookings</span></div>
         <div style={{ overflowX:"auto" }}>
@@ -301,7 +579,7 @@ function OverviewTab({ bookings, locations, vehicles, rates, features, categorie
             <thead><tr><th>Client</th><th>Route</th><th>Date & Time</th><th>Status</th></tr></thead>
             <tbody>
               {bookings.length === 0 && <tr><td colSpan={4} style={{ padding:28, textAlign:"center", color:"#9ca3af" }}>No bookings yet</td></tr>}
-              {bookings.slice(0, 8).map((b: Booking) => {
+              {bookings.slice(0, 8).map((b: any) => {
                 const { isRoundTrip } = parseNotes(b.notes ?? "");
                 return (
                   <tr key={b.id}>
