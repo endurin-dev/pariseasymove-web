@@ -335,7 +335,19 @@ export default function ReservationPage() {
       });
       if (res.ok) {
         const b=await res.json();
-        setBookingRef((b.id??"PEM-"+Date.now().toString(36)).toUpperCase());
+        const ref = (b.id??"PEM-"+Date.now().toString(36)).toUpperCase();
+        setBookingRef(ref);
+
+        // ── Google Ads: Booking Confirmed ──────────────────────
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event: "booking_confirmed",
+          booking_id: ref,
+          value: confirmedPrice,
+          currency: "EUR",
+        });
+        // ── End Google Ads ─────────────────────────────────────
+
         setDone(true);
       } else { alert("Something went wrong. Please try again."); }
     } catch { alert("Network error. Please try again."); }
@@ -483,7 +495,6 @@ export default function ReservationPage() {
               </div>
             )}
 
-            {/* Night surcharge indicator in sidebar */}
             {nightSurcharge>0&&(
               <div style={{ marginBottom:16,padding:"8px 12px",borderRadius:9,background:"rgba(99,102,241,.15)",border:"1px solid rgba(99,102,241,.3)",fontSize:12,fontWeight:700,color:"#a5b4fc",display:"flex",alignItems:"center",gap:6 }}>
                 <span className="rp-night-star">🌙</span>
@@ -575,7 +586,6 @@ export default function ReservationPage() {
               {/* ══ STEP 0 ══ */}
               {step===0&&(
                 <div style={{ display:"flex",flexDirection:"column",gap:20 }}>
-                  {/* Trip type */}
                   <div>
                     <label style={S.label}>Trip Type</label>
                     <div className="rp-trip-toggle">
@@ -593,7 +603,6 @@ export default function ReservationPage() {
                     )}
                   </div>
 
-                  {/* Pickup / Dropoff */}
                   <div>
                     <label style={S.label}>Pickup Location <span style={{ color:GREEN }}>*</span></label>
                     <LocationSelect value={trip.fromId} onChange={setFrom} locations={locations} placeholder="Select pickup location…" error={errors.from} excludeId={trip.toId}/>
@@ -603,7 +612,6 @@ export default function ReservationPage() {
                     <LocationSelect value={trip.toId} onChange={setTo} locations={locations} placeholder="Select drop-off location…" error={errors.to} excludeId={trip.fromId}/>
                   </div>
 
-                  {/* Flight / Train */}
                   {showFlightBox&&(
                     <div>
                       <label style={S.label}>✈️ {flightLabel} <span style={{ fontSize:11,color:"#9ca3af",fontWeight:400 }}>(optional)</span></label>
@@ -613,7 +621,6 @@ export default function ReservationPage() {
                     </div>
                   )}
 
-                  {/* Address */}
                   {showAddressBox&&(
                     <div>
                       <label style={S.label}>📍 {addressLabel} <span style={{ fontSize:11,color:"#9ca3af",fontWeight:400 }}>(optional)</span></label>
@@ -623,7 +630,6 @@ export default function ReservationPage() {
                     </div>
                   )}
 
-                  {/* Date / Time */}
                   <div className="rp-grid">
                     {field(<>
                       <label style={S.label}>Travel Date <span style={{ color:GREEN }}>*</span></label>
@@ -638,7 +644,6 @@ export default function ReservationPage() {
                         <input type="time" value={trip.time} onChange={e=>setTrip(t=>({...t,time:e.target.value}))} style={S.input}/>
                       </div>
                       {errEl(errors.time)}
-                      {/* Night surcharge banner — shows right under the time picker */}
                       {isNightTime(trip.time)&&(
                         <div className="rp-night-banner" style={{ marginTop:10 }}>
                           <div style={{ fontSize:26,flexShrink:0,lineHeight:1 }} className="rp-night-star">🌙</div>
@@ -657,14 +662,12 @@ export default function ReservationPage() {
                     </>)}
                   </div>
 
-                  {/* Counters */}
                   <div className="rp-grid">
                     {counter("passengers",1,16,"Passengers")}
                     {counter("kids",0,6,"Children (under 12)")}
                     {counter("bags",0,16,"Luggage Bags")}
                   </div>
 
-                  {/* 9+ notice */}
                   {totalPax>=9&&(
                     <div style={{ background:"linear-gradient(135deg,#fffbeb,#fef3c7)",border:"1.5px solid #fcd34d",borderRadius:12,padding:"12px 16px",display:"flex",alignItems:"center",gap:12 }}>
                       <span style={{ fontSize:22,flexShrink:0 }}>⚡</span>
@@ -675,7 +678,6 @@ export default function ReservationPage() {
                     </div>
                   )}
 
-                  {/* Suggestion */}
                   {totalPax>0&&totalPax<9&&(()=>{
                     const fits=vehiclesWithPrice.filter(v=>!v.paxExceeded&&!v.lugExceeded);
                     const smallest=fits.sort((a,b)=>a.maxPassengers-b.maxPassengers)[0];
@@ -720,7 +722,6 @@ export default function ReservationPage() {
                     </div>
                   )}
 
-                  {/* Night surcharge notice on vehicle step */}
                   {nightSurcharge>0&&(
                     <div className="rp-night-banner">
                       <div style={{ fontSize:22,flexShrink:0 }} className="rp-night-star">🌙</div>
@@ -873,21 +874,13 @@ export default function ReservationPage() {
                   </div>
                   {field(<><label style={S.label}>Special Requests <span style={{ fontSize:12,color:"#9ca3af",fontWeight:400 }}>(optional)</span></label><textarea rows={4} placeholder="Return date/time for round trip, flight number, special assistance…" value={personal.notes} onChange={e=>setPersonal(p=>({...p,notes:e.target.value}))} style={{ width:"100%",border:"1.5px solid #e5e7eb",borderRadius:10,padding:"12px 14px",fontSize:14,color:DARK,resize:"none",outline:"none",fontFamily:"inherit",boxSizing:"border-box" }}/></>)}
 
-                  {/* ── Payment Method ── */}
                   <div>
                     <label style={{ ...S.label,marginBottom:10 }}>
                       Payment Method <span style={{ color:GREEN }}>*</span>
                     </label>
                     <div style={{ display:"flex",gap:12,flexWrap:"wrap" }}>
-                      {/* Cash option */}
-                      <div
-                        className={`rp-payment-opt${paymentMethod==="cash"?" selected":""}`}
-                        onClick={()=>setPaymentMethod("cash")}
-                        style={{ border:`2px solid ${paymentMethod==="cash"?"#111827":"#e5e7eb"}` }}
-                      >
-                        <div style={{ width:44,height:44,borderRadius:12,background:paymentMethod==="cash"?"#111827":"#f3f4f6",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"background .2s",fontSize:22 }}>
-                          💵
-                        </div>
+                      <div className={`rp-payment-opt${paymentMethod==="cash"?" selected":""}`} onClick={()=>setPaymentMethod("cash")} style={{ border:`2px solid ${paymentMethod==="cash"?"#111827":"#e5e7eb"}` }}>
+                        <div style={{ width:44,height:44,borderRadius:12,background:paymentMethod==="cash"?"#111827":"#f3f4f6",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"background .2s",fontSize:22 }}>💵</div>
                         <div style={{ flex:1,minWidth:0 }}>
                           <div style={{ fontSize:14,fontWeight:700,color:DARK,marginBottom:2 }}>Cash to Driver</div>
                           <div style={{ fontSize:11,color:"#6b7280",lineHeight:1.4 }}>Pay in cash on arrival — no card needed</div>
@@ -896,16 +889,8 @@ export default function ReservationPage() {
                           {paymentMethod==="cash"&&<div style={{ width:10,height:10,borderRadius:"50%",background:"#111827" }}/>}
                         </div>
                       </div>
-
-                      {/* Card option */}
-                      <div
-                        className={`rp-payment-opt${paymentMethod==="card"?" selected":""}`}
-                        onClick={()=>setPaymentMethod("card")}
-                        style={{ border:`2px solid ${paymentMethod==="card"?"#111827":"#e5e7eb"}` }}
-                      >
-                        <div style={{ width:44,height:44,borderRadius:12,background:paymentMethod==="card"?"#111827":"#f3f4f6",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"background .2s",fontSize:22 }}>
-                          💳
-                        </div>
+                      <div className={`rp-payment-opt${paymentMethod==="card"?" selected":""}`} onClick={()=>setPaymentMethod("card")} style={{ border:`2px solid ${paymentMethod==="card"?"#111827":"#e5e7eb"}` }}>
+                        <div style={{ width:44,height:44,borderRadius:12,background:paymentMethod==="card"?"#111827":"#f3f4f6",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"background .2s",fontSize:22 }}>💳</div>
                         <div style={{ flex:1,minWidth:0 }}>
                           <div style={{ fontSize:14,fontWeight:700,color:DARK,marginBottom:2 }}>Card to Driver</div>
                           <div style={{ fontSize:11,color:"#6b7280",lineHeight:1.4 }}>Pay by card on arrival — Visa, Mastercard accepted</div>
@@ -954,7 +939,6 @@ export default function ReservationPage() {
                     ...(personal.notes?[["Notes",personal.notes] as [string,string]]:[]),
                   ]}/>
 
-                  {/* Fare breakdown */}
                   <div style={{ border:"1px solid #e5e7eb",borderRadius:14,overflow:"hidden" }}>
                     <div style={{ background:"#f9fafb",padding:"12px 20px",borderBottom:"1px solid #e5e7eb" }}>
                       <span style={{ fontSize:13,fontWeight:700,color:DARK }}>Fare Breakdown</span>

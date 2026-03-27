@@ -1,4 +1,15 @@
+"use client";
+
 export default function Contact() {
+  const handlePhoneClick = () => {
+    // ── Google Ads: Generate Lead (phone click) ──
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: "generate_lead",
+    });
+    // ── End Google Ads ───────────────────────────
+  };
+
   return (
     <section className="bg-navy text-white">
       <div className="max-w-5xl mx-auto px-6 text-center">
@@ -7,7 +18,7 @@ export default function Contact() {
         </h2>
 
         <p className="text-lg md:text-xl leading-relaxed max-w-4xl mx-auto mb-12">
-          Connect with us and let’s chat! Whether you’re searching for <strong>cheap taxi services near me</strong>, need details about the <strong>cost of a taxi to the airport</strong>, or want to book a <strong>24/7 taxi service</strong>, we’re here to help. Send us a message on your favorite social media platform, drop us an email, or call us directly to discuss your needs for <strong>Paris airport transfer</strong>, <strong>wheelchair taxi services near me</strong>, or private taxi service near me.
+          Connect with us and let's chat! Whether you're searching for <strong>cheap taxi services near me</strong>, need details about the <strong>cost of a taxi to the airport</strong>, or want to book a <strong>24/7 taxi service</strong>, we're here to help. Send us a message on your favorite social media platform, drop us an email, or call us directly to discuss your needs for <strong>Paris airport transfer</strong>, <strong>wheelchair taxi services near me</strong>, or private taxi service near me.
         </p>
 
         <p className="mb-8">
@@ -22,9 +33,11 @@ export default function Contact() {
           </a>.
         </p>
 
+        {/* ── Phone number fires generate_lead on click ── */}
         <a
           href="tel:+33652466694"
           className="text-4xl md:text-5xl font-bold text-gold hover:text-gold-light transition block mb-12"
+          onClick={handlePhoneClick}
         >
           +33 6 52 46 66 94
         </a>

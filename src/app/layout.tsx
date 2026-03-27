@@ -3,6 +3,7 @@ import "@/app/globals.css";
 import { Inter, Montserrat } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import PageViewTracker from "@/components/PageViewTracker";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -117,6 +118,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           />
         </noscript>
         {/* ── End Google Tag Manager (noscript) ── */}
+
+        {/* ── Page View Tracker (fires dataLayer on every route change) ── */}
+        <PageViewTracker />
+        {/* ── End Page View Tracker ── */}
 
         {/* ✅ Schema Markup (VERY IMPORTANT FOR SEO) */}
         <script
