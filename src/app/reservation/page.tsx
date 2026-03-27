@@ -308,52 +308,98 @@ export default function ReservationPage() {
   const next = () => { if (validate()) setStep(s=>s+1); };
   const back = () => { setStep(s=>s-1); setErrors({}); };
 
+  // ── SUBMIT — saves booking THEN sends emails ──────────────────
   const submit = async () => {
     setSending(true);
-    const code=COUNTRY_CODES[personal.country]??"";
-    const rawNumber=personal.whatsapp.trim().replace(/^\+\d{1,4}\s?/,"");
-    const fullWhatsapp=code?`${code}${rawNumber}`:personal.whatsapp;
+    const code = COUNTRY_CODES[personal.country] ?? "";
+    const rawNumber = personal.whatsapp.trim().replace(/^\+\d{1,4}\s?/, "");
+    const fullWhatsapp = code ? `${code}${rawNumber}` : personal.whatsapp;
+
     try {
-      const res=await fetch("/api/bookings",{
-        method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-          fromLocId:trip.fromId,toLocId:trip.toId,
-          date:trip.date,time:trip.time,
-          passengers:trip.passengers,kids:trip.kids,bags:trip.bags,
-          vehicleId,name:personal.name,country:personal.country,
-          whatsapp:fullWhatsapp,email:personal.email,
-          notes:[
-            trip.tripType==="round-trip"?"ROUND TRIP":"",
-            trip.flightOrTrain?`Flight/Train: ${trip.flightOrTrain}`:"",
-            trip.dropoffAddress?`Address: ${trip.dropoffAddress}`:"",
-            nightSurcharge>0?"NIGHT SURCHARGE (+€15)":"",
-            `Payment: ${paymentMethod==="cash"?"Cash to driver":"Card to driver"}`,
+      // Step 1 — Save booking to database
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fromLocId: trip.fromId, toLocId: trip.toId,
+          date: trip.date, time: trip.time,
+          passengers: trip.passengers, kids: trip.kids, bags: trip.bags,
+          vehicleId,
+          name: personal.name, country: personal.country,
+          whatsapp: fullWhatsapp, email: personal.email,
+          notes: [
+            trip.tripType === "round-trip" ? "ROUND TRIP" : "",
+            trip.flightOrTrain ? `Flight/Train: ${trip.flightOrTrain}` : "",
+            trip.dropoffAddress ? `Address: ${trip.dropoffAddress}` : "",
+            nightSurcharge > 0 ? "NIGHT SURCHARGE (+€15)" : "",
+            `Payment: ${paymentMethod === "cash" ? "Cash to driver" : "Card to driver"}`,
             personal.notes,
           ].filter(Boolean).join(" | "),
-          status:"new",
+          status: "new",
         }),
       });
+
       if (res.ok) {
-        const b=await res.json();
-        const ref = (b.id??"PEM-"+Date.now().toString(36)).toUpperCase();
+        const b = await res.json();
+        const ref = (b.id ?? "PEM-" + Date.now().toString(36)).toUpperCase();
         setBookingRef(ref);
 
-        // ── Google Ads: Booking Confirmed ──────────────────────
-      const dataLayer = (window as any).dataLayer || [];
-  (window as any).dataLayer = dataLayer;
+        // Step 2 — Send confirmation emails (customer + admin)
+        try {
+          await fetch("/api/send-booking-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              bookingRef: ref,
+              name: personal.name,
+              email: personal.email,
+              country: personal.country,
+              whatsapp: fullWhatsapp,
+              fromName: trip.fromName,
+              toName: trip.toName,
+              date: trip.date,
+              time: trip.time,
+              passengers: trip.passengers,
+              kids: trip.kids,
+              bags: trip.bags,
+              vehicleName: vehicle?.name ?? "",
+              vehicleModel: vehicle?.model ?? "",
+              isRoundTrip,
+              flightTrain: trip.flightOrTrain,
+              address: trip.dropoffAddress,
+              notes: personal.notes,
+              nightSurcharge,
+              basePrice: vehicle?.baseRoutePrice ?? null,
+              totalPrice: confirmedPrice,
+              onDemand: vehicle?.onDemand ?? false,
+              paymentMethod,
+            }),
+          });
+        } catch (emailErr) {
+          // Email failed but booking was saved — don't block the user
+          console.error("Email send failed:", emailErr);
+        }
 
-  dataLayer.push({
-    event: "booking_confirmed",
-    booking_id: ref,
+        // Step 3 — Google Ads conversion tracking
+        const dataLayer = (window as any).dataLayer || [];
+        (window as any).dataLayer = dataLayer;
+        dataLayer.push({
+          event: "booking_confirmed",
+          booking_id: ref,
           value: confirmedPrice,
           currency: "EUR",
         });
-        // ── End Google Ads ─────────────────────────────────────
 
+        // Step 4 — Show success screen
         setDone(true);
-      } else { alert("Something went wrong. Please try again."); }
-    } catch { alert("Network error. Please try again."); }
-    finally { setSending(false); }
+      } else {
+        alert("Something went wrong saving your booking. Please try again.");
+      }
+    } catch {
+      alert("Network error. Please try again.");
+    } finally {
+      setSending(false);
+    }
   };
 
   const S: Record<string,React.CSSProperties> = {
@@ -378,9 +424,9 @@ export default function ReservationPage() {
     </div>
   );
 
-  const dialCode = COUNTRY_CODES[personal.country]??"";
+  const dialCode = COUNTRY_CODES[personal.country] ?? "";
 
-  // ── DONE ─────────────────────────────────────────────────────
+  // ── DONE SCREEN ───────────────────────────────────────────────
   if (done) return (
     <div style={{ display:"flex",alignItems:"center",justifyContent:"center",padding:40,background:"#f4f5f7",minHeight:"60vh" }}>
       <div style={{ maxWidth:520,width:"100%",background:"#fff",borderRadius:20,boxShadow:"0 8px 40px rgba(0,0,0,0.10)",padding:"48px 40px",textAlign:"center" }}>
