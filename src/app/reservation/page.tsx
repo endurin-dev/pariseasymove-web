@@ -339,10 +339,12 @@ export default function ReservationPage() {
         setBookingRef(ref);
 
         // ── Google Ads: Booking Confirmed ──────────────────────
-        window.dataLayer = window.dataLayer || [];
-        window.dataLayer.push({
-          event: "booking_confirmed",
-          booking_id: ref,
+      const dataLayer = (window as any).dataLayer || [];
+  (window as any).dataLayer = dataLayer;
+
+  dataLayer.push({
+    event: "booking_confirmed",
+    booking_id: ref,
           value: confirmedPrice,
           currency: "EUR",
         });

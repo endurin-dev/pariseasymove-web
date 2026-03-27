@@ -1,14 +1,16 @@
 "use client";
 
 export default function Contact() {
-  const handlePhoneClick = () => {
-    // ── Google Ads: Generate Lead (phone click) ──
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({
-      event: "generate_lead",
-    });
-    // ── End Google Ads ───────────────────────────
-  };
+const handlePhoneClick = () => {
+  // ── Google Ads: Generate Lead (phone click) ──
+  const dataLayer = (window as any).dataLayer || [];
+  (window as any).dataLayer = dataLayer;
+
+  dataLayer.push({
+    event: "generate_lead",
+  });
+  // ── End Google Ads ───────────────────────────
+};
 
   return (
     <section className="bg-navy text-white">
