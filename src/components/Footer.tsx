@@ -444,8 +444,8 @@ export default function Footer() {
               </div>
               <div>
                 <div className="ft-contact-label">Address</div>
-                <div className="ft-contact-value">10 rue Pierre Sarrazin</div>
-                <div style={{ fontSize: 11, color: "rgba(245,240,232,0.4)", marginTop: 2 }}>95190 Goussainville · CDG Airport · Paris, France</div>
+                <div className="ft-contact-value">11 square de l’avre, </div>
+                <div style={{ fontSize: 11, color: "rgba(245,240,232,0.4)", marginTop: 2 }}>92100 Boulogne-Billancourt, France</div>
               </div>
             </div>
             <a href="tel:+33652466694" className="ft-contact-item">

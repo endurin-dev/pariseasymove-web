@@ -19,90 +19,159 @@ export default function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Close menu on route change
   useEffect(() => { setIsOpen(false); }, [pathname]);
 
   const t = {
-    en: { home: "Home", disney: "DisneyLand", rates: "Rates", reservation: "Reservation", contact: "Contact", bookNow: "Reserve Now", callUs: "Speak With Us" },
-    fr: { home: "Accueil", disney: "DisneyLand", rates: "Tarifs", reservation: "Réservation", contact: "Contact", bookNow: "Réserver", callUs: "Contactez-nous" },
+    en: { home: "Home", disney: "DisneyLand", rates: "Rates", blog: "Blog", reservation: "Reservation", contact: "Contact", bookNow: "Reserve Now", callUs: "Speak With Us" },
+    fr: { home: "Accueil", disney: "DisneyLand", rates: "Tarifs", blog: "Blog", reservation: "Réservation", contact: "Contact", bookNow: "Réserver", callUs: "Contactez-nous" },
   };
 
   const navLinks = [
-    { href: "/", label: t[lang].home, disney: false },
-    { href: "/disney", label: t[lang].disney, disney: true },
-    { href: "/rates", label: t[lang].rates, disney: false },
-    { href: "/reservation", label: t[lang].reservation, disney: false },
-    { href: "/contact-us", label: t[lang].contact, disney: false },
+    { href: "/", label: t[lang].home, disney: false, blog: false },
+    { href: "/disney", label: t[lang].disney, disney: true, blog: false },
+    { href: "/rates", label: t[lang].rates, disney: false, blog: false },
+    { href: "/reservation", label: t[lang].reservation, disney: false, blog: false },
+    { href: "/blog", label: t[lang].blog, disney: false, blog: true },
+    { href: "/contact-us", label: t[lang].contact, disney: false, blog: false },
   ];
 
-  const GOLD = "#c9a347";
-  const TEXT = "#f8f8f8";
-  const TEXT_DIM = "rgba(248,248,248,0.78)";
-  const BORDER = "rgba(255,255,255,0.085)";
-  const SURFACE = "rgba(255,255,255,0.035)";
+  // ── Brand colors pulled from the PEM logo ──────────────────────────────
+  // Logo: deep teal bg (#0d3d4a / #0a2e38), crisp white letterforms, dark navy base
+  const TEAL_DEEP   = "#0d3d4a";   // dominant logo bg teal
+  const TEAL_MID    = "#0f4d5e";   // slightly lighter teal for hover surfaces
+  const TEAL_GLOW   = "rgba(13,61,74,0.55)"; // translucent teal for backdrops
+  const WHITE       = "#f4f8f9";   // crisp off-white matching logo text
+  const WHITE_DIM   = "rgba(244,248,249,0.7)";
+  const BORDER      = "rgba(244,248,249,0.1)";
+  const BORDER_MID  = "rgba(244,248,249,0.18)";
+  const ACCENT      = "#7ecfdf";   // light teal highlight (drawn from lighter tones in logo gradient)
+  const SURFACE     = "rgba(13,61,74,0.35)";
+
+  const isBlogActive = pathname === "/blog" || pathname.startsWith("/blog/");
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Montserrat:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=Montserrat:wght@400;500;600;700&display=swap');
 
-        /* ── Logo & Global Animations ── */
-        .h-logo-container { position: relative; transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1); }
-        .h-logo-ring {
-          position: absolute; inset: -4px; border: 1px solid rgba(201,163,71,0.3);
-          border-radius: 50%; animation: logo-pulse 4s infinite ease-in-out;
+        /* ── Logo image ── */
+        .h-logo-wrap {
+          position: relative;
+          overflow: hidden;
+          border-radius: 4px;
+          transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+          /* Subtle teal glow matching the logo's deep teal bg */
+          box-shadow: 0 0 0 1px rgba(126,207,223,0.18), 0 4px 20px rgba(13,61,74,0.5);
         }
-        @keyframes logo-pulse {
-          0%, 100% { opacity: 0.4; transform: scale(1); }
-          50% { opacity: 0.8; transform: scale(1.08); border-color: rgba(201,163,71,0.6); }
+        .h-logo-wrap:hover {
+          box-shadow: 0 0 0 1px rgba(126,207,223,0.35), 0 6px 28px rgba(13,61,74,0.8);
+          transform: translateY(-1px);
         }
-        .h-shimmer-effect {
+        /* Shimmer sweep across logo on hover */
+        .h-logo-wrap::after {
+          content: '';
           position: absolute; inset: 0;
-          background: linear-gradient(135deg, transparent 45%, rgba(255,255,255,0.3) 50%, transparent 55%);
-          background-size: 300% 300%; animation: shimmer 6s infinite linear;
-          pointer-events: none; z-index: 2;
+          background: linear-gradient(110deg, transparent 30%, rgba(126,207,223,0.22) 50%, transparent 70%);
+          background-size: 250% 100%;
+          background-position: 200% 0;
+          transition: background-position 0.55s ease;
+          pointer-events: none;
+          z-index: 2;
         }
-        @keyframes shimmer {
-          0% { background-position: -200% -200%; }
-          100% { background-position: 200% 200%; }
-        }
+        .h-logo-wrap:hover::after { background-position: -50% 0; }
 
         /* ── Nav links ── */
         .h-navlink-u {
-          position: relative; font-family: 'Cormorant Garamond', serif;
-          font-size: 16px; font-weight: 500; color: rgba(248,248,248,0.78);
-          text-decoration: none; padding: 6px 14px; letter-spacing: 0.05em;
-          border-radius: 6px; white-space: nowrap; transition: all 0.3s ease;
+          position: relative;
+          font-family: 'Cinzel', serif;
+          font-size: 11.5px; font-weight: 500;
+          color: ${WHITE_DIM};
+          text-decoration: none; padding: 7px 15px;
+          letter-spacing: 0.09em; text-transform: uppercase;
+          border-radius: 5px; white-space: nowrap;
+          transition: all 0.28s ease;
         }
         .h-navlink-u::after {
-          content: ''; position: absolute; width: 0; height: 1px; bottom: 4px; left: 50%;
-          background: #c9a347; transition: width 0.4s ease; transform: translateX(-50%);
+          content: ''; position: absolute; width: 0; height: 1px;
+          bottom: 3px; left: 50%;
+          background: ${ACCENT}; transition: width 0.35s ease;
+          transform: translateX(-50%);
         }
-        .h-navlink-u:hover { background: rgba(255,255,255,0.035); color: #f8f8f8; }
-        .h-navlink-u:hover::after { width: 65%; }
+        .h-navlink-u:hover { background: rgba(126,207,223,0.07); color: ${WHITE}; }
+        .h-navlink-u:hover::after { width: 60%; }
+
+        /* ── Blog link ── */
+        .h-blog-link {
+          position: relative; font-family: 'Cinzel', serif;
+          font-size: 11.5px; font-weight: 500; color: ${WHITE_DIM};
+          text-decoration: none; padding: 7px 15px; letter-spacing: 0.09em;
+          text-transform: uppercase; border-radius: 5px; white-space: nowrap;
+          transition: all 0.28s ease; display: inline-flex; align-items: center; gap: 7px;
+        }
+        .h-blog-link::after {
+          content: ''; position: absolute; width: 0; height: 1px;
+          bottom: 3px; left: 50%;
+          background: ${ACCENT}; transition: width 0.35s ease; transform: translateX(-50%);
+        }
+        .h-blog-link:hover { background: rgba(126,207,223,0.07); color: ${WHITE}; }
+        .h-blog-link:hover::after { width: 60%; }
+        .h-blog-link.active { color: ${ACCENT}; }
+        .h-blog-link.active::after { width: 60%; }
+        .h-blog-dot {
+          width: 5px; height: 5px; border-radius: 50%;
+          background: ${ACCENT}; opacity: 0.8; flex-shrink: 0;
+          animation: blog-dot-pulse 3s infinite ease-in-out;
+        }
+        @keyframes blog-dot-pulse {
+          0%, 100% { opacity: 0.5; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.35); }
+        }
 
         /* ── Disney ── */
         .h-disney-link {
           position: relative; font-family: 'Cinzel Decorative', cursive;
-          font-size: 11px; font-weight: 400; text-decoration: none;
-          padding: 7px 16px; letter-spacing: 0.08em; white-space: nowrap;
-          border-radius: 8px; transition: all 0.3s ease; color: #ff9540;
-          background: rgba(255,140,50,0.07); border: 1px solid rgba(255,140,50,0.25);
+          font-size: 10px; font-weight: 400; text-decoration: none;
+          padding: 7px 16px; letter-spacing: 0.07em; white-space: nowrap;
+          border-radius: 6px; transition: all 0.3s ease; color: #ffb06a;
+          background: rgba(255,160,80,0.07); border: 1px solid rgba(255,160,80,0.22);
         }
-        .h-disney-link:hover { background: rgba(255,140,50,0.13); color: #ffb870; transform: translateY(-1px); }
+        .h-disney-link:hover { background: rgba(255,160,80,0.13); color: #ffc990; transform: translateY(-1px); }
 
-        /* ── CTA Button ── */
+        /* ── CTA Button — teal-to-teal gradient from logo palette ── */
         .h-book-btn {
-          transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1) !important;
+          transition: all 0.38s cubic-bezier(0.23, 1, 0.32, 1) !important;
           position: relative; overflow: hidden;
+          background: linear-gradient(135deg, #0f5060 0%, #0d3d4a 60%, #0a2e38 100%) !important;
+          border: 1px solid rgba(126,207,223,0.35) !important;
         }
-        .h-book-btn:hover {
-          background: #e8c97a !important; transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(201,163,71,0.4) !important;
+        .h-book-btn::before {
+          content: '';
+          position: absolute; inset: 0;
+          background: linear-gradient(135deg, rgba(126,207,223,0.15) 0%, transparent 60%);
+          opacity: 0; transition: opacity 0.3s ease;
         }
+        .h-book-btn:hover { transform: translateY(-2px) !important; box-shadow: 0 8px 28px rgba(13,61,74,0.7), 0 0 0 1px rgba(126,207,223,0.5) !important; }
+        .h-book-btn:hover::before { opacity: 1; }
+
+        /* ── Lang toggle ── */
+        .h-lang-btn-s {
+          background: none; border: none; padding: 5px 11px;
+          font-family: 'Montserrat', sans-serif;
+          font-size: 10.5px; font-weight: 600; color: ${WHITE_DIM};
+          cursor: pointer; text-transform: uppercase; letter-spacing: 0.1em;
+          transition: all 0.22s;
+        }
+        .h-lang-btn-s.active { background: rgba(126,207,223,0.14); color: ${ACCENT}; border-radius: 5px; }
+
+        /* ── Call pulse ── */
+        @keyframes h-pulse { 0%,100%{box-shadow:0 0 5px rgba(26,140,100,0.4)} 50%{box-shadow:0 0 14px rgba(26,140,100,0.75)} }
+
+        /* ── Divider ── */
+        @media (max-width: 1079px) { .h-desktop { display: none !important; } }
+        @media (min-width: 1080px) { .h-mobile-btn { display: none !important; } }
 
         /* ── Burger ── */
-        .h-burger-line { height: 1.8px; background: rgba(248,248,248,0.78); border-radius: 1px; transition: all 0.4s cubic-bezier(0.23,1,0.32,1); display: block; }
+        .h-burger-line { height: 1.8px; background: ${WHITE_DIM}; border-radius: 1px; transition: all 0.4s cubic-bezier(0.23,1,0.32,1); display: block; }
         .h-burger-line:nth-child(1) { width: 22px; }
         .h-burger-line:nth-child(2) { width: 15px; }
         .h-burger-line:nth-child(3) { width: 22px; }
@@ -110,111 +179,139 @@ export default function Header() {
         .h-burger-open .h-burger-line:nth-child(2) { opacity: 0; width: 0; transform: scaleX(0); }
         .h-burger-open .h-burger-line:nth-child(3) { transform: translateY(-7px) rotate(-45deg); width: 22px; }
 
-        .h-lang-btn-s {
-          background: none; border: none; padding: 5px 11px; font-family: 'Montserrat', sans-serif;
-          font-size: 10.8px; font-weight: 600; color: rgba(248,248,248,0.78); cursor: pointer;
-          text-transform: uppercase; letter-spacing: 0.09em; transition: all 0.2s;
-        }
-        .h-lang-btn-s.active { background: rgba(201,163,71,0.16); color: #c9a347; border-radius: 5px; }
-
-        @keyframes h-pulse { 0%,100%{box-shadow:0 0 6px rgba(26,107,82,0.35)} 50%{box-shadow:0 0 16px rgba(26,107,82,0.7)} }
-        @media (max-width: 1079px) { .h-desktop { display: none !important; } }
-        @media (min-width: 1080px) { .h-mobile-btn { display: none !important; } }
-
-        /* ── Drawer ── */
+        /* ── Mobile Drawer ── */
         .h-drawer { position: fixed; inset: 0; z-index: 9998; display: flex; }
-        .h-drawer-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); animation: fadeIn 0.3s ease both; }
-        .h-drawer-panel { position: relative; z-index: 1; width: min(340px, 88vw); height: 100%; background: #0a0a0a; border-right: 1px solid rgba(201,163,71,0.15); display: flex; flex-direction: column; animation: slideIn 0.35s cubic-bezier(0.22,1,0.36,1) both; overflow-y: auto; }
+        .h-drawer-backdrop { position: absolute; inset: 0; background: rgba(5,18,22,0.75); backdrop-filter: blur(6px); animation: fadeIn 0.3s ease both; }
+        .h-drawer-panel { position: relative; z-index: 1; width: min(340px, 88vw); height: 100%; background: #050f12; border-right: 1px solid rgba(126,207,223,0.12); display: flex; flex-direction: column; animation: slideIn 0.35s cubic-bezier(0.22,1,0.36,1) both; overflow-y: auto; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
-        .h-drawer-top { padding: 28px 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; }
-        .h-drawer-logo-name { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 600; color: #f8f8f8; line-height: 1; }
-        .h-drawer-nav { padding: 16px 0; flex: 1; }
-        .h-drawer-link { display: flex; align-items: center; gap: 12px; padding: 14px 24px; font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 500; color: rgba(248,248,248,0.75); text-decoration: none; border-left: 3px solid transparent; transition: all 0.22s; }
-        .h-drawer-link:hover { color: #f8f8f8; background: rgba(255,255,255,0.04); border-left-color: rgba(201,163,71,0.4); }
-        .h-drawer-bottom { padding: 20px 24px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; gap: 12px; }
+        .h-drawer-top { padding: 28px 24px 22px; border-bottom: 1px solid rgba(126,207,223,0.1); display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .h-drawer-nav { padding: 12px 0; flex: 1; }
+        .h-drawer-link { display: flex; align-items: center; gap: 12px; padding: 14px 24px; font-family: 'Cinzel', serif; font-size: 13px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(244,248,249,0.7); text-decoration: none; border-left: 3px solid transparent; transition: all 0.22s; }
+        .h-drawer-link:hover { color: ${WHITE}; background: rgba(126,207,223,0.05); border-left-color: rgba(126,207,223,0.4); }
+        .h-drawer-link.blog-active { color: ${ACCENT}; border-left-color: rgba(126,207,223,0.5); background: rgba(126,207,223,0.04); }
+        .h-drawer-bottom { padding: 20px 24px; border-top: 1px solid rgba(126,207,223,0.1); display: flex; flex-direction: column; gap: 12px; }
       `}</style>
 
       <header style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
-        background: scrolled ? "rgba(10,10,10,0.75)" : "#0a0a0a",
-        backdropFilter: scrolled ? "blur(20px)" : "none",
-        WebkitBackdropFilter: scrolled ? "blur(20px)" : "none",
-        borderBottom: `1px solid ${scrolled ? "rgba(201,163,71,0.2)" : BORDER}`,
-        boxShadow: scrolled ? "0 10px 40px rgba(0,0,0,0.5)" : "none",
+        background: scrolled
+          ? "rgba(5,18,22,0.82)"
+          : "#050f12",
+        backdropFilter: scrolled ? "blur(22px)" : "none",
+        WebkitBackdropFilter: scrolled ? "blur(22px)" : "none",
+        borderBottom: `1px solid ${scrolled ? "rgba(126,207,223,0.18)" : BORDER}`,
+        boxShadow: scrolled ? `0 8px 36px rgba(5,18,22,0.7), inset 0 -1px 0 rgba(126,207,223,0.1)` : "none",
         transition: "all 0.4s cubic-bezier(0.23, 1, 0.32, 1)",
       }}>
-        <div style={{ 
-          maxWidth: 1520, margin: "0 auto", padding: "0 4vw", 
-          height: scrolled ? 76 : 92, 
-          display: "flex", alignItems: "center", justifyContent: "space-between", 
-          boxSizing: "border-box", transition: "height 0.4s ease" 
+        <div style={{
+          maxWidth: 1520, margin: "0 auto", padding: "0 4vw",
+          height: scrolled ? 74 : 90,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          boxSizing: "border-box", transition: "height 0.4s ease",
         }}>
 
-          {/* ── Logo ── */}
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none" }}>
-            <div className="h-logo-container" style={{ width: scrolled ? 40 : 48, height: scrolled ? 40 : 48, transition: "all 0.4s ease" }}>
-              <div className="h-logo-ring" />
-              <div style={{ position: "relative", width: "100%", height: "100%", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.05)" }}>
-                <div className="h-shimmer-effect" />
-                <Image 
-                  src="/images/logo.webp" 
-                  alt="Paris Easy Move Logo" 
-                  fill 
-                  sizes="48px" 
-                  style={{ objectFit: "cover" }} 
-                  priority
-                />
-              </div>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              <span style={{ 
-                fontFamily: "'Playfair Display', serif", fontSize: scrolled ? 24 : 29, 
-                fontWeight: 600, color: TEXT, letterSpacing: "-0.01em", lineHeight: 1, 
-                whiteSpace: "nowrap", transition: "font-size 0.4s ease" 
-              }}>
-                Paris <em style={{ fontStyle: "italic", color: GOLD, fontWeight: 500 }}>Easy</em> Move
-              </span>
-              <span style={{ 
-                fontFamily: "'Montserrat', sans-serif", fontSize: scrolled ? 8.5 : 9.5, 
-                fontWeight: 500, letterSpacing: "0.22em", textTransform: "uppercase", 
-                color: TEXT_DIM, whiteSpace: "nowrap", transition: "font-size 0.4s ease" 
-              }}>
-                Luxe Transportation
-              </span>
+          {/* ── Logo (image only — the image IS the brand name) ── */}
+          <Link href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+            <div
+              className="h-logo-wrap"
+              style={{
+                width: scrolled ? 180 : 218,
+                height: scrolled ? 46 : 56,
+                transition: "all 0.4s ease",
+                flexShrink: 0,
+              }}
+            >
+              <Image
+                src="/images/logo.png"
+                alt="Paris Easy Move"
+                fill
+                sizes="218px"
+                style={{ objectFit: "contain", objectPosition: "left center" }}
+                priority
+              />
             </div>
           </Link>
 
           {/* ── Desktop Nav ── */}
-          <nav className="h-desktop" style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            {navLinks.map((link) => (
-              <Link key={link.href} href={link.href} className={link.disney ? "h-disney-link" : "h-navlink-u"}>
-                {link.label}
-              </Link>
-            ))}
+          <nav className="h-desktop" style={{ display: "flex", alignItems: "center", gap: 2 }}>
+            {navLinks.map((link) => {
+              if (link.disney) {
+                return (
+                  <Link key={link.href} href={link.href} className="h-disney-link">
+                    {link.label}
+                  </Link>
+                );
+              }
+              if (link.blog) {
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`h-blog-link${isBlogActive ? " active" : ""}`}
+                  >
+                    {link.label}
+                    <span className="h-blog-dot" />
+                  </Link>
+                );
+              }
+              return (
+                <Link key={link.href} href={link.href} className="h-navlink-u">
+                  {link.label}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* ── Desktop Right Controls ── */}
-          <div className="h-desktop" style={{ display: "flex", alignItems: "center", gap: 18, flexShrink: 0 }}>
+          <div className="h-desktop" style={{ display: "flex", alignItems: "center", gap: 16, flexShrink: 0 }}>
+            {/* Language toggle */}
             <div style={{ display: "flex", background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 7, padding: 2 }}>
               <button onClick={() => setLang("en")} className={`h-lang-btn-s${lang === "en" ? " active" : ""}`}>EN</button>
               <button onClick={() => setLang("fr")} className={`h-lang-btn-s${lang === "fr" ? " active" : ""}`}>FR</button>
             </div>
-            <div style={{ width: 1, height: 28, background: `linear-gradient(to bottom, transparent, ${BORDER}, transparent)`, opacity: 0.5 }} />
-            <a href="tel:+33652466694" style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 17px", border: `1px solid ${BORDER}`, borderRadius: 9, textDecoration: "none", whiteSpace: "nowrap" }}>
-              <span style={{ width: 8, height: 8, background: "#1a6b52", borderRadius: "50%", boxShadow: "0 0 12px rgba(26,107,82,0.5)", animation: "h-pulse 2.8s infinite ease-in-out", flexShrink: 0 }} />
+
+            {/* Vertical divider */}
+            <div style={{ width: 1, height: 28, background: `linear-gradient(to bottom, transparent, ${BORDER_MID}, transparent)` }} />
+
+            {/* Phone */}
+            <a href="tel:+33652466694" style={{
+              display: "flex", alignItems: "center", gap: 11,
+              padding: "8px 16px", border: `1px solid ${BORDER}`, borderRadius: 8,
+              textDecoration: "none", whiteSpace: "nowrap",
+              background: "rgba(13,61,74,0.2)", transition: "background 0.25s",
+            }}>
+              <span style={{
+                width: 8, height: 8, background: "#1fbe82", borderRadius: "50%",
+                boxShadow: "0 0 10px rgba(31,190,130,0.6)",
+                animation: "h-pulse 2.8s infinite ease-in-out", flexShrink: 0
+              }} />
               <div>
-                <div style={{ fontFamily: "'Montserrat', sans-serif", fontSize: 9, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: TEXT_DIM }}>{t[lang].callUs}</div>
-                <div style={{ fontFamily: "'Playfair Display', serif", fontSize: scrolled ? 15 : 16.5, fontWeight: 500, color: TEXT, transition: "font-size 0.4s ease" }}>+33 6 52 46 66 94</div>
+                <div style={{
+                  fontFamily: "'Montserrat', sans-serif", fontSize: 8.5, fontWeight: 600,
+                  letterSpacing: "0.15em", textTransform: "uppercase", color: WHITE_DIM
+                }}>{t[lang].callUs}</div>
+                <div style={{
+                  fontFamily: "'Montserrat', sans-serif",
+                  fontSize: scrolled ? 15 : 16.5,
+                  fontWeight: 600, letterSpacing: "0.03em",
+                  color: WHITE, transition: "font-size 0.4s ease"
+                }}>
+                  +33 6 52 46 66 94
+                </div>
               </div>
             </a>
-            <Link href="/reservation" className="h-book-btn" style={{ 
-              display: "inline-flex", alignItems: "center", gap: 10, padding: "0 26px", 
-              height: scrolled ? 40 : 46, background: GOLD, color: "#0a0a0a", 
-              fontFamily: "'Montserrat', sans-serif", fontSize: 13.2, fontWeight: 700, 
-              letterSpacing: "0.08em", textTransform: "uppercase", borderRadius: 9, 
-              textDecoration: "none", boxShadow: "0 4px 18px rgba(201,163,71,0.25)", 
-              whiteSpace: "nowrap"
+
+            {/* Reserve CTA */}
+            <Link href="/reservation" className="h-book-btn" style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              padding: "0 26px",
+              height: scrolled ? 40 : 46,
+              color: WHITE,
+              fontFamily: "'Cinzel', serif", fontSize: 11, fontWeight: 600,
+              letterSpacing: "0.14em", textTransform: "uppercase", borderRadius: 7,
+              textDecoration: "none",
+              whiteSpace: "nowrap",
             }}>
               {t[lang].bookNow}
             </Link>
@@ -225,7 +322,12 @@ export default function Header() {
             className={`h-mobile-btn${isOpen ? " h-burger-open" : ""}`}
             onClick={() => setIsOpen(!isOpen)}
             aria-label="Toggle menu"
-            style={{ display: "flex", flexDirection: "column", gap: 5, width: 42, height: 42, alignItems: "center", justifyContent: "center", background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 9, cursor: "pointer" }}
+            style={{
+              display: "flex", flexDirection: "column", gap: 5,
+              width: 42, height: 42, alignItems: "center", justifyContent: "center",
+              background: SURFACE, border: `1px solid ${BORDER}`,
+              borderRadius: 8, cursor: "pointer"
+            }}
           >
             <span className="h-burger-line" />
             <span className="h-burger-line" />
@@ -240,28 +342,74 @@ export default function Header() {
           <div className="h-drawer-backdrop" onClick={() => setIsOpen(false)} />
           <div className="h-drawer-panel">
             <div className="h-drawer-top">
-              <div>
-                <div className="h-drawer-logo-name">Paris <em style={{ fontStyle: "italic", color: GOLD }}>Easy</em> Move</div>
-                <div style={{ fontSize: 9, color: TEXT_DIM, letterSpacing: '0.1em' }}>Luxe Transportation</div>
+              {/* Logo image in drawer */}
+              <div style={{ position: "relative", width: 160, height: 42, flexShrink: 0 }}>
+                <Image
+                  src="/images/logo.png"
+                  alt="Paris Easy Move"
+                  fill
+                  sizes="160px"
+                  style={{ objectFit: "contain", objectPosition: "left center" }}
+                />
               </div>
-              <button style={{ background: 'none', border: 'none', color: TEXT_DIM }} onClick={() => setIsOpen(false)}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              <button
+                style={{ background: "none", border: "none", color: WHITE_DIM, cursor: "pointer", flexShrink: 0 }}
+                onClick={() => setIsOpen(false)}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
               </button>
             </div>
+
             <nav className="h-drawer-nav">
-              {navLinks.map((link, i) => (
-                <Link key={link.href} href={link.href} className={link.disney ? "h-drawer-disney-link" : "h-drawer-link"} onClick={() => setIsOpen(false)}>
-                  <span style={{ fontSize: 10, color: GOLD, marginRight: 15, opacity: 0.6 }}>0{i + 1}</span>
-                  {link.label}
-                </Link>
-              ))}
+              {navLinks.map((link, i) => {
+                const isCurrentBlog = link.blog && isBlogActive;
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`h-drawer-link${isCurrentBlog ? " blog-active" : ""}`}
+                    onClick={() => setIsOpen(false)}
+                    style={link.disney ? {
+                      color: "#ffb06a",
+                      fontFamily: "'Cinzel Decorative', cursive",
+                      fontSize: 11,
+                    } : undefined}
+                  >
+                    <span style={{ fontSize: 9.5, color: ACCENT, marginRight: 12, opacity: isCurrentBlog ? 1 : 0.5, fontFamily: "'Montserrat', sans-serif", fontWeight: 600 }}>
+                      0{i + 1}
+                    </span>
+                    {link.label}
+                    {link.blog && (
+                      <span style={{
+                        marginLeft: "auto", fontSize: 8.5,
+                        fontFamily: "'Montserrat', sans-serif", fontWeight: 700,
+                        letterSpacing: ".14em", textTransform: "uppercase",
+                        color: ACCENT, opacity: 0.75,
+                        padding: "2px 8px",
+                        border: `1px solid rgba(126,207,223,0.25)`,
+                        borderRadius: 4,
+                      }}>
+                        New
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
             </nav>
+
             <div className="h-drawer-bottom">
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => setLang("en")} className={`h-lang-btn-s ${lang === "en" ? "active" : ""}`} style={{ flex: 1, border: `1px solid ${BORDER}` }}>EN</button>
-                <button onClick={() => setLang("fr")} className={`h-lang-btn-s ${lang === "fr" ? "active" : ""}`} style={{ flex: 1, border: `1px solid ${BORDER}` }}>FR</button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setLang("en")} className={`h-lang-btn-s${lang === "en" ? " active" : ""}`} style={{ flex: 1, border: `1px solid ${BORDER}`, borderRadius: 6 }}>EN</button>
+                <button onClick={() => setLang("fr")} className={`h-lang-btn-s${lang === "fr" ? " active" : ""}`} style={{ flex: 1, border: `1px solid ${BORDER}`, borderRadius: 6 }}>FR</button>
               </div>
-              <Link href="/reservation" className="h-book-btn" style={{ background: GOLD, color: '#0a0a0a', textAlign: 'center', padding: '14px', borderRadius: 8, fontWeight: 700, textDecoration: 'none' }}>
+              <Link href="/reservation" className="h-book-btn" style={{
+                textAlign: "center", padding: "14px", borderRadius: 7,
+                fontFamily: "'Cinzel', serif", fontSize: 11, fontWeight: 600,
+                letterSpacing: "0.12em", textTransform: "uppercase",
+                color: WHITE, textDecoration: "none",
+              }}>
                 {t[lang].bookNow}
               </Link>
             </div>

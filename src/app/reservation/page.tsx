@@ -172,7 +172,6 @@ export default function ReservationPage() {
   const [bookingRef,setBookingRef]= useState("");
   const [errors,   setErrors]    = useState<Record<string,string>>({});
 
-  // ── Fetch all data + read URL params ─────────────────────────
   useEffect(() => {
     (async () => {
       try {
@@ -214,7 +213,6 @@ export default function ReservationPage() {
     })();
   }, []);
 
-  // Auto-strip country code when country changes
   useEffect(() => {
     if (!personal.country) return;
     setPersonal(p => ({ ...p, whatsapp:p.whatsapp.replace(/^\+\d{1,4}\s?/,"").replace(/^\+/,"") }));
@@ -308,7 +306,6 @@ export default function ReservationPage() {
   const next = () => { if (validate()) setStep(s=>s+1); };
   const back = () => { setStep(s=>s-1); setErrors({}); };
 
-  // ── SUBMIT — saves booking THEN sends emails ──────────────────
   const submit = async () => {
     setSending(true);
     const code = COUNTRY_CODES[personal.country] ?? "";
@@ -316,7 +313,6 @@ export default function ReservationPage() {
     const fullWhatsapp = code ? `${code}${rawNumber}` : personal.whatsapp;
 
     try {
-      // Step 1 — Save booking to database
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -344,7 +340,6 @@ export default function ReservationPage() {
         const ref = (b.id ?? "PEM-" + Date.now().toString(36)).toUpperCase();
         setBookingRef(ref);
 
-        // Step 2 — Send confirmation emails (customer + admin)
         try {
           await fetch("/api/send-booking-email", {
             method: "POST",
@@ -376,11 +371,9 @@ export default function ReservationPage() {
             }),
           });
         } catch (emailErr) {
-          // Email failed but booking was saved — don't block the user
           console.error("Email send failed:", emailErr);
         }
 
-        // Step 3 — Google Ads conversion tracking
         const dataLayer = (window as any).dataLayer || [];
         (window as any).dataLayer = dataLayer;
         dataLayer.push({
@@ -390,7 +383,6 @@ export default function ReservationPage() {
           currency: "EUR",
         });
 
-        // Step 4 — Show success screen
         setDone(true);
       } else {
         alert("Something went wrong saving your booking. Please try again.");
@@ -478,17 +470,65 @@ export default function ReservationPage() {
         .rp-body{flex:1;min-width:0}
         .rp-card{background:#fff;border-radius:18px;box-shadow:0 2px 24px rgba(0,0,0,0.08);padding:40px}
         @media(max-width:640px){.rp-card{padding:20px}.rp-inner{padding:0 12px}}
+        @media(max-width:480px){.rp-card{padding:16px}}
         .rp-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
         @media(max-width:600px){.rp-grid{grid-template-columns:1fr}}
         .rp-input-wrap:focus-within{border-color:#16a34a!important;box-shadow:0 0 0 3px rgba(22,163,74,0.1)}
         .rp-step-active{background:#16a34a;border-color:#16a34a;color:#fff}
         .rp-step-done{background:rgba(74,222,128,0.15);border-color:#4ade80;color:#4ade80}
         .rp-step-idle{background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.12);color:rgba(255,255,255,0.3)}
-        .rp-vehicle{display:flex;border:2px solid #e5e7eb;border-radius:14px;overflow:hidden;cursor:pointer;background:#fff;transition:all .2s;position:relative}
-        .rp-vehicle:hover:not(.rp-locked){border-color:#f59e0b;box-shadow:0 4px 20px rgba(0,0,0,0.08)}
-        .rp-vehicle.sel{border-color:#f59e0b;box-shadow:0 0 0 4px rgba(245,158,11,0.2);background:#fffbeb}
-        .rp-vehicle.rp-locked{cursor:not-allowed;border-color:#f3f4f6;opacity:.7}
-        .rp-vehicle.rp-recommended{border-color:#16a34a;box-shadow:0 0 0 2px rgba(22,163,74,0.15)}
+
+        /* ── Vehicle card (new full-photo style) ── */
+        .rp-vc{background:#fff;border-radius:16px;overflow:hidden;cursor:pointer;border:2px solid #e5e7eb;transition:border-color .18s,box-shadow .18s;position:relative}
+        .rp-vc:hover:not(.rp-vc-locked){border-color:#f59e0b;box-shadow:0 4px 20px rgba(0,0,0,0.08)}
+        .rp-vc.rp-vc-sel{border-color:#f59e0b;box-shadow:0 0 0 4px rgba(245,158,11,0.18)}
+        .rp-vc.rp-vc-recom{border-color:#16a34a}
+        .rp-vc.rp-vc-locked{opacity:.68;cursor:not-allowed}
+
+        .rp-vc-selbar{height:34px;background:#f59e0b;display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;font-weight:800;color:#111;letter-spacing:.07em;text-transform:uppercase}
+
+        .rp-vc-photo{position:relative;width:100%;aspect-ratio:16/7;overflow:hidden;background:#1a1a2e}
+        @media(min-width:600px){.rp-vc-photo{aspect-ratio:16/6}}
+        .rp-vc-photo img{width:100%;height:100%;object-fit:cover;display:block}
+        .rp-vc-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.75) 0%,rgba(0,0,0,0.08) 55%,transparent 100%)}
+
+        .rp-vc-badges{position:absolute;top:12px;left:12px;display:flex;gap:6px;flex-wrap:wrap}
+        .rp-vc-badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap}
+        .rp-vc-badge-green{background:#16a34a;color:#fff}
+        .rp-vc-badge-amber{background:#f59e0b;color:#111}
+        .rp-vc-badge-dark{background:rgba(17,24,39,0.82);color:#fff}
+        .rp-vc-badge-night{background:rgba(49,46,129,0.88);color:#a5f3fc}
+        .rp-vc-badge-orange{background:#d97706;color:#fff}
+
+        .rp-vc-photobottom{position:absolute;bottom:0;left:0;right:0;padding:14px 16px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+        .rp-vc-vname{color:#fff;font-size:17px;font-weight:800;letter-spacing:.02em;text-shadow:0 1px 4px rgba(0,0,0,0.5);line-height:1.2}
+        @media(min-width:600px){.rp-vc-vname{font-size:20px}}
+        .rp-vc-vmodel{color:rgba(255,255,255,.6);font-size:12px;margin-top:2px;font-style:italic}
+        .rp-vc-price-wrap{text-align:right;flex-shrink:0}
+        .rp-vc-price-big{color:#4ade80;font-size:26px;font-weight:900;line-height:1;text-shadow:0 1px 6px rgba(0,0,0,0.5)}
+        @media(min-width:600px){.rp-vc-price-big{font-size:30px}}
+        .rp-vc-price-label{color:rgba(255,255,255,.5);font-size:10px;margin-top:2px}
+
+        .rp-vc-details{padding:14px 16px 16px}
+        .rp-vc-bars{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+        .rp-vc-bar-header{display:flex;justify-content:space-between;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#9ca3af;margin-bottom:4px}
+        .rp-vc-bar-track{height:5px;background:#f3f4f6;border-radius:99px;overflow:hidden}
+        .rp-vc-bar-fill{height:100%;border-radius:99px;transition:width .3s}
+
+        .rp-vc-features{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+        .rp-vc-feat{display:inline-flex;align-items:center;padding:3px 9px;border-radius:6px;background:#f3f4f6;border:0.5px solid #e5e7eb;font-size:11px;color:#4b5563}
+        .rp-vc-special{background:#fffbeb;border:1px solid #fde68a;color:#92400e;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:600;margin-bottom:10px}
+
+        .rp-vc-action{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:0.5px solid #e5e7eb;gap:12px}
+        .rp-vc-sel .rp-vc-action{border-top-color:#fde68a}
+        .rp-vc-bookbtn{padding:9px 18px;border-radius:10px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;border:none;cursor:pointer;background:#f59e0b;color:#111;transition:background .15s;flex-shrink:0;white-space:nowrap}
+        .rp-vc-bookbtn:hover{background:#d97706}
+        .rp-vc-bookbtn.sel{background:#d97706;color:#111}
+
+        .rp-vc-lockoverlay{position:absolute;inset:0;background:rgba(248,249,251,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:5;border-radius:14px}
+        .rp-vc-lockcircle{width:44px;height:44px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;font-size:20px}
+        .rp-vc-lockswitch{padding:6px 14px;border-radius:8px;font-size:11px;font-weight:700;background:#16a34a;color:#fff;border:none;cursor:pointer;margin-top:2px}
+
         .rp-trip-toggle{display:flex;border:1.5px solid #e5e7eb;border-radius:12px;overflow:hidden;background:#f9fafb}
         .rp-trip-opt{flex:1;padding:12px 16px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;color:#6b7280;border:none;background:transparent;transition:all .18s;font-family:inherit}
         .rp-trip-opt.active{background:#111827;color:#fff}
@@ -506,17 +546,15 @@ export default function ReservationPage() {
         @keyframes spin{to{transform:rotate(360deg)}}
         .rp-spin{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
         .rp-dots{display:inline-block;width:10px;height:10px;border:2px solid rgba(22,163,74,0.3);border-top-color:#16a34a;border-radius:50%;animation:spin .7s linear infinite;margin-left:8px;vertical-align:middle}
-        .rp-lock-overlay{position:absolute;inset:0;background:rgba(248,249,251,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:2;border-radius:12px;backdrop-filter:blur(2px)}
-        .rp-vehicle.sel::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#f59e0b}
-        optgroup{font-weight:700;color:#374151}
-        option{font-weight:400;color:#111827}
-        .dial-prefix{display:flex;align-items:center;padding:0 12px;background:#f9fafb;border-right:1px solid #e5e7eb;font-size:14px;font-weight:700;color:#374151;white-space:nowrap;flex-shrink:0;min-width:56px;justify-content:center}
         .rp-payment-opt{display:flex;align-items:center;gap:14px;border:2px solid #e5e7eb;border-radius:12px;padding:16px 20px;cursor:pointer;background:#fff;transition:all .2s;flex:1;min-width:0}
         .rp-payment-opt:hover{border-color:#d1d5db;background:#f9fafb}
         .rp-payment-opt.selected{border-color:#111827;background:#f9fafb;box-shadow:0 0 0 3px rgba(17,24,39,0.08)}
         .rp-night-banner{background:linear-gradient(135deg,#1e1b4b,#312e81);border:1.5px solid #4338ca;border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:14px;margin-top:8px}
         @keyframes nightPulse{0%,100%{opacity:1}50%{opacity:.7}}
         .rp-night-star{animation:nightPulse 2s ease-in-out infinite}
+        .dial-prefix{display:flex;align-items:center;padding:0 12px;background:#f9fafb;border-right:1px solid #e5e7eb;font-size:14px;font-weight:700;color:#374151;white-space:nowrap;flex-shrink:0;min-width:56px;justify-content:center}
+        optgroup{font-weight:700;color:#374151}
+        option{font-weight:400;color:#111827}
       `}</style>
 
       <div className="rp">
@@ -745,10 +783,14 @@ export default function ReservationPage() {
                 </div>
               )}
 
-              {/* ══ STEP 1 ══ */}
+              {/* ══ STEP 1 — Full-photo vehicle cards ══ */}
               {step===1&&(
                 <div style={{ display:"flex",flexDirection:"column",gap:14 }}>
-                  {errors.vehicle&&<div style={{ background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626",padding:"10px 16px",borderRadius:10,fontSize:14,fontWeight:600 }}>{errors.vehicle}</div>}
+                  {errors.vehicle&&(
+                    <div style={{ background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626",padding:"10px 16px",borderRadius:10,fontSize:14,fontWeight:600 }}>
+                      {errors.vehicle}
+                    </div>
+                  )}
 
                   {isRoundTrip&&(
                     <div style={{ background:"linear-gradient(135deg,#fffbeb,#fef3c7)",border:"1.5px solid #fcd34d",borderRadius:12,padding:"12px 16px",display:"flex",gap:12,alignItems:"center" }}>
@@ -789,13 +831,18 @@ export default function ReservationPage() {
                     const available=vehiclesWithPrice.filter(v=>!v.paxExceeded&&!v.lugExceeded);
                     if(locked.length===0||available.length===0) return null;
                     const suggest=available.sort((a,b)=>a.maxPassengers-b.maxPassengers)[0];
-                    const reason=locked.some(v=>v.paxExceeded)&&locked.some(v=>v.lugExceeded)?`${totalPax} passengers and ${trip.bags} bags`:locked.some(v=>v.paxExceeded)?`${totalPax} passenger${totalPax!==1?"s":""}`: `${trip.bags} bag${trip.bags!==1?"s":""}`;
+                    const reason=locked.some(v=>v.paxExceeded)&&locked.some(v=>v.lugExceeded)
+                      ?`${totalPax} passengers and ${trip.bags} bags`
+                      :locked.some(v=>v.paxExceeded)?`${totalPax} passenger${totalPax!==1?"s":""}`: `${trip.bags} bag${trip.bags!==1?"s":""}`;
                     return (
                       <div style={{ background:"linear-gradient(135deg,#fff7ed,#fffbeb)",border:"1.5px solid #fed7aa",borderRadius:14,padding:"14px 18px",display:"flex",gap:14,alignItems:"flex-start" }}>
                         <div style={{ width:36,height:36,borderRadius:"50%",background:"#ffedd5",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1 }}><span style={{ fontSize:18 }}>🚐</span></div>
                         <div>
                           <div style={{ fontWeight:700,color:"#9a3412",fontSize:13,marginBottom:3 }}>Some vehicles can't fit your group of {reason}</div>
-                          <div style={{ fontSize:12,color:"#c2410c",lineHeight:1.5 }}>{locked.length} vehicle{locked.length!==1?" types are":" type is"} locked below.{suggest&&<> We recommend the <strong>{suggest.name}</strong> (up to {suggest.maxPassengers} pax · {suggest.maxLuggage} bags).</>}</div>
+                          <div style={{ fontSize:12,color:"#c2410c",lineHeight:1.5 }}>
+                            {locked.length} vehicle{locked.length!==1?" types are":" type is"} locked below.
+                            {suggest&&<> We recommend the <strong>{suggest.name}</strong> (up to {suggest.maxPassengers} pax · {suggest.maxLuggage} bags).</>}
+                          </div>
                         </div>
                       </div>
                     );
@@ -807,94 +854,145 @@ export default function ReservationPage() {
                     </div>
                   )}
 
-                  {vehiclesWithPrice.map(v=>{
-                    const sel=vehicleId===v.id;
-                    const isLocked=v.paxExceeded||v.lugExceeded;
-                    const isRecom=recommendedVehicle?.id===v.id&&!sel;
-                    const lockReasons:string[]=[];
-                    if(v.paxExceeded) lockReasons.push(`${totalPax} pax exceeds ${v.maxPassengers}-pax limit`);
-                    if(v.lugExceeded) lockReasons.push(`${trip.bags} bags exceeds ${v.maxLuggage}-bag limit`);
-                    const nextFit=vehiclesWithPrice.filter(x=>!x.paxExceeded&&!x.lugExceeded&&x.id!==v.id).sort((a,b)=>a.maxPassengers-b.maxPassengers)[0];
+                  {vehiclesWithPrice.map(v => {
+                    const sel = vehicleId === v.id;
+                    const isLocked = v.paxExceeded || v.lugExceeded;
+                    const isRecom = recommendedVehicle?.id === v.id && !sel;
+                    const lockReasons: string[] = [];
+                    if (v.paxExceeded) lockReasons.push(`${totalPax} pax exceeds ${v.maxPassengers}-pax limit`);
+                    if (v.lugExceeded) lockReasons.push(`${trip.bags} bags exceeds ${v.maxLuggage}-bag limit`);
+                    const nextFit = vehiclesWithPrice.filter(x=>!x.paxExceeded&&!x.lugExceeded&&x.id!==v.id).sort((a,b)=>a.maxPassengers-b.maxPassengers)[0];
+
+                    const paxPct = Math.min(100,(totalPax/v.maxPassengers)*100);
+                    const lugPct = Math.min(100,(trip.bags/v.maxLuggage)*100);
+                    const paxColor = v.paxExceeded?"#ef4444":paxPct>80?"#f59e0b":"#22c55e";
+                    const lugColor = v.lugExceeded?"#ef4444":lugPct>80?"#f59e0b":"#22c55e";
+
                     return (
-                      <div key={v.id} className={`rp-vehicle${sel?" sel":""}${isLocked?" rp-locked":""}${isRecom?" rp-recommended":""}`}
+                      <div key={v.id}
+                        className={`rp-vc${sel?" rp-vc-sel":""}${isLocked?" rp-vc-locked":""}${isRecom?" rp-vc-recom":""}`}
                         onClick={()=>{ if(!isLocked) setVehicleId(v.id); }}>
-                        {sel&&<div style={{ position:"absolute",top:0,left:0,right:0,height:36,background:"#f59e0b",display:"flex",alignItems:"center",justifyContent:"center",gap:6,zIndex:3 }}>
-                          <svg width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
-                          <span style={{ fontSize:11,fontWeight:800,color:"#fff",letterSpacing:".08em",textTransform:"uppercase" }}>Selected</span>
-                        </div>}
-                        {isLocked&&(
-                          <div className="rp-lock-overlay">
-                            <div style={{ width:40,height:40,borderRadius:"50%",background:"#fee2e2",display:"flex",alignItems:"center",justifyContent:"center" }}>
-                              <svg width={20} height={20} fill="none" viewBox="0 0 24 24" stroke="#dc2626" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                            </div>
-                            <div style={{ textAlign:"center",padding:"0 16px" }}>
-                              <div style={{ fontSize:12,fontWeight:700,color:"#dc2626",marginBottom:4 }}>Not available for your group</div>
-                              <div style={{ fontSize:11,color:"#b91c1c",lineHeight:1.5,marginBottom:6 }}>{lockReasons.join(" · ")}</div>
-                              {nextFit&&<button type="button" onClick={e=>{e.stopPropagation();setVehicleId(nextFit.id);}} style={{ padding:"6px 14px",borderRadius:8,fontSize:11,fontWeight:700,background:"#16a34a",color:"#fff",border:"none",cursor:"pointer" }}>Switch to {nextFit.name} →</button>}
-                            </div>
+
+                        {/* Selected top bar */}
+                        {sel&&(
+                          <div className="rp-vc-selbar">
+                            <svg width={13} height={13} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                            Selected
                           </div>
                         )}
-                        <div style={{ width:180,minWidth:180,flexShrink:0,position:"relative",overflow:"hidden",opacity:isLocked?.35:1,marginTop:sel?36:0 }}>
-                          <img src={v.img} alt={v.name} style={{ width:"100%",height:"100%",minHeight:sel?110:140,objectFit:"cover",display:"block" }}/>
-                          {isRecom&&!isLocked&&!sel&&<div style={{ position:"absolute",top:8,left:8,background:"#16a34a",color:"#fff",fontSize:9,fontWeight:800,padding:"3px 7px",borderRadius:5,letterSpacing:".08em",textTransform:"uppercase" }}>✦ Best fit</div>}
-                          {v.isDoubled&&!isLocked&&<div style={{ position:"absolute",bottom:8,left:8,background:"#d97706",color:"#fff",fontSize:9,fontWeight:800,padding:"3px 7px",borderRadius:5 }}>×2 RATE</div>}
-                          {isRoundTrip&&!isLocked&&<div style={{ position:"absolute",bottom:8,right:8,background:"#111827",color:"#f59e0b",fontSize:9,fontWeight:800,padding:"3px 7px",borderRadius:5 }}>RT ×2</div>}
-                          {nightSurcharge>0&&!isLocked&&<div style={{ position:"absolute",top:8,right:8,background:"#312e81",color:"#a5f3fc",fontSize:9,fontWeight:800,padding:"3px 7px",borderRadius:5 }}>🌙 +€{NIGHT_SURCHARGE}</div>}
-                        </div>
-                        <div style={{ flex:1,padding:"14px 18px",display:"flex",flexDirection:"column",justifyContent:"space-between",opacity:isLocked?.4:1,marginTop:sel?36:0 }}>
-                          <div>
-                            <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4 }}>
-                              <span style={{ fontSize:13,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.04em",color:DARK }}>{v.name}</span>
-                              <div style={{ display:"flex",gap:5,flexWrap:"wrap",justifyContent:"flex-end" }}>
-                                {v.tag&&<span style={{ fontSize:10,fontWeight:700,background:sel?AMBER:GREEN,color:"#fff",padding:"2px 8px",borderRadius:999 }}>{v.tag}</span>}
-                                {isRecom&&!sel&&<span style={{ fontSize:10,fontWeight:700,background:"#dcfce7",color:"#16a34a",padding:"2px 8px",borderRadius:999,border:"1px solid #bbf7d0" }}>Recommended</span>}
-                              </div>
-                            </div>
-                            <div style={{ fontSize:11,color:"#9ca3af",fontStyle:"italic",marginBottom:8 }}>{v.model}</div>
-                            <div style={{ display:"flex",gap:12,marginBottom:8 }}>
-                              <div style={{ flex:1 }}>
-                                <div style={{ display:"flex",justifyContent:"space-between",fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:".07em",color:v.paxExceeded?"#dc2626":"#9ca3af",marginBottom:3 }}>
-                                  <span>👤 Passengers</span><span style={{ color:v.paxExceeded?"#dc2626":totalPax>0?"#374151":"#9ca3af" }}>{totalPax}/{v.maxPassengers}</span>
-                                </div>
-                                <div style={{ height:5,background:"#f3f4f6",borderRadius:99,overflow:"hidden" }}>
-                                  <div style={{ height:"100%",width:`${Math.min(100,(totalPax/v.maxPassengers)*100)}%`,background:v.paxExceeded?"#ef4444":totalPax/v.maxPassengers>0.8?"#f59e0b":"#22c55e",borderRadius:99,transition:"width .3s" }}/>
-                                </div>
-                              </div>
-                              <div style={{ flex:1 }}>
-                                <div style={{ display:"flex",justifyContent:"space-between",fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:".07em",color:v.lugExceeded?"#dc2626":"#9ca3af",marginBottom:3 }}>
-                                  <span>🧳 Luggage</span><span style={{ color:v.lugExceeded?"#dc2626":trip.bags>0?"#374151":"#9ca3af" }}>{trip.bags}/{v.maxLuggage}</span>
-                                </div>
-                                <div style={{ height:5,background:"#f3f4f6",borderRadius:99,overflow:"hidden" }}>
-                                  <div style={{ height:"100%",width:`${Math.min(100,(trip.bags/v.maxLuggage)*100)}%`,background:v.lugExceeded?"#ef4444":trip.bags/v.maxLuggage>0.8?"#f59e0b":"#22c55e",borderRadius:99,transition:"width .3s" }}/>
-                                </div>
-                              </div>
-                            </div>
-                            <div style={{ display:"flex",flexWrap:"wrap",gap:5,marginBottom:6 }}>
-                              {features.map(f=><span key={f} className="rp-badge">{f}</span>)}
-                            </div>
-                            {v.special&&<div style={{ background:"#fffbeb",border:"1px solid #fde68a",color:"#92400e",padding:"5px 10px",borderRadius:7,fontSize:11,fontWeight:600,marginTop:4 }}>⚠️ {v.special}</div>}
+
+                        {/* Full-bleed photo */}
+                        <div className="rp-vc-photo">
+                          <img src={v.img} alt={v.name}/>
+                          <div className="rp-vc-overlay"/>
+
+                          {/* Badges — top left */}
+                          <div className="rp-vc-badges">
+                            {isRecom&&!sel&&<span className="rp-vc-badge rp-vc-badge-green">✦ Best fit</span>}
+                            {v.tag&&<span className="rp-vc-badge rp-vc-badge-amber">{v.tag}</span>}
+                            {nightSurcharge>0&&<span className="rp-vc-badge rp-vc-badge-night">🌙 +€{NIGHT_SURCHARGE}</span>}
+                            {isRoundTrip&&<span className="rp-vc-badge rp-vc-badge-dark">RT ×2</span>}
+                            {v.isDoubled&&<span className="rp-vc-badge rp-vc-badge-orange">⚡ ×2 rate</span>}
                           </div>
-                          <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:12,paddingTop:10,borderTop:`1px solid ${sel?"#fde68a":"#f3f4f6"}` }}>
+
+                          {/* Name + price overlaid on photo bottom */}
+                          <div className="rp-vc-photobottom">
                             <div>
-                              {v.onDemand?(<><div style={{ fontSize:16,fontWeight:800,color:"#d97706",lineHeight:1 }}>On Demand</div><div style={{ fontSize:10,color:"#9ca3af",marginTop:2 }}>Contact us for price</div></>):
-                              v.routePrice!==null?(<>
-                                <div style={{ display:"flex",alignItems:"baseline",gap:6,flexWrap:"wrap" }}>
-                                  <div style={{ fontSize:22,fontWeight:900,color:sel?"#d97706":DARK,lineHeight:1 }}>{v.routePrice} <span style={{ fontSize:13,fontWeight:700 }}>EUR</span></div>
-                                  {v.isDoubled&&<span style={{ fontSize:10,fontWeight:700,background:"#fef3c7",color:"#d97706",padding:"2px 6px",borderRadius:5,border:"1px solid #fcd34d" }}>×2</span>}
-                                  {isRoundTrip&&<span style={{ fontSize:10,fontWeight:700,background:"#fff7ed",color:"#ea580c",padding:"2px 6px",borderRadius:5,border:"1px solid #fed7aa" }}>RT</span>}
-                                  {nightSurcharge>0&&<span style={{ fontSize:10,fontWeight:700,background:"#ede9fe",color:"#7c3aed",padding:"2px 6px",borderRadius:5,border:"1px solid #ddd6fe" }}>🌙 +€{NIGHT_SURCHARGE}</span>}
+                              <div className="rp-vc-vname">{v.name}</div>
+                              <div className="rp-vc-vmodel">{v.model}</div>
+                            </div>
+                            <div className="rp-vc-price-wrap">
+                              {v.onDemand?(
+                                <div style={{ color:"#fbbf24",fontSize:18,fontWeight:900,lineHeight:1,textShadow:"0 1px 6px rgba(0,0,0,0.5)" }}>On Demand</div>
+                              ):v.routePrice!==null?(
+                                <>
+                                  <div className="rp-vc-price-big">€{v.routePrice}</div>
+                                  <div className="rp-vc-price-label">{isRoundTrip?"round trip":"one way"} · {totalPax} pax</div>
+                                </>
+                              ):(
+                                <div style={{ color:"rgba(255,255,255,.5)",fontSize:14 }}>—</div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Details below photo */}
+                        <div className="rp-vc-details">
+
+                          {/* Capacity bars */}
+                          <div className="rp-vc-bars">
+                            {[
+                              { label:"👤 Passengers", val:totalPax, max:v.maxPassengers, pct:paxPct, color:paxColor, exceeded:v.paxExceeded },
+                              { label:"🧳 Luggage",    val:trip.bags, max:v.maxLuggage,    pct:lugPct, color:lugColor, exceeded:v.lugExceeded },
+                            ].map(b=>(
+                              <div key={b.label}>
+                                <div className="rp-vc-bar-header" style={{ color:b.exceeded?"#dc2626":"#9ca3af" }}>
+                                  <span>{b.label}</span>
+                                  <span style={{ color:b.exceeded?"#dc2626":b.val>0?"#374151":"#9ca3af" }}>{b.val}/{b.max}</span>
                                 </div>
-                                <div style={{ fontSize:10,color:"#9ca3af",marginTop:2 }}>✓ {totalPax} pax · {isRoundTrip?"round trip":"one way"} · fixed · incl. VAT{nightSurcharge>0?" · incl. night fee":""}</div>
-                              </>):(<div style={{ fontSize:14,color:"#9ca3af" }}>Price unavailable</div>)}
+                                <div className="rp-vc-bar-track">
+                                  <div className="rp-vc-bar-fill" style={{ width:`${b.pct}%`,background:b.color }}/>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Feature pills */}
+                          <div className="rp-vc-features">
+                            {features.map(f=><span key={f} className="rp-vc-feat">{f}</span>)}
+                          </div>
+
+                          {/* Special note */}
+                          {v.special&&<div className="rp-vc-special">⚠️ {v.special}</div>}
+
+                          {/* Action row */}
+                          <div className="rp-vc-action">
+                            <div>
+                              {v.onDemand?(
+                                <>
+                                  <div style={{ fontSize:16,fontWeight:800,color:"#d97706",lineHeight:1 }}>On Demand</div>
+                                  <div style={{ fontSize:10,color:"#9ca3af",marginTop:2 }}>Contact us for pricing</div>
+                                </>
+                              ):v.routePrice!==null?(
+                                <>
+                                  <div style={{ display:"flex",alignItems:"baseline",gap:6,flexWrap:"wrap" }}>
+                                    <span style={{ fontSize:20,fontWeight:900,color:sel?"#d97706":DARK }}>€{v.routePrice}</span>
+                                    <span style={{ fontSize:13,fontWeight:600,color:"#6b7280" }}>EUR</span>
+                                    {v.isDoubled&&<span style={{ fontSize:10,fontWeight:700,background:"#fef3c7",color:"#d97706",padding:"2px 6px",borderRadius:5,border:"1px solid #fcd34d" }}>×2</span>}
+                                    {isRoundTrip&&<span style={{ fontSize:10,fontWeight:700,background:"#fff7ed",color:"#ea580c",padding:"2px 6px",borderRadius:5,border:"1px solid #fed7aa" }}>RT</span>}
+                                  </div>
+                                  <div style={{ fontSize:10,color:"#9ca3af",marginTop:2 }}>
+                                    ✓ {totalPax} pax · {isRoundTrip?"round trip":"one way"} · fixed · incl. VAT{nightSurcharge>0?" · incl. night fee":""}
+                                  </div>
+                                </>
+                              ):(
+                                <div style={{ fontSize:14,color:"#9ca3af" }}>Price unavailable</div>
+                              )}
                             </div>
                             {!isLocked&&(
-                              <button type="button" onClick={e=>{e.stopPropagation();setVehicleId(sel?"":v.id);}}
-                                style={{ padding:"9px 16px",borderRadius:9,fontWeight:800,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",border:"none",cursor:"pointer",background:sel?"#d97706":AMBER,color:DARK }}>
+                              <button type="button"
+                                className={`rp-vc-bookbtn${sel?" sel":""}`}
+                                onClick={e=>{ e.stopPropagation(); setVehicleId(sel?"":v.id); }}>
                                 {sel?"✓ Selected":"Book Now →"}
                               </button>
                             )}
                           </div>
                         </div>
+
+                        {/* Lock overlay */}
+                        {isLocked&&(
+                          <div className="rp-vc-lockoverlay">
+                            <div className="rp-vc-lockcircle">🔒</div>
+                            <div style={{ fontSize:13,fontWeight:700,color:"#dc2626" }}>Not available for your group</div>
+                            <div style={{ fontSize:11,color:"#b91c1c",textAlign:"center",lineHeight:1.5,maxWidth:220,padding:"0 16px" }}>{lockReasons.join(" · ")}</div>
+                            {nextFit&&(
+                              <button type="button" className="rp-vc-lockswitch"
+                                onClick={e=>{ e.stopPropagation(); setVehicleId(nextFit.id); }}>
+                                Switch to {nextFit.name} →
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })}

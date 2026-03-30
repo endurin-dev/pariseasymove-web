@@ -453,9 +453,9 @@ export default function ContactUs() {
                     <div className="cp-info-label">Address</div>
                     <div className="cp-info-value">Paris Easy Move</div>
                     <div className="cp-info-sub">
-                      10 rue Pierre Sarrazin<br />
-                      95190 Goussainville / CDG Airport<br />
-                      Paris area, France
+                      11 square de l’avre, <br />
+                      92100 Boulogne-Billancourt, <br />
+                      France
                     </div>
                   </div>
                 </div>
@@ -531,7 +531,7 @@ export default function ContactUs() {
               {/* Map embed */}
               <div className="cp-map">
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2614.!2d2.4767!3d49.0273!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47e60df2a2a2a2a3%3A0x1!2s10+rue+Pierre+Sarrazin%2C+95190+Goussainville%2C+France!5e0!3m2!1sen!2sfr!4v1"
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2626.5589155314524!2d2.2500230768451934!3d48.82847680281068!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47e67a92ad88a85f%3A0xa1d75abfab1e4f22!2s11%20Sq.%20de%20l&#39;Avre%2C%2092100%20Boulogne-Billancourt%2C%20France!5e0!3m2!1sen!2slk!4v1774846463586!5m2!1sen!2slk"
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
