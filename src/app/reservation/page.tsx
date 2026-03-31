@@ -7,6 +7,7 @@ interface TripDetails {
   fromName: string; toName: string;
   tripType: "one-way" | "round-trip";
   date: string; time: string;
+  returnDate: string; returnTime: string;
   passengers: number; kids: number; bags: number;
   flightOrTrain: string;
   dropoffAddress: string;
@@ -161,7 +162,9 @@ export default function ReservationPage() {
   const [step,     setStep]      = useState(0);
   const [trip,     setTrip]      = useState<TripDetails>({
     fromId:"",toId:"",fromName:"",toName:"",tripType:"one-way",
-    date:"",time:"",passengers:1,kids:0,bags:1,
+    date:"",time:"",
+    returnDate:"",returnTime:"",
+    passengers:1,kids:0,bags:1,
     flightOrTrain:"",dropoffAddress:"",
   });
   const [vehicleId,setVehicleId] = useState("");
@@ -220,7 +223,8 @@ export default function ReservationPage() {
 
   const totalPax    = trip.passengers + trip.kids;
   const isRoundTrip = trip.tripType === "round-trip";
-  const nightSurcharge = isNightTime(trip.time) ? NIGHT_SURCHARGE : 0;
+  const nightSurcharge    = isNightTime(trip.time) ? NIGHT_SURCHARGE : 0;
+  const returnNightSurcharge = isRoundTrip && isNightTime(trip.returnTime) ? NIGHT_SURCHARGE : 0;
 
   const getRateRecord = (vId:string): Rate|null => {
     if (!trip.fromId||!trip.toId) return null;
@@ -233,14 +237,15 @@ export default function ReservationPage() {
     if (!trip.fromId||!trip.toId) {
       const base=v.price;
       const routeBase = isRoundTrip?base*2:base as number;
-      return {...v,routePrice:routeBase + nightSurcharge,baseRoutePrice:routeBase,onDemand:false,noRate:false,paxExceeded,lugExceeded,isDoubled:false};
+      return {...v,routePrice:routeBase + nightSurcharge + returnNightSurcharge,baseRoutePrice:routeBase,onDemand:false,noRate:false,paxExceeded,lugExceeded,isDoubled:false};
     }
     const rate=getRateRecord(v.id);
     if (!rate) return {...v,routePrice:null,baseRoutePrice:null,onDemand:false,noRate:true,paxExceeded,lugExceeded,isDoubled:false};
     if (rate.onDemand) return {...v,routePrice:null,baseRoutePrice:null,onDemand:true,noRate:false,paxExceeded,lugExceeded,isDoubled:false};
     const base=calcPrice(rate,totalPax);
     const routeBase=base!==null&&isRoundTrip?base*2:base;
-    const final=routeBase!==null?routeBase+nightSurcharge:null;
+    const totalSurcharge = nightSurcharge + returnNightSurcharge;
+    const final=routeBase!==null?routeBase+totalSurcharge:null;
     return {...v,routePrice:final,baseRoutePrice:routeBase,onDemand:false,noRate:false,paxExceeded,lugExceeded,isDoubled:totalPax>=9};
   }).filter(v=>!v.noRate);
 
@@ -289,6 +294,13 @@ export default function ReservationPage() {
       if (trip.fromId&&trip.toId&&trip.fromId===trip.toId) e.to="Must differ from pickup";
       if (!trip.date)   e.date="Required";
       if (!trip.time)   e.time="Required";
+      if (isRoundTrip) {
+        if (!trip.returnDate) e.returnDate="Required for round trip";
+        if (!trip.returnTime) e.returnTime="Required for round trip";
+        if (trip.returnDate && trip.date && trip.returnDate < trip.date) {
+          e.returnDate="Return date must be on or after departure date";
+        }
+      }
     }
     if (step===1&&!vehicleId) e.vehicle="Please select a vehicle";
     if (step===2) {
@@ -312,6 +324,18 @@ export default function ReservationPage() {
     const rawNumber = personal.whatsapp.trim().replace(/^\+\d{1,4}\s?/, "");
     const fullWhatsapp = code ? `${code}${rawNumber}` : personal.whatsapp;
 
+    const noteParts = [
+      isRoundTrip ? "ROUND TRIP" : "",
+      isRoundTrip && trip.returnDate ? `Return Date: ${trip.returnDate}` : "",
+      isRoundTrip && trip.returnTime ? `Return Time: ${trip.returnTime}` : "",
+      trip.flightOrTrain ? `Flight/Train: ${trip.flightOrTrain}` : "",
+      trip.dropoffAddress ? `Address: ${trip.dropoffAddress}` : "",
+      nightSurcharge > 0 ? "OUTBOUND NIGHT SURCHARGE (+€15)" : "",
+      returnNightSurcharge > 0 ? "RETURN NIGHT SURCHARGE (+€15)" : "",
+      `Payment: ${paymentMethod === "cash" ? "Cash to driver" : "Card to driver"}`,
+      personal.notes,
+    ].filter(Boolean).join(" | ");
+
     try {
       const res = await fetch("/api/bookings", {
         method: "POST",
@@ -319,18 +343,13 @@ export default function ReservationPage() {
         body: JSON.stringify({
           fromLocId: trip.fromId, toLocId: trip.toId,
           date: trip.date, time: trip.time,
+          returnDate: isRoundTrip ? trip.returnDate : null,
+          returnTime: isRoundTrip ? trip.returnTime : null,
           passengers: trip.passengers, kids: trip.kids, bags: trip.bags,
           vehicleId,
           name: personal.name, country: personal.country,
           whatsapp: fullWhatsapp, email: personal.email,
-          notes: [
-            trip.tripType === "round-trip" ? "ROUND TRIP" : "",
-            trip.flightOrTrain ? `Flight/Train: ${trip.flightOrTrain}` : "",
-            trip.dropoffAddress ? `Address: ${trip.dropoffAddress}` : "",
-            nightSurcharge > 0 ? "NIGHT SURCHARGE (+€15)" : "",
-            `Payment: ${paymentMethod === "cash" ? "Cash to driver" : "Card to driver"}`,
-            personal.notes,
-          ].filter(Boolean).join(" | "),
+          notes: noteParts,
           status: "new",
         }),
       });
@@ -354,6 +373,8 @@ export default function ReservationPage() {
               toName: trip.toName,
               date: trip.date,
               time: trip.time,
+              returnDate: isRoundTrip ? trip.returnDate : null,
+              returnTime: isRoundTrip ? trip.returnTime : null,
               passengers: trip.passengers,
               kids: trip.kids,
               bags: trip.bags,
@@ -364,6 +385,7 @@ export default function ReservationPage() {
               address: trip.dropoffAddress,
               notes: personal.notes,
               nightSurcharge,
+              returnNightSurcharge,
               basePrice: vehicle?.baseRoutePrice ?? null,
               totalPrice: confirmedPrice,
               onDemand: vehicle?.onDemand ?? false,
@@ -434,7 +456,8 @@ export default function ReservationPage() {
           {([
             ["Trip Type", isRoundTrip?"🔄 Round Trip":"→ One Way"],
             ["Route",`${trip.fromName} → ${trip.toName}`],
-            ["Date & Time",`${trip.date} at ${trip.time}`],
+            ["Departure",`${trip.date} at ${trip.time}`],
+            ...(isRoundTrip ? [["Return", `${trip.returnDate} at ${trip.returnTime}`] as [string,string]] : []),
             ["Vehicle",vehicle?.name??"—"],
             ["Passengers",`${totalPax} pax${vehicle?.isDoubled?" (×2 rate)":""}`],
             ["Payment",paymentMethod==="cash"?"💵 Cash to driver":"💳 Card to driver"],
@@ -446,7 +469,13 @@ export default function ReservationPage() {
           ))}
           {nightSurcharge>0&&(
             <div style={{ display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #e5e7eb",fontSize:14 }}>
-              <span style={{ color:"#6b7280" }}>🌙 Night Surcharge</span>
+              <span style={{ color:"#6b7280" }}>🌙 Outbound Night Surcharge</span>
+              <span style={{ fontWeight:600,color:"#7c3aed" }}>+€{NIGHT_SURCHARGE}</span>
+            </div>
+          )}
+          {returnNightSurcharge>0&&(
+            <div style={{ display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #e5e7eb",fontSize:14 }}>
+              <span style={{ color:"#6b7280" }}>🌙 Return Night Surcharge</span>
               <span style={{ fontWeight:600,color:"#7c3aed" }}>+€{NIGHT_SURCHARGE}</span>
             </div>
           )}
@@ -546,15 +575,68 @@ export default function ReservationPage() {
         @keyframes spin{to{transform:rotate(360deg)}}
         .rp-spin{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
         .rp-dots{display:inline-block;width:10px;height:10px;border:2px solid rgba(22,163,74,0.3);border-top-color:#16a34a;border-radius:50%;animation:spin .7s linear infinite;margin-left:8px;vertical-align:middle}
-        .rp-payment-opt{display:flex;align-items:center;gap:14px;border:2px solid #e5e7eb;border-radius:12px;padding:16px 20px;cursor:pointer;background:#fff;transition:all .2s;flex:1;min-width:0}
-        .rp-payment-opt:hover{border-color:#d1d5db;background:#f9fafb}
-        .rp-payment-opt.selected{border-color:#111827;background:#f9fafb;box-shadow:0 0 0 3px rgba(17,24,39,0.08)}
         .rp-night-banner{background:linear-gradient(135deg,#1e1b4b,#312e81);border:1.5px solid #4338ca;border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:14px;margin-top:8px}
         @keyframes nightPulse{0%,100%{opacity:1}50%{opacity:.7}}
         .rp-night-star{animation:nightPulse 2s ease-in-out infinite}
         .dial-prefix{display:flex;align-items:center;padding:0 12px;background:#f9fafb;border-right:1px solid #e5e7eb;font-size:14px;font-weight:700;color:#374151;white-space:nowrap;flex-shrink:0;min-width:56px;justify-content:center}
         optgroup{font-weight:700;color:#374151}
         option{font-weight:400;color:#111827}
+
+        /* ── Return trip date/time box ── */
+        .rp-return-box{background:linear-gradient(135deg,#fffbeb,#fef9ec);border:1.5px solid #fcd34d;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;margin-top:4px}
+        .rp-return-header{display:flex;align-items:center;gap:10px}
+        .rp-return-icon{width:34px;height:34px;border-radius:10px;background:#f59e0b;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+        .rp-return-title{font-size:13px;font-weight:700;color:#92400e}
+        .rp-return-sub{font-size:11px;color:#b45309;margin-top:1px}
+
+        /* ── Payment options — mobile-first redesign ── */
+        .rp-payment-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        @media(max-width:480px){.rp-payment-grid{grid-template-columns:1fr;gap:10px}}
+
+        .rp-pay-opt{
+          position:relative;
+          display:flex;flex-direction:column;align-items:center;justify-content:center;
+          gap:10px;padding:20px 16px;
+          border:2px solid #e5e7eb;border-radius:16px;
+          cursor:pointer;background:#fff;
+          transition:all .2s ease;
+          text-align:center;
+          min-height:120px;
+          -webkit-tap-highlight-color:transparent;
+          user-select:none;
+        }
+        .rp-pay-opt:active{transform:scale(0.97)}
+        .rp-pay-opt:hover{border-color:#d1d5db;background:#fafafa;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+        .rp-pay-opt.selected{
+          border-color:#111827;background:#f9fafb;
+          box-shadow:0 0 0 3px rgba(17,24,39,0.08),0 4px 16px rgba(0,0,0,0.08);
+        }
+        .rp-pay-check{
+          position:absolute;top:10px;right:10px;
+          width:20px;height:20px;border-radius:50%;
+          border:2px solid #d1d5db;
+          display:flex;align-items:center;justify-content:center;
+          transition:all .2s;background:#fff;
+          flex-shrink:0;
+        }
+        .rp-pay-opt.selected .rp-pay-check{border-color:#111827;background:#111827}
+        .rp-pay-icon{
+          width:52px;height:52px;border-radius:14px;
+          background:#f3f4f6;
+          display:flex;align-items:center;justify-content:center;
+          font-size:26px;
+          transition:background .2s;
+          flex-shrink:0;
+        }
+        .rp-pay-opt.selected .rp-pay-icon{background:#111827}
+        .rp-pay-label{font-size:14px;font-weight:700;color:#111827;line-height:1.2}
+        .rp-pay-sub{font-size:11px;color:#6b7280;line-height:1.4;max-width:140px}
+        @media(max-width:480px){
+          .rp-pay-opt{flex-direction:row;text-align:left;min-height:unset;padding:16px 14px;gap:14px;align-items:center}
+          .rp-pay-icon{width:46px;height:46px;font-size:22px;flex-shrink:0}
+          .rp-pay-sub{max-width:none}
+          .rp-pay-check{position:static;margin-left:auto;flex-shrink:0}
+        }
       `}</style>
 
       <div className="rp">
@@ -582,9 +664,15 @@ export default function ReservationPage() {
             )}
 
             {nightSurcharge>0&&(
+              <div style={{ marginBottom:8,padding:"8px 12px",borderRadius:9,background:"rgba(99,102,241,.15)",border:"1px solid rgba(99,102,241,.3)",fontSize:12,fontWeight:700,color:"#a5b4fc",display:"flex",alignItems:"center",gap:6 }}>
+                <span className="rp-night-star">🌙</span>
+                Outbound night surcharge <span style={{ marginLeft:"auto",color:"#c4b5fd" }}>+€{NIGHT_SURCHARGE}</span>
+              </div>
+            )}
+            {returnNightSurcharge>0&&(
               <div style={{ marginBottom:16,padding:"8px 12px",borderRadius:9,background:"rgba(99,102,241,.15)",border:"1px solid rgba(99,102,241,.3)",fontSize:12,fontWeight:700,color:"#a5b4fc",display:"flex",alignItems:"center",gap:6 }}>
                 <span className="rp-night-star">🌙</span>
-                Night surcharge <span style={{ marginLeft:"auto",color:"#c4b5fd" }}>+€{NIGHT_SURCHARGE}</span>
+                Return night surcharge <span style={{ marginLeft:"auto",color:"#c4b5fd" }}>+€{NIGHT_SURCHARGE}</span>
               </div>
             )}
 
@@ -631,6 +719,11 @@ export default function ReservationPage() {
                   <div>🏁 {trip.toName}</div>
                   {isRoundTrip&&<><div style={{ color:"rgba(255,255,255,.3)",marginLeft:6 }}>↓</div><div style={{ color:"rgba(245,158,11,.7)" }}>🔄 {trip.fromName}</div></>}
                 </div>
+                {isRoundTrip&&trip.returnDate&&trip.returnTime&&(
+                  <div style={{ marginTop:8,padding:"6px 10px",borderRadius:8,background:"rgba(245,158,11,.1)",border:"1px solid rgba(245,158,11,.2)",fontSize:11,color:"#f59e0b" }}>
+                    🔄 Return: {trip.returnDate} at {trip.returnTime}
+                  </div>
+                )}
               </div>
             )}
 
@@ -676,17 +769,12 @@ export default function ReservationPage() {
                     <label style={S.label}>Trip Type</label>
                     <div className="rp-trip-toggle">
                       <button type="button" className={`rp-trip-opt${trip.tripType==="one-way"?" active":""}`}
-                        onClick={()=>{setTrip(t=>({...t,tripType:"one-way"}));setVehicleId("");}}>→ One Way</button>
+                        onClick={()=>{setTrip(t=>({...t,tripType:"one-way",returnDate:"",returnTime:""}));setVehicleId("");}}>→ One Way</button>
                       <button type="button" className={`rp-trip-opt${trip.tripType==="round-trip"?" active":""}`}
                         onClick={()=>{setTrip(t=>({...t,tripType:"round-trip"}));setVehicleId("");}}>
                         🔄 Round Trip <span style={{ fontSize:11,opacity:.7,marginLeft:4 }}>(price ×2)</span>
                       </button>
                     </div>
-                    {isRoundTrip&&(
-                      <div style={{ marginTop:8,padding:"8px 14px",background:"#fffbeb",border:"1px solid #fde68a",borderRadius:9,fontSize:12,color:"#92400e",fontWeight:600 }}>
-                        💡 Round trip price = one-way price × 2. Return journey details can be added in Special Requests.
-                      </div>
-                    )}
                   </div>
 
                   <div>
@@ -716,16 +804,17 @@ export default function ReservationPage() {
                     </div>
                   )}
 
+                  {/* Outbound date & time */}
                   <div className="rp-grid">
                     {field(<>
-                      <label style={S.label}>Travel Date <span style={{ color:GREEN }}>*</span></label>
+                      <label style={S.label}>{isRoundTrip ? "Departure Date" : "Travel Date"} <span style={{ color:GREEN }}>*</span></label>
                       <div className="rp-input-wrap" style={wrap(errors.date)}>
                         <input type="date" value={trip.date} min={new Date().toISOString().split("T")[0]} onChange={e=>setTrip(t=>({...t,date:e.target.value}))} style={S.input}/>
                       </div>
                       {errEl(errors.date)}
                     </>)}
                     {field(<>
-                      <label style={S.label}>Pickup Time <span style={{ color:GREEN }}>*</span></label>
+                      <label style={S.label}>{isRoundTrip ? "Departure Time" : "Pickup Time"} <span style={{ color:GREEN }}>*</span></label>
                       <div className="rp-input-wrap" style={wrap(errors.time)}>
                         <input type="time" value={trip.time} onChange={e=>setTrip(t=>({...t,time:e.target.value}))} style={S.input}/>
                       </div>
@@ -736,7 +825,7 @@ export default function ReservationPage() {
                           <div style={{ flex:1 }}>
                             <div style={{ fontSize:13,fontWeight:800,color:"#e0e7ff",marginBottom:3 }}>Night Surcharge Applied</div>
                             <div style={{ fontSize:11,color:"rgba(196,181,253,.8)",lineHeight:1.5 }}>
-                              Pickups between <strong style={{ color:"#c4b5fd" }}>10:00 PM – 6:00 AM</strong> include a night surcharge of <strong style={{ color:"#a5f3fc" }}>+€{NIGHT_SURCHARGE}</strong> added to your fare.
+                              Pickups between <strong style={{ color:"#c4b5fd" }}>10:00 PM – 6:00 AM</strong> include a night surcharge of <strong style={{ color:"#a5f3fc" }}>+€{NIGHT_SURCHARGE}</strong>.
                             </div>
                           </div>
                           <div style={{ flexShrink:0,background:"rgba(165,243,252,.15)",border:"1px solid rgba(165,243,252,.3)",borderRadius:10,padding:"8px 14px",textAlign:"center" }}>
@@ -747,6 +836,64 @@ export default function ReservationPage() {
                       )}
                     </>)}
                   </div>
+
+                  {/* ── Return date & time (only for round trip) ── */}
+                  {isRoundTrip&&(
+                    <div className="rp-return-box">
+                      <div className="rp-return-header">
+                        <div className="rp-return-icon">🔄</div>
+                        <div>
+                          <div className="rp-return-title">Return Journey Details</div>
+                          <div className="rp-return-sub">When should we pick you up for the return trip?</div>
+                        </div>
+                      </div>
+                      <div className="rp-grid">
+                        {field(<>
+                          <label style={S.label}>Return Date <span style={{ color:"#d97706" }}>*</span></label>
+                          <div className="rp-input-wrap" style={wrap(errors.returnDate)}>
+                            <input
+                              type="date"
+                              value={trip.returnDate}
+                              min={trip.date || new Date().toISOString().split("T")[0]}
+                              onChange={e=>setTrip(t=>({...t,returnDate:e.target.value}))}
+                              style={S.input}
+                            />
+                          </div>
+                          {errEl(errors.returnDate)}
+                        </>)}
+                        {field(<>
+                          <label style={S.label}>Return Pickup Time <span style={{ color:"#d97706" }}>*</span></label>
+                          <div className="rp-input-wrap" style={wrap(errors.returnTime)}>
+                            <input
+                              type="time"
+                              value={trip.returnTime}
+                              onChange={e=>setTrip(t=>({...t,returnTime:e.target.value}))}
+                              style={S.input}
+                            />
+                          </div>
+                          {errEl(errors.returnTime)}
+                          {isNightTime(trip.returnTime)&&(
+                            <div className="rp-night-banner" style={{ marginTop:10 }}>
+                              <div style={{ fontSize:22,flexShrink:0,lineHeight:1 }} className="rp-night-star">🌙</div>
+                              <div style={{ flex:1 }}>
+                                <div style={{ fontSize:12,fontWeight:800,color:"#e0e7ff",marginBottom:2 }}>Return Night Surcharge</div>
+                                <div style={{ fontSize:11,color:"rgba(196,181,253,.8)" }}>
+                                  +€{NIGHT_SURCHARGE} will be added for return pickup.
+                                </div>
+                              </div>
+                              <div style={{ flexShrink:0,background:"rgba(165,243,252,.15)",border:"1px solid rgba(165,243,252,.3)",borderRadius:9,padding:"6px 12px",textAlign:"center" }}>
+                                <div style={{ fontSize:9,color:"rgba(165,243,252,.7)",fontWeight:700,letterSpacing:".08em",textTransform:"uppercase",marginBottom:1 }}>Extra</div>
+                                <div style={{ fontSize:18,fontWeight:900,color:"#a5f3fc",lineHeight:1 }}>+€{NIGHT_SURCHARGE}</div>
+                              </div>
+                            </div>
+                          )}
+                        </>)}
+                      </div>
+                      <div style={{ background:"rgba(245,158,11,.08)",border:"1px solid rgba(245,158,11,.25)",borderRadius:9,padding:"8px 12px",fontSize:11,color:"#92400e",fontWeight:500,lineHeight:1.5 }}>
+                        💡 The return trip is from <strong>{trip.toName||"your drop-off"}</strong> back to <strong>{trip.fromName||"your pickup"}</strong>. Return details can also be noted in Special Requests on the next page.
+                      </div>
+                    </div>
+                  )}
 
                   <div className="rp-grid">
                     {counter("passengers",1,16,"Passengers")}
@@ -793,11 +940,14 @@ export default function ReservationPage() {
                   )}
 
                   {isRoundTrip&&(
-                    <div style={{ background:"linear-gradient(135deg,#fffbeb,#fef3c7)",border:"1.5px solid #fcd34d",borderRadius:12,padding:"12px 16px",display:"flex",gap:12,alignItems:"center" }}>
-                      <span style={{ fontSize:20 }}>🔄</span>
+                    <div style={{ background:"linear-gradient(135deg,#fffbeb,#fef3c7)",border:"1.5px solid #fcd34d",borderRadius:12,padding:"12px 16px",display:"flex",gap:12,alignItems:"flex-start" }}>
+                      <span style={{ fontSize:20,flexShrink:0,marginTop:1 }}>🔄</span>
                       <div>
-                        <div style={{ fontWeight:700,color:"#92400e",fontSize:13 }}>Round trip — all prices doubled</div>
-                        <div style={{ fontSize:12,color:"#b45309",marginTop:1 }}>Prices shown include both outbound and return journeys</div>
+                        <div style={{ fontWeight:700,color:"#92400e",fontSize:13 }}>Round trip — all base prices doubled</div>
+                        <div style={{ fontSize:12,color:"#b45309",marginTop:1 }}>
+                          Prices shown include both outbound ({trip.date} {trip.time}) and return ({trip.returnDate||"—"} {trip.returnTime||"—"}) journeys
+                          {returnNightSurcharge > 0 ? " + return night surcharge" : ""}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -812,16 +962,20 @@ export default function ReservationPage() {
                     </div>
                   )}
 
-                  {nightSurcharge>0&&(
+                  {(nightSurcharge>0||returnNightSurcharge>0)&&(
                     <div className="rp-night-banner">
                       <div style={{ fontSize:22,flexShrink:0 }} className="rp-night-star">🌙</div>
                       <div style={{ flex:1 }}>
-                        <div style={{ fontSize:13,fontWeight:800,color:"#e0e7ff",marginBottom:2 }}>Night Surcharge Included in All Prices</div>
-                        <div style={{ fontSize:11,color:"rgba(196,181,253,.8)" }}>+€{NIGHT_SURCHARGE} night fee (10 PM–6 AM) has been added to each fare shown below</div>
+                        <div style={{ fontSize:13,fontWeight:800,color:"#e0e7ff",marginBottom:2 }}>Night Surcharge Included in Prices</div>
+                        <div style={{ fontSize:11,color:"rgba(196,181,253,.8)" }}>
+                          {nightSurcharge>0&&`Outbound +€${NIGHT_SURCHARGE} (10 PM–6 AM)`}
+                          {nightSurcharge>0&&returnNightSurcharge>0&&" · "}
+                          {returnNightSurcharge>0&&`Return +€${NIGHT_SURCHARGE} (10 PM–6 AM)`}
+                        </div>
                       </div>
                       <div style={{ flexShrink:0,background:"rgba(165,243,252,.15)",border:"1px solid rgba(165,243,252,.3)",borderRadius:9,padding:"6px 12px",textAlign:"center" }}>
-                        <div style={{ fontSize:9,color:"rgba(165,243,252,.7)",fontWeight:700,letterSpacing:".08em",textTransform:"uppercase",marginBottom:1 }}>Added</div>
-                        <div style={{ fontSize:18,fontWeight:900,color:"#a5f3fc",lineHeight:1 }}>+€{NIGHT_SURCHARGE}</div>
+                        <div style={{ fontSize:9,color:"rgba(165,243,252,.7)",fontWeight:700,letterSpacing:".08em",textTransform:"uppercase",marginBottom:1 }}>Total Added</div>
+                        <div style={{ fontSize:18,fontWeight:900,color:"#a5f3fc",lineHeight:1 }}>+€{nightSurcharge+returnNightSurcharge}</div>
                       </div>
                     </div>
                   )}
@@ -873,7 +1027,6 @@ export default function ReservationPage() {
                         className={`rp-vc${sel?" rp-vc-sel":""}${isLocked?" rp-vc-locked":""}${isRecom?" rp-vc-recom":""}`}
                         onClick={()=>{ if(!isLocked) setVehicleId(v.id); }}>
 
-                        {/* Selected top bar */}
                         {sel&&(
                           <div className="rp-vc-selbar">
                             <svg width={13} height={13} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
@@ -881,21 +1034,16 @@ export default function ReservationPage() {
                           </div>
                         )}
 
-                        {/* Full-bleed photo */}
                         <div className="rp-vc-photo">
                           <img src={v.img} alt={v.name}/>
                           <div className="rp-vc-overlay"/>
-
-                          {/* Badges — top left */}
                           <div className="rp-vc-badges">
                             {isRecom&&!sel&&<span className="rp-vc-badge rp-vc-badge-green">✦ Best fit</span>}
                             {v.tag&&<span className="rp-vc-badge rp-vc-badge-amber">{v.tag}</span>}
-                            {nightSurcharge>0&&<span className="rp-vc-badge rp-vc-badge-night">🌙 +€{NIGHT_SURCHARGE}</span>}
+                            {(nightSurcharge>0||returnNightSurcharge>0)&&<span className="rp-vc-badge rp-vc-badge-night">🌙 +€{nightSurcharge+returnNightSurcharge}</span>}
                             {isRoundTrip&&<span className="rp-vc-badge rp-vc-badge-dark">RT ×2</span>}
                             {v.isDoubled&&<span className="rp-vc-badge rp-vc-badge-orange">⚡ ×2 rate</span>}
                           </div>
-
-                          {/* Name + price overlaid on photo bottom */}
                           <div className="rp-vc-photobottom">
                             <div>
                               <div className="rp-vc-vname">{v.name}</div>
@@ -916,10 +1064,7 @@ export default function ReservationPage() {
                           </div>
                         </div>
 
-                        {/* Details below photo */}
                         <div className="rp-vc-details">
-
-                          {/* Capacity bars */}
                           <div className="rp-vc-bars">
                             {[
                               { label:"👤 Passengers", val:totalPax, max:v.maxPassengers, pct:paxPct, color:paxColor, exceeded:v.paxExceeded },
@@ -936,16 +1081,10 @@ export default function ReservationPage() {
                               </div>
                             ))}
                           </div>
-
-                          {/* Feature pills */}
                           <div className="rp-vc-features">
                             {features.map(f=><span key={f} className="rp-vc-feat">{f}</span>)}
                           </div>
-
-                          {/* Special note */}
                           {v.special&&<div className="rp-vc-special">⚠️ {v.special}</div>}
-
-                          {/* Action row */}
                           <div className="rp-vc-action">
                             <div>
                               {v.onDemand?(
@@ -962,7 +1101,7 @@ export default function ReservationPage() {
                                     {isRoundTrip&&<span style={{ fontSize:10,fontWeight:700,background:"#fff7ed",color:"#ea580c",padding:"2px 6px",borderRadius:5,border:"1px solid #fed7aa" }}>RT</span>}
                                   </div>
                                   <div style={{ fontSize:10,color:"#9ca3af",marginTop:2 }}>
-                                    ✓ {totalPax} pax · {isRoundTrip?"round trip":"one way"} · fixed · incl. VAT{nightSurcharge>0?" · incl. night fee":""}
+                                    ✓ {totalPax} pax · {isRoundTrip?"round trip":"one way"} · fixed · incl. VAT{(nightSurcharge+returnNightSurcharge)>0?` · incl. night fee(s)`:""}
                                   </div>
                                 </>
                               ):(
@@ -979,7 +1118,6 @@ export default function ReservationPage() {
                           </div>
                         </div>
 
-                        {/* Lock overlay */}
                         {isLocked&&(
                           <div className="rp-vc-lockoverlay">
                             <div className="rp-vc-lockcircle">🔒</div>
@@ -1018,37 +1156,62 @@ export default function ReservationPage() {
                     </>)}
                     {field(<><label style={S.label}>Email Address <span style={{ color:GREEN }}>*</span></label><div className="rp-input-wrap" style={wrap(errors.email)}><input type="email" placeholder="you@example.com" value={personal.email} onChange={e=>setPersonal(p=>({...p,email:e.target.value}))} style={S.input}/></div>{errEl(errors.email)}</>)}
                   </div>
-                  {field(<><label style={S.label}>Special Requests <span style={{ fontSize:12,color:"#9ca3af",fontWeight:400 }}>(optional)</span></label><textarea rows={4} placeholder="Return date/time for round trip, flight number, special assistance…" value={personal.notes} onChange={e=>setPersonal(p=>({...p,notes:e.target.value}))} style={{ width:"100%",border:"1.5px solid #e5e7eb",borderRadius:10,padding:"12px 14px",fontSize:14,color:DARK,resize:"none",outline:"none",fontFamily:"inherit",boxSizing:"border-box" }}/></>)}
+                  {field(<><label style={S.label}>Special Requests <span style={{ fontSize:12,color:"#9ca3af",fontWeight:400 }}>(optional)</span></label><textarea rows={4} placeholder="Special assistance, accessibility needs, extra stops…" value={personal.notes} onChange={e=>setPersonal(p=>({...p,notes:e.target.value}))} style={{ width:"100%",border:"1.5px solid #e5e7eb",borderRadius:10,padding:"12px 14px",fontSize:14,color:DARK,resize:"none",outline:"none",fontFamily:"inherit",boxSizing:"border-box" }}/></>)}
 
+                  {/* ── Payment method — redesigned ── */}
                   <div>
-                    <label style={{ ...S.label,marginBottom:10 }}>
+                    <label style={{ ...S.label,marginBottom:12 }}>
                       Payment Method <span style={{ color:GREEN }}>*</span>
                     </label>
-                    <div style={{ display:"flex",gap:12,flexWrap:"wrap" }}>
-                      <div className={`rp-payment-opt${paymentMethod==="cash"?" selected":""}`} onClick={()=>setPaymentMethod("cash")} style={{ border:`2px solid ${paymentMethod==="cash"?"#111827":"#e5e7eb"}` }}>
-                        <div style={{ width:44,height:44,borderRadius:12,background:paymentMethod==="cash"?"#111827":"#f3f4f6",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"background .2s",fontSize:22 }}>💵</div>
-                        <div style={{ flex:1,minWidth:0 }}>
-                          <div style={{ fontSize:14,fontWeight:700,color:DARK,marginBottom:2 }}>Cash to Driver</div>
-                          <div style={{ fontSize:11,color:"#6b7280",lineHeight:1.4 }}>Pay in cash on arrival — no card needed</div>
+
+                    <div className="rp-payment-grid">
+                      {/* Cash */}
+                      <div
+                        className={`rp-pay-opt${paymentMethod==="cash"?" selected":""}`}
+                        onClick={()=>setPaymentMethod("cash")}
+                        role="radio"
+                        aria-checked={paymentMethod==="cash"}
+                      >
+                        <div className="rp-pay-icon">
+                          <span style={{ filter:paymentMethod==="cash"?"invert(1) brightness(2)":"none",transition:"filter .2s" }}>💵</span>
                         </div>
-                        <div style={{ width:20,height:20,borderRadius:"50%",border:`2px solid ${paymentMethod==="cash"?"#111827":"#d1d5db"}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .2s" }}>
-                          {paymentMethod==="cash"&&<div style={{ width:10,height:10,borderRadius:"50%",background:"#111827" }}/>}
+                        <div style={{ display:"flex",flexDirection:"column",gap:2,flex:1,minWidth:0 }}>
+                          <div className="rp-pay-label">Cash to Driver</div>
+                          <div className="rp-pay-sub">Pay in cash on arrival</div>
+                        </div>
+                        <div className="rp-pay-check">
+                          {paymentMethod==="cash"&&(
+                            <svg width={10} height={10} fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={3.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                          )}
                         </div>
                       </div>
-                      <div className={`rp-payment-opt${paymentMethod==="card"?" selected":""}`} onClick={()=>setPaymentMethod("card")} style={{ border:`2px solid ${paymentMethod==="card"?"#111827":"#e5e7eb"}` }}>
-                        <div style={{ width:44,height:44,borderRadius:12,background:paymentMethod==="card"?"#111827":"#f3f4f6",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"background .2s",fontSize:22 }}>💳</div>
-                        <div style={{ flex:1,minWidth:0 }}>
-                          <div style={{ fontSize:14,fontWeight:700,color:DARK,marginBottom:2 }}>Card to Driver</div>
-                          <div style={{ fontSize:11,color:"#6b7280",lineHeight:1.4 }}>Pay by card on arrival — Visa, Mastercard accepted</div>
+
+                      {/* Card */}
+                      <div
+                        className={`rp-pay-opt${paymentMethod==="card"?" selected":""}`}
+                        onClick={()=>setPaymentMethod("card")}
+                        role="radio"
+                        aria-checked={paymentMethod==="card"}
+                      >
+                        <div className="rp-pay-icon">
+                          <span style={{ filter:paymentMethod==="card"?"invert(1) brightness(2)":"none",transition:"filter .2s" }}>💳</span>
                         </div>
-                        <div style={{ width:20,height:20,borderRadius:"50%",border:`2px solid ${paymentMethod==="card"?"#111827":"#d1d5db"}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .2s" }}>
-                          {paymentMethod==="card"&&<div style={{ width:10,height:10,borderRadius:"50%",background:"#111827" }}/>}
+                        <div style={{ display:"flex",flexDirection:"column",gap:2,flex:1,minWidth:0 }}>
+                          <div className="rp-pay-label">Card to Driver</div>
+                          <div className="rp-pay-sub">Visa & Mastercard accepted</div>
+                        </div>
+                        <div className="rp-pay-check">
+                          {paymentMethod==="card"&&(
+                            <svg width={10} height={10} fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={3.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                          )}
                         </div>
                       </div>
                     </div>
+
                     {errEl(errors.paymentMethod)}
+
                     {paymentMethod&&(
-                      <div style={{ marginTop:10,padding:"8px 14px",background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:9,fontSize:12,color:"#166534",fontWeight:600,display:"flex",alignItems:"center",gap:8 }}>
+                      <div style={{ marginTop:10,padding:"9px 14px",background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:9,fontSize:12,color:"#166534",fontWeight:600,display:"flex",alignItems:"center",gap:8 }}>
                         <svg width={14} height={14} fill="none" viewBox="0 0 24 24" stroke={GREEN} strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
                         {paymentMethod==="cash"?"You'll pay cash directly to your driver upon arrival.":"You'll pay by card directly to your driver upon arrival."}
                       </div>
@@ -1063,7 +1226,11 @@ export default function ReservationPage() {
                   <SummaryCard title="Trip Details" rows={[
                     ["Trip Type", isRoundTrip?"🔄 Round Trip (×2 price)":"→ One Way"],
                     ["Pickup",    trip.fromName],["Drop-off",trip.toName],
-                    ["Date",     trip.date],["Time",trip.time],
+                    ["Departure Date", trip.date],["Departure Time", trip.time],
+                    ...(isRoundTrip ? [
+                      ["Return Date", trip.returnDate] as [string,string],
+                      ["Return Time", trip.returnTime] as [string,string],
+                    ] : []),
                     ["Passengers",`${trip.passengers} adult${trip.passengers!==1?"s":""}${trip.kids>0?`, ${trip.kids} child${trip.kids!==1?"ren":""}`:""} (${totalPax} total)`],
                     ["Luggage",  `${trip.bags} bag${trip.bags!==1?"s":""}`],
                     ...(trip.flightOrTrain?[["Flight/Train",trip.flightOrTrain] as [string,string]]:[]),
@@ -1097,7 +1264,15 @@ export default function ReservationPage() {
                       {nightSurcharge>0&&(
                         <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 20px",fontSize:14,background:"#f5f3ff",borderTop:"1px dashed #ddd6fe",borderBottom:"1px dashed #ddd6fe" }}>
                           <span style={{ color:"#7c3aed",display:"flex",alignItems:"center",gap:6,fontWeight:600 }}>
-                            <span>🌙</span> Night Surcharge (10 PM – 6 AM)
+                            <span>🌙</span> Outbound Night Surcharge (10 PM – 6 AM)
+                          </span>
+                          <span style={{ fontWeight:700,color:"#7c3aed" }}>+€{NIGHT_SURCHARGE}</span>
+                        </div>
+                      )}
+                      {returnNightSurcharge>0&&(
+                        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 20px",fontSize:14,background:"#f5f3ff",borderTop:"1px dashed #ddd6fe",borderBottom:"1px dashed #ddd6fe" }}>
+                          <span style={{ color:"#7c3aed",display:"flex",alignItems:"center",gap:6,fontWeight:600 }}>
+                            <span>🌙</span> Return Night Surcharge (10 PM – 6 AM)
                           </span>
                           <span style={{ fontWeight:700,color:"#7c3aed" }}>+€{NIGHT_SURCHARGE}</span>
                         </div>
@@ -1109,16 +1284,26 @@ export default function ReservationPage() {
                     </div>
                   </div>
 
-                  <div style={{ background:DARK,borderRadius:14,padding:"18px 24px",display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+                  <div style={{ background:DARK,borderRadius:14,padding:"18px 24px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:12 }}>
                     <div>
                       <div style={{ fontSize:13,color:"rgba(255,255,255,.45)",marginBottom:3 }}>Total Fare · {totalPax} pax · {isRoundTrip?"Round Trip":"One Way"}</div>
-                      <div style={{ fontSize:11,color:"rgba(255,255,255,.25)" }}>Fixed · incl. VAT · Pay on arrival{isRoundTrip?" · round trip ×2":""}{vehicle?.isDoubled?" · 9+ pax ×2":""}{nightSurcharge>0?" · incl. 🌙 night fee":""}</div>
+                      <div style={{ fontSize:11,color:"rgba(255,255,255,.25)" }}>
+                        Fixed · incl. VAT · Pay on arrival
+                        {isRoundTrip?" · round trip ×2":""}
+                        {vehicle?.isDoubled?" · 9+ pax ×2":""}
+                        {nightSurcharge>0?" · 🌙 outbound night":""}
+                        {returnNightSurcharge>0?" · 🌙 return night":""}
+                      </div>
                     </div>
-                    <div style={{ textAlign:"right" }}>
+                    <div style={{ textAlign:"right",flexShrink:0 }}>
                       <div style={{ fontSize:34,fontWeight:900,color:"#4ade80" }}>
                         {vehicle?.onDemand?<span style={{ fontSize:20 }}>On Demand</span>:`€${confirmedPrice}`}
                       </div>
-                      {(isRoundTrip||vehicle?.isDoubled||nightSurcharge>0)&&<div style={{ fontSize:10,color:"#f59e0b",marginTop:2 }}>{[isRoundTrip?"RT ×2":"",vehicle?.isDoubled?"9+pax ×2":"",nightSurcharge>0?"🌙 +€15":""].filter(Boolean).join(" · ")}</div>}
+                      {(isRoundTrip||vehicle?.isDoubled||(nightSurcharge+returnNightSurcharge)>0)&&(
+                        <div style={{ fontSize:10,color:"#f59e0b",marginTop:2 }}>
+                          {[isRoundTrip?"RT ×2":"",vehicle?.isDoubled?"9+pax ×2":"",(nightSurcharge+returnNightSurcharge)>0?`🌙 +€${nightSurcharge+returnNightSurcharge}`:""].filter(Boolean).join(" · ")}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
