@@ -8,11 +8,13 @@ interface BookingEmailData {
   name: string; email: string; country: string; whatsapp: string;
   fromName: string; toName: string;
   date: string; time: string;
+  returnDate?: string | null; returnTime?: string | null;   // ← ADDED
   passengers: number; kids: number; bags: number;
   vehicleName: string; vehicleModel: string;
   isRoundTrip: boolean;
   flightTrain: string; address: string; notes: string;
   nightSurcharge: number;
+  returnNightSurcharge?: number;                            // ← ADDED
   basePrice: number | null;
   totalPrice: number | null;
   onDemand: boolean;
@@ -37,9 +39,11 @@ function buildCustomerEmail(data: BookingEmailData): string {
   const {
     bookingRef, name, email, country, whatsapp,
     fromName, toName, date, time,
+    returnDate, returnTime,
     passengers, kids, bags, vehicleName, vehicleModel,
     isRoundTrip, flightTrain, address, notes,
-    nightSurcharge, basePrice, totalPrice, onDemand,
+    nightSurcharge, returnNightSurcharge = 0,
+    basePrice, totalPrice, onDemand,
     paymentMethod,
   } = data;
 
@@ -74,14 +78,11 @@ function buildCustomerEmail(data: BookingEmailData): string {
   <!-- ═══ HERO CARD ═══ -->
   <tr><td style="background:linear-gradient(160deg,#1a1200 0%,#0f0f0f 40%,#0a1a0a 100%);border-radius:20px;border:1px solid #2a2200;overflow:hidden;">
 
-    <!-- Gold top accent line -->
     <div style="height:3px;background:linear-gradient(90deg,transparent,#c9a347,#e8c97a,#c9a347,transparent);"></div>
 
-    <!-- Hero content -->
     <table width="100%" cellpadding="0" cellspacing="0">
       <tr><td style="padding:52px 48px 40px;text-align:center;">
 
-        <!-- Checkmark circle -->
         <div style="display:inline-block;width:80px;height:80px;border-radius:50%;border:2px solid #c9a347;background:rgba(201,163,71,0.08);margin-bottom:28px;">
           <table width="80" height="80" cellpadding="0" cellspacing="0"><tr><td align="center" valign="middle">
             <svg width="32" height="32" fill="none" viewBox="0 0 24 24">
@@ -96,7 +97,6 @@ function buildCustomerEmail(data: BookingEmailData): string {
           Your luxury transfer has been arranged. A professional chauffeur will meet you at the designated point.
         </p>
 
-        <!-- Booking Ref Badge -->
         <div style="display:inline-block;border:1px solid rgba(201,163,71,0.4);border-radius:4px;padding:14px 32px;background:rgba(201,163,71,0.06);">
           <div style="font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#c9a347;margin-bottom:6px;">Booking Reference</div>
           <div style="font-size:26px;font-weight:700;color:#e8c97a;letter-spacing:0.15em;font-family:'Courier New',monospace;">${bookingRef}</div>
@@ -164,8 +164,10 @@ function buildCustomerEmail(data: BookingEmailData): string {
       ${buildRow("Trip Type", isRoundTrip ? "🔄 Round Trip (×2 price)" : "→ One Way")}
       ${buildRow("Pickup", fromName)}
       ${buildRow("Drop-off", toName)}
-      ${buildRow("Date", date)}
-      ${buildRow("Pickup Time", time + (nightSurcharge > 0 ? "  🌙 Night fare" : ""))}
+      ${buildRow("Departure Date", date)}
+      ${buildRow("Departure Time", time + (nightSurcharge > 0 ? "  🌙 Night fare" : ""))}
+      ${isRoundTrip && returnDate ? buildRow("Return Date", returnDate) : ""}
+      ${isRoundTrip && returnTime ? buildRow("Return Time", returnTime + (returnNightSurcharge > 0 ? "  🌙 Night fare" : "")) : ""}
       ${buildRow("Adults", `${passengers}`)}
       ${kids > 0 ? buildRow("Children", `${kids}`) : ""}
       ${buildRow("Luggage", `${bags} bag${bags !== 1 ? "s" : ""}`)}
@@ -199,7 +201,8 @@ function buildCustomerEmail(data: BookingEmailData): string {
         <span style="font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#92784a;">Fare Breakdown</span>
       </td></tr>
       ${buildRow(`Base fare${isRoundTrip ? " (×2 round trip)" : ""}`, onDemand ? "On Demand" : `€${basePrice}`)}
-      ${nightSurcharge > 0 ? buildRow("🌙 Night Surcharge (10 PM – 6 AM)", `+€${nightSurcharge}`) : ""}
+      ${nightSurcharge > 0 ? buildRow("🌙 Outbound Night Surcharge (10 PM – 6 AM)", `+€${nightSurcharge}`) : ""}
+      ${returnNightSurcharge > 0 ? buildRow("🌙 Return Night Surcharge (10 PM – 6 AM)", `+€${returnNightSurcharge}`) : ""}
       <tr>
         <td colspan="2" style="padding:16px 24px;background:#fafaf8;border-top:2px solid #e8e0d0;">
           <table width="100%" cellpadding="0" cellspacing="0"><tr>
@@ -311,10 +314,12 @@ function buildAdminEmail(data: BookingEmailData): string {
   const {
     bookingRef, name, email, whatsapp, country,
     fromName, toName, date, time,
+    returnDate, returnTime,
     passengers, kids, bags,
     vehicleName, vehicleModel,
     isRoundTrip, flightTrain, address, notes,
-    nightSurcharge, basePrice, totalPrice, onDemand,
+    nightSurcharge, returnNightSurcharge = 0,
+    basePrice, totalPrice, onDemand,
     paymentMethod,
   } = data;
 
@@ -322,6 +327,7 @@ function buildAdminEmail(data: BookingEmailData): string {
   const year = new Date().getFullYear();
   const now = new Date().toUTCString();
   const isNight = nightSurcharge > 0;
+  const isReturnNight = returnNightSurcharge > 0;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -338,10 +344,7 @@ function buildAdminEmail(data: BookingEmailData): string {
 
   <!-- ═══ TOP ALERT HEADER ═══ -->
   <tr><td style="background:#111827;border-radius:18px 18px 0 0;padding:0;overflow:hidden;">
-
-    <!-- Colored urgency bar -->
     <div style="height:4px;background:linear-gradient(90deg,#16a34a,#4ade80,#16a34a);"></div>
-
     <table width="100%" cellpadding="0" cellspacing="0">
       <tr><td style="padding:24px 32px 20px;">
         <table width="100%" cellpadding="0" cellspacing="0"><tr>
@@ -377,6 +380,7 @@ function buildAdminEmail(data: BookingEmailData): string {
       <td style="text-align:right;white-space:nowrap;">
         <div style="font-size:14px;font-weight:700;color:#c9a347;">${date}</div>
         <div style="font-size:13px;color:rgba(255,255,255,0.5);">${time}${isNight ? " 🌙" : ""}</div>
+        ${isRoundTrip && returnDate ? `<div style="font-size:11px;color:rgba(245,158,11,0.7);margin-top:4px;">🔄 Return: ${returnDate} ${returnTime || ""}${isReturnNight ? " 🌙" : ""}</div>` : ""}
       </td>
     </tr></table>
   </td></tr>
@@ -404,15 +408,16 @@ function buildAdminEmail(data: BookingEmailData): string {
   <tr><td style="background:#fff;padding:0 0 0;border-top:2px solid #f3f4f6;">
     <table width="100%" cellpadding="0" cellspacing="0">
 
-      <!-- Section: Booking Info -->
       <tr><td colspan="2" style="padding:16px 24px 8px;background:#f9fafb;border-top:1px solid #f3f4f6;border-bottom:1px solid #f3f4f6;">
         <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:#6b7280;">📋 Booking Information</span>
       </td></tr>
       ${buildRow("Trip Type", isRoundTrip ? "🔄 Round Trip (×2 price)" : "→ One Way")}
       ${buildRow("Pickup Location", fromName)}
       ${buildRow("Drop-off Location", toName)}
-      ${buildRow("Date", date)}
-      ${buildRow("Pickup Time", time + (isNight ? "  🌙 Night surcharge applies" : ""))}
+      ${buildRow("Departure Date", date)}
+      ${buildRow("Departure Time", time + (isNight ? "  🌙 Night surcharge applies" : ""))}
+      ${isRoundTrip && returnDate ? buildRow("Return Date", returnDate) : ""}
+      ${isRoundTrip && returnTime ? buildRow("Return Time", returnTime + (isReturnNight ? "  🌙 Night surcharge applies" : "")) : ""}
       ${buildRow("Adults", `${passengers}`)}
       ${kids > 0 ? buildRow("Children", `${kids}`) : ""}
       ${buildRow("Total Passengers", `${totalPax}`)}
@@ -420,19 +425,18 @@ function buildAdminEmail(data: BookingEmailData): string {
       ${flightTrain ? buildRow("Flight / Train No.", flightTrain, true) : ""}
       ${address ? buildRow("Address", address, true) : ""}
 
-      <!-- Section: Vehicle -->
       <tr><td colspan="2" style="padding:16px 24px 8px;background:#f9fafb;border-top:1px solid #f3f4f6;border-bottom:1px solid #f3f4f6;">
         <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:#6b7280;">🚘 Vehicle</span>
       </td></tr>
       ${buildRow("Vehicle Type", vehicleName)}
       ${buildRow("Model", vehicleModel)}
 
-      <!-- Section: Fare -->
       <tr><td colspan="2" style="padding:16px 24px 8px;background:#f9fafb;border-top:1px solid #f3f4f6;border-bottom:1px solid #f3f4f6;">
         <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:#6b7280;">💶 Fare</span>
       </td></tr>
       ${buildRow(`Base Fare${isRoundTrip ? " (×2 round trip)" : ""}`, onDemand ? "On Demand" : `€${basePrice}`)}
-      ${isNight ? buildRow("🌙 Night Surcharge", `+€${nightSurcharge}`) : ""}
+      ${isNight ? buildRow("🌙 Outbound Night Surcharge", `+€${nightSurcharge}`) : ""}
+      ${isReturnNight ? buildRow("🌙 Return Night Surcharge", `+€${returnNightSurcharge}`) : ""}
       <tr>
         <td style="padding:14px 24px;border-bottom:1px solid #f0f0f0;border-top:2px solid #111827;background:#f0fdf4;" width="40%">
           <span style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:#15803d;">Total Charged</span>
@@ -443,7 +447,6 @@ function buildAdminEmail(data: BookingEmailData): string {
       </tr>
       ${buildRow("Payment Method", paymentMethod === "cash" ? "💵 Cash to driver" : "💳 Card to driver")}
 
-      <!-- Section: Customer -->
       <tr><td colspan="2" style="padding:16px 24px 8px;background:#f9fafb;border-top:1px solid #f3f4f6;border-bottom:1px solid #f3f4f6;">
         <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:#6b7280;">👤 Customer</span>
       </td></tr>
@@ -453,7 +456,6 @@ function buildAdminEmail(data: BookingEmailData): string {
       ${buildRow("Email", email)}
       ${notes ? buildRow("Special Requests", notes, true) : ""}
 
-      <!-- Received at -->
       <tr><td colspan="2" style="padding:10px 24px;background:#fafafa;border-top:1px solid #f3f4f6;">
         <span style="font-size:10px;color:#d1d5db;">Received: ${now}</span>
       </td></tr>
@@ -506,32 +508,64 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const data = body as BookingEmailData;
 
+    // ── Validate required fields early ────────────────────────────────────────
+    if (!data.email || !data.bookingRef) {
+      return NextResponse.json(
+        { ok: false, error: "Missing required fields: email or bookingRef" },
+        { status: 400 }
+      );
+    }
+
     const customerHtml = buildCustomerEmail(data);
     const adminHtml    = buildAdminEmail(data);
 
-    // ── OPTION A: Resend (recommended) ───────────────────────────────────────
+    const adminTo = process.env.ADMIN_EMAIL ?? "booking@pariseasymove.com";
+    const fromAddr = process.env.EMAIL_FROM ?? "noreply@pariseasymove.com";
+
+    const customerSubject = `✅ Booking Confirmed — ${data.fromName} → ${data.toName} · Ref: ${data.bookingRef}`;
+    const adminSubject    = `🚖 New Booking: ${data.name} — ${data.fromName} → ${data.toName} · ${data.date} ${data.time} · ${data.bookingRef}`;
+
+    // ── OPTION A: Resend ──────────────────────────────────────────────────────
     if (process.env.RESEND_API_KEY) {
       const { Resend } = await import("resend");
       const resend = new Resend(process.env.RESEND_API_KEY);
 
       const [customerResult, adminResult] = await Promise.all([
         resend.emails.send({
-          from: `Paris Easy Move <${process.env.EMAIL_FROM ?? "noreply@pariseasymove.com"}>`,
+          from: `Paris Easy Move <${fromAddr}>`,
           to: data.email,
-          subject: `✅ Booking Confirmed — ${data.fromName} → ${data.toName} · Ref: ${data.bookingRef}`,
+          subject: customerSubject,
           html: customerHtml,
         }),
         resend.emails.send({
-          from: `Paris Easy Move <${process.env.EMAIL_FROM ?? "noreply@pariseasymove.com"}>`,
-          to: process.env.ADMIN_EMAIL ?? "booking@pariseasymove.com",
-          subject: `🚖 New Booking: ${data.name} — ${data.fromName} → ${data.toName} · ${data.date} ${data.time} · ${data.bookingRef}`,
+          from: `Paris Easy Move <${fromAddr}>`,
+          to: adminTo,
+          subject: adminSubject,
           html: adminHtml,
         }),
       ]);
+
+      // Resend returns { error } on failure — surface it
+      if (customerResult.error || adminResult.error) {
+        console.error("[send-booking-email] Resend errors:", customerResult.error, adminResult.error);
+        return NextResponse.json(
+          { ok: false, error: customerResult.error ?? adminResult.error },
+          { status: 500 }
+        );
+      }
+
       return NextResponse.json({ ok: true, customer: customerResult, admin: adminResult });
     }
 
     // ── OPTION B: Nodemailer SMTP ─────────────────────────────────────────────
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.error("[send-booking-email] No email provider configured. Set RESEND_API_KEY or EMAIL_USER + EMAIL_PASS.");
+      return NextResponse.json(
+        { ok: false, error: "Email provider not configured on server." },
+        { status: 500 }
+      );
+    }
+
     const nodemailer = await import("nodemailer");
     const transporter = nodemailer.default.createTransport({
       host:   process.env.EMAIL_HOST   ?? "smtp.gmail.com",
@@ -543,17 +577,20 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Verify connection before sending
+    await transporter.verify();
+
     await Promise.all([
       transporter.sendMail({
-        from: `"Paris Easy Move" <${process.env.EMAIL_FROM ?? process.env.EMAIL_USER}>`,
+        from: `"Paris Easy Move" <${fromAddr}>`,
         to: data.email,
-        subject: `✅ Booking Confirmed — ${data.fromName} → ${data.toName} · Ref: ${data.bookingRef}`,
+        subject: customerSubject,
         html: customerHtml,
       }),
       transporter.sendMail({
-        from: `"Paris Easy Move Bookings" <${process.env.EMAIL_FROM ?? process.env.EMAIL_USER}>`,
-        to: process.env.ADMIN_EMAIL ?? "booking@pariseasymove.com",
-        subject: `🚖 New Booking: ${data.name} — ${data.fromName} → ${data.toName} · ${data.date} ${data.time} · ${data.bookingRef}`,
+        from: `"Paris Easy Move Bookings" <${fromAddr}>`,
+        to: adminTo,
+        subject: adminSubject,
         html: adminHtml,
       }),
     ]);

@@ -160,6 +160,24 @@ export default function WhyChooseUs() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700&display=swap');
 
+        /* ── Benefits grid ── */
+        .wcu-benefits-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          gap: 24px;
+          padding: 50px 5vw;
+        }
+
+        /* ── Stats grid ── */
+        .wcu-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 20px;
+          padding: 50px 5vw;
+          border-bottom: 1px solid rgba(201,163,71,0.1);
+        }
+
+        /* ── Benefit cards ── */
         .benefit-card {
           background: white;
           border: 1px solid rgba(201,163,71,0.14);
@@ -168,11 +186,14 @@ export default function WhyChooseUs() {
           transition: all 0.35s ease;
           position: relative;
         }
-
         .benefit-card:hover {
           transform: translateY(-6px);
           box-shadow: 0 16px 48px rgba(10,31,68,0.1);
           border-color: #c9a34766;
+        }
+        .benefit-card.featured {
+          background: linear-gradient(145deg, #ffffff, #fdfaf4);
+          border-color: #c9a34740;
         }
 
         .benefit-num {
@@ -193,11 +214,7 @@ export default function WhyChooseUs() {
           box-shadow: 0 4px 12px rgba(10,31,68,0.15);
         }
 
-        .featured {
-          background: linear-gradient(145deg, #ffffff, #fdfaf4);
-          border-color: #c9a34740;
-        }
-
+        /* ── Stat cards ── */
         .stat-card {
           background: #0a1f44;
           color: white;
@@ -206,29 +223,19 @@ export default function WhyChooseUs() {
           text-align: center;
         }
 
-        .payment-section {
+        /* ── Payment ── */
+        .wcu-payment-section {
           padding: 50px 5vw;
           border-top: 1px solid rgba(201,163,71,0.1);
           border-bottom: 1px solid rgba(201,163,71,0.1);
           text-align: center;
         }
-
-        .payment-label {
-          font-size: 11px;
-          font-weight: 600;
-          letter-spacing: 0.24em;
-          text-transform: uppercase;
-          color: #c9a347;
-          margin-bottom: 28px;
-        }
-
-        .payment-methods {
+        .wcu-payment-methods {
           display: flex;
           justify-content: center;
           flex-wrap: wrap;
           gap: 14px;
         }
-
         .payment-pill {
           display: flex;
           align-items: center;
@@ -242,16 +249,15 @@ export default function WhyChooseUs() {
           font-weight: 500;
           transition: all 0.25s ease;
         }
-
         .payment-pill:hover {
           border-color: #c9a347;
           background: #fdfaf4;
           transform: translateY(-2px);
           box-shadow: 0 6px 18px rgba(201,163,71,0.15);
         }
-
         .payment-pill svg { color: #c9a347; flex-shrink: 0; }
 
+        /* ── CTA ── */
         .cta-btn {
           padding: 14px 48px;
           background: #0a1f44;
@@ -265,28 +271,105 @@ export default function WhyChooseUs() {
           transition: all 0.3s ease;
           cursor: pointer;
         }
-
         .cta-btn:hover {
           background: #c9a347;
           color: #0a1f44;
           transform: translateY(-2px);
         }
 
+        /* ── TABLET (≤ 1024px) ── */
         @media (max-width: 1024px) {
-          .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+          .wcu-stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            padding: 40px 5vw;
+          }
         }
 
+        /* ── MOBILE (≤ 640px) ── */
         @media (max-width: 640px) {
-          .benefit-card { padding: 32px 24px 24px; }
-          .benefit-num { left: 24px; width: 46px; height: 46px; font-size: 1.2rem; }
-          .stat-card { padding: 24px 16px; }
-          .payment-methods { gap: 10px; }
-          .payment-pill { padding: 10px 16px; font-size: 12px; }
+          /* Hero */
+          .wcu-hero {
+            padding: 48px 20px 32px !important;
+          }
+
+          /* Stats: 2-col on mobile */
+          .wcu-stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 32px 20px;
+          }
+          .stat-card {
+            padding: 22px 14px;
+          }
+
+          /* Benefits: single column, tighter padding */
+          .wcu-benefits-grid {
+            grid-template-columns: 1fr;
+            gap: 28px;
+            padding: 40px 20px;
+          }
+          .benefit-card {
+            padding: 36px 20px 22px;
+          }
+          .benefit-num {
+            left: 20px;
+            width: 44px;
+            height: 44px;
+            font-size: 1.1rem;
+          }
+
+          /* Payment */
+          .wcu-payment-section {
+            padding: 36px 20px;
+          }
+          .wcu-payment-methods {
+            gap: 10px;
+          }
+          .payment-pill {
+            padding: 10px 16px;
+            font-size: 12px;
+            gap: 8px;
+          }
+          .payment-pill svg {
+            width: 22px !important;
+            height: 22px !important;
+          }
+
+          /* CTA */
+          .wcu-cta-section {
+            padding: 36px 20px !important;
+          }
+          .cta-btn {
+            width: 100%;
+            padding: 16px 24px;
+            font-size: 0.9rem;
+          }
+          .wcu-cta-text {
+            font-size: 1.3rem !important;
+          }
+        }
+
+        /* ── VERY SMALL (≤ 380px) ── */
+        @media (max-width: 380px) {
+          .wcu-stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+          }
+          .wcu-payment-methods {
+            flex-direction: column;
+            align-items: center;
+          }
+          .payment-pill {
+            width: 100%;
+            max-width: 240px;
+            justify-content: center;
+          }
         }
       `}</style>
 
       {/* Hero */}
-      <div style={styles.hero}>
+      <div className="wcu-hero" style={styles.hero}>
         <div style={styles.eyebrow}>Paris Private Transfers</div>
         <h1 style={styles.heroTitle}>Luxury Redefined</h1>
         <p style={styles.heroDesc}>
@@ -295,7 +378,7 @@ export default function WhyChooseUs() {
       </div>
 
       {/* Stats */}
-      <div style={styles.statsGrid}>
+      <div className="wcu-stats-grid">
         {stats.map((s, i) => (
           <div key={i} className="stat-card">
             <div style={styles.statValue}>{s.value}</div>
@@ -305,12 +388,11 @@ export default function WhyChooseUs() {
       </div>
 
       {/* Benefits */}
-      <div style={styles.benefitsGrid}>
+      <div className="wcu-benefits-grid">
         {benefits.map((b, i) => (
           <div
             key={i}
             className={`benefit-card${b.featured ? " featured" : ""}`}
-            style={styles.benefitCard}
           >
             <div className="benefit-num">{b.num}</div>
             <div style={{ ...styles.iconContainer, color: "#c9a347" }}>
@@ -323,9 +405,9 @@ export default function WhyChooseUs() {
       </div>
 
       {/* Payment Methods */}
-      <div className="payment-section">
-        <div className="payment-label">Accepted Payment Methods</div>
-        <div className="payment-methods">
+      <div className="wcu-payment-section">
+        <div style={styles.paymentLabel}>Accepted Payment Methods</div>
+        <div className="wcu-payment-methods">
           {paymentMethods.map((p, i) => (
             <div key={i} className="payment-pill">
               {p.icon}
@@ -336,8 +418,10 @@ export default function WhyChooseUs() {
       </div>
 
       {/* CTA */}
-      <div style={styles.ctaSection}>
-        <p style={styles.ctaText}>Begin your journey with effortless elegance</p>
+      <div className="wcu-cta-section" style={styles.ctaSection}>
+        <p className="wcu-cta-text" style={styles.ctaText}>
+          Begin your journey with effortless elegance
+        </p>
         <button className="cta-btn">Reserve Your Transfer</button>
       </div>
     </section>
@@ -367,69 +451,61 @@ const styles: Record<string, React.CSSProperties> = {
   },
   heroTitle: {
     fontFamily: "'Cormorant Garamond', serif",
-    fontSize: "clamp(3.2rem, 7vw, 5.4rem)",
+    fontSize: "clamp(2.8rem, 7vw, 5.4rem)",
     fontWeight: 500,
     lineHeight: 1.02,
     margin: "0 0 16px",
     color: "#0a1f44",
   },
   heroDesc: {
-    fontSize: "clamp(1.05rem, 1.4vw, 1.18rem)",
+    fontSize: "clamp(1rem, 1.4vw, 1.18rem)",
     lineHeight: 1.6,
     color: "#334155",
     maxWidth: 640,
     margin: "0 auto",
   },
-  statsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(4, 1fr)",
-    gap: 20,
-    padding: "50px 5vw",
-    borderBottom: "1px solid rgba(201,163,71,0.1)",
-  },
   statValue: {
-    fontSize: "clamp(2.6rem, 5vw, 3.8rem)",
+    fontSize: "clamp(2rem, 5vw, 3.8rem)",
     fontWeight: 700,
     color: "#c9a347",
     lineHeight: 1,
     marginBottom: 6,
   },
   statLabel: {
-    fontSize: "clamp(13px, 0.95vw, 14px)",
+    fontSize: "clamp(11px, 0.95vw, 14px)",
     color: "#94a3b8",
     fontWeight: 500,
-  },
-  benefitsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
-    gap: 24,
-    padding: "50px 5vw",
-  },
-  benefitCard: {
-    position: "relative",
   },
   iconContainer: {
     marginBottom: 20,
   },
   benefitTitle: {
     fontFamily: "'Cormorant Garamond', serif",
-    fontSize: "clamp(1.6rem, 2.2vw, 1.95rem)",
+    fontSize: "clamp(1.5rem, 2.2vw, 1.95rem)",
     fontWeight: 500,
     lineHeight: 1.2,
     marginBottom: 10,
     color: "#0a1f44",
   },
   benefitDesc: {
-    fontSize: "clamp(0.97rem, 1.15vw, 1.03rem)",
+    fontSize: "clamp(0.95rem, 1.15vw, 1.03rem)",
     lineHeight: 1.65,
     color: "#475569",
+  },
+  paymentLabel: {
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: "0.24em",
+    textTransform: "uppercase" as const,
+    color: "#c9a347",
+    marginBottom: 28,
   },
   ctaSection: {
     padding: "50px 5vw",
     textAlign: "center",
   },
   ctaText: {
-    fontSize: "clamp(1.4rem, 2.6vw, 1.8rem)",
+    fontSize: "clamp(1.2rem, 2.6vw, 1.8rem)",
     fontWeight: 500,
     color: "#0a1f44",
     marginBottom: 20,

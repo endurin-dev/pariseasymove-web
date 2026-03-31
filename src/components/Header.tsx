@@ -23,15 +23,15 @@ export default function Header() {
     { href: "/disney",      label: "DisneyLand",  disney: true,  blog: false },
     { href: "/rates",       label: "Rates",       disney: false, blog: false },
     { href: "/reservation", label: "Reservation", disney: false, blog: false },
+    { href: "/faq",         label: "FAQ",         disney: false, blog: false },
     { href: "/blog",        label: "Blog",        disney: false, blog: true  },
     { href: "/contact-us",  label: "Contact",     disney: false, blog: false },
   ];
 
-  // ── Navy dark-blue palette ──────────────────────────────────────────────
-  const NAVY_DEEP    = "#080f1e";   // darkest navy — header bg
-  const NAVY_MID     = "#0d1a33";   // mid navy — drawer bg
-  const NAVY_SURFACE = "rgba(13,26,51,0.6)"; // nav surface tint
-  const GOLD         = "#c8a96e";   // warm gold accent
+  const NAVY_DEEP    = "#080f1e";
+  const NAVY_MID     = "#0d1a33";
+  const NAVY_SURFACE = "rgba(13,26,51,0.6)";
+  const GOLD         = "#c8a96e";
   const GOLD_DIM     = "rgba(200,169,110,0.65)";
   const GOLD_GLOW    = "rgba(200,169,110,0.18)";
   const WHITE        = "#f0f4ff";
@@ -44,9 +44,8 @@ export default function Header() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Cinzel:wght@400;500;600;700&family=Cinzel+Decorative:wght@400;700&family=Raleway:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400;1,600&family=Cinzel:wght@400;500;600;700&family=Cinzel+Decorative:wght@400;700&family=Raleway:wght@300;400;500;600;700&display=swap');
 
-        /* ── Logo circle ── */
         .h-logo-circle {
           border-radius: 50%;
           overflow: hidden;
@@ -62,8 +61,6 @@ export default function Header() {
           box-shadow: 0 0 0 4px rgba(200,169,110,0.12), 0 6px 28px rgba(8,15,30,0.9);
           transform: scale(1.03);
         }
-
-        /* Shimmer on logo hover */
         .h-logo-circle::after {
           content: '';
           position: absolute; inset: 0; border-radius: 50%;
@@ -75,7 +72,6 @@ export default function Header() {
         }
         .h-logo-circle:hover::after { background-position: -50% 0; }
 
-        /* ── Brand name ── */
         .h-brand-name {
           font-family: 'Cinzel', serif;
           font-weight: 600;
@@ -92,11 +88,10 @@ export default function Header() {
           text-shadow: 0 1px 18px rgba(200,169,110,0.45);
         }
         .h-brand-slogan {
-          font-family: 'Cormorant Garamond', serif;
-          font-style: italic;
+          font-family: 'Cinzel', serif;
           font-size: 11px;
           font-weight: 400;
-          letter-spacing: 0.28em;
+          letter-spacing: 0.22em;
           text-transform: uppercase;
           color: ${GOLD};
           margin-top: 2px;
@@ -106,7 +101,6 @@ export default function Header() {
         }
         .h-logo-group:hover .h-brand-slogan { opacity: 1; }
 
-        /* ── Nav links ── */
         .h-navlink-u {
           position: relative;
           font-family: 'Cinzel', serif;
@@ -126,7 +120,6 @@ export default function Header() {
         .h-navlink-u:hover { background: ${GOLD_GLOW}; color: ${WHITE}; }
         .h-navlink-u:hover::after { width: 55%; }
 
-        /* ── Blog link ── */
         .h-blog-link {
           position: relative; font-family: 'Cinzel', serif;
           font-size: 11px; font-weight: 500; color: ${WHITE_DIM};
@@ -153,7 +146,6 @@ export default function Header() {
           50% { opacity: 0.9; transform: scale(1.4); }
         }
 
-        /* ── Disney ── */
         .h-disney-link {
           position: relative; font-family: 'Cinzel Decorative', cursive;
           font-size: 9.5px; font-weight: 400; text-decoration: none;
@@ -163,7 +155,6 @@ export default function Header() {
         }
         .h-disney-link:hover { background: rgba(255,160,80,0.12); color: #ffc990; transform: translateY(-1px); }
 
-        /* ── CTA Button — navy to deep navy with gold border ── */
         .h-book-btn {
           transition: all 0.38s cubic-bezier(0.23, 1, 0.32, 1) !important;
           position: relative; overflow: hidden;
@@ -182,14 +173,40 @@ export default function Header() {
         }
         .h-book-btn:hover::before { opacity: 1; }
 
-        /* ── Call pulse ── */
-        @keyframes h-pulse { 0%,100%{box-shadow:0 0 5px rgba(26,140,100,0.4)} 50%{box-shadow:0 0 14px rgba(26,140,100,0.75)} }
+        @keyframes h-pulse {
+          0%,100% { box-shadow: 0 0 5px rgba(31,190,130,0.4); }
+          50%      { box-shadow: 0 0 14px rgba(31,190,130,0.75); }
+        }
 
-        /* ── Responsive breakpoints ── */
+        .h-phone-link {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          padding: 0 20px;
+          border: 1px solid ${BORDER};
+          border-radius: 10px;
+          text-decoration: none;
+          white-space: nowrap;
+          background: rgba(13,26,51,0.3);
+          transition: background 0.25s, border-color 0.25s;
+          align-self: stretch;
+        }
+        .h-phone-link:hover {
+          background: rgba(200,169,110,0.06);
+          border-color: rgba(200,169,110,0.3);
+        }
+        .h-phone-number {
+          font-family: 'Raleway', sans-serif;
+          font-weight: 400;
+          letter-spacing: 0.08em;
+          color: ${WHITE};
+          font-variant-numeric: tabular-nums;
+          transition: font-size 0.4s ease;
+        }
+
         @media (max-width: 1079px) { .h-desktop { display: none !important; } }
         @media (min-width: 1080px) { .h-mobile-btn { display: none !important; } }
 
-        /* ── Burger ── */
         .h-burger-line { height: 1.8px; background: ${WHITE_DIM}; border-radius: 1px; transition: all 0.4s cubic-bezier(0.23,1,0.32,1); display: block; }
         .h-burger-line:nth-child(1) { width: 22px; }
         .h-burger-line:nth-child(2) { width: 15px; }
@@ -198,7 +215,6 @@ export default function Header() {
         .h-burger-open .h-burger-line:nth-child(2) { opacity: 0; width: 0; transform: scaleX(0); }
         .h-burger-open .h-burger-line:nth-child(3) { transform: translateY(-7px) rotate(-45deg); width: 22px; }
 
-        /* ── Mobile Drawer ── */
         .h-drawer { position: fixed; inset: 0; z-index: 9998; display: flex; }
         .h-drawer-backdrop { position: absolute; inset: 0; background: rgba(4,8,18,0.82); backdrop-filter: blur(6px); animation: fadeIn 0.3s ease both; }
         .h-drawer-panel { position: relative; z-index: 1; width: min(340px, 88vw); height: 100%; background: ${NAVY_MID}; border-right: 1px solid rgba(200,169,110,0.12); display: flex; flex-direction: column; animation: slideIn 0.35s cubic-bezier(0.22,1,0.36,1) both; overflow-y: auto; }
@@ -211,18 +227,16 @@ export default function Header() {
         .h-drawer-link.blog-active { color: ${GOLD}; border-left-color: rgba(200,169,110,0.5); background: rgba(200,169,110,0.04); }
         .h-drawer-bottom { padding: 20px 24px; border-top: 1px solid rgba(200,169,110,0.1); display: flex; flex-direction: column; gap: 12px; }
 
-        /* ── Gold separator line ── */
         .h-gold-sep {
           width: 1px; height: 26px;
           background: linear-gradient(to bottom, transparent, rgba(200,169,110,0.3), transparent);
+          flex-shrink: 0;
         }
       `}</style>
 
       <header style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
-        background: scrolled
-          ? "rgba(8,15,30,0.88)"
-          : NAVY_DEEP,
+        background: scrolled ? "rgba(8,15,30,0.88)" : NAVY_DEEP,
         backdropFilter: scrolled ? "blur(22px)" : "none",
         WebkitBackdropFilter: scrolled ? "blur(22px)" : "none",
         borderBottom: `1px solid ${scrolled ? "rgba(200,169,110,0.2)" : BORDER}`,
@@ -238,9 +252,8 @@ export default function Header() {
           boxSizing: "border-box", transition: "height 0.4s ease",
         }}>
 
-          {/* ── Logo: circle image + text brand ── */}
+          {/* ── Logo ── */}
           <Link href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none", gap: 14 }} className="h-logo-group">
-            {/* Circle logo image */}
             <div
               className="h-logo-circle"
               style={{
@@ -258,13 +271,8 @@ export default function Header() {
                 priority
               />
             </div>
-
-            {/* Brand text */}
             <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-              <span
-                className="h-brand-name"
-                style={{ fontSize: scrolled ? 16 : 18 }}
-              >
+              <span className="h-brand-name" style={{ fontSize: scrolled ? 16 : 18 }}>
                 Paris Easy Move
               </span>
               <span className="h-brand-slogan">Prestige Chauffeur</span>
@@ -302,62 +310,67 @@ export default function Header() {
           </nav>
 
           {/* ── Desktop Right Controls ── */}
-          <div className="h-desktop" style={{ display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
-
-            <div className="h-gold-sep" />
+          <div
+            className="h-desktop"
+            style={{
+              display: "flex",
+              alignItems: "stretch",
+              gap: 14,
+              flexShrink: 0,
+              height: scrolled ? 40 : 46,
+              transition: "height 0.4s ease",
+            }}
+          >
+            <div className="h-gold-sep" style={{ alignSelf: "center" }} />
 
             {/* Phone */}
-            <a href="tel:+33652466694" style={{
-              display: "flex", alignItems: "center", gap: 11,
-              padding: "8px 16px",
-              border: `1px solid ${BORDER}`,
-              borderRadius: 8,
-              textDecoration: "none", whiteSpace: "nowrap",
-              background: "rgba(13,26,51,0.3)",
-              transition: "background 0.25s, border-color 0.25s",
-            }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLElement).style.background = "rgba(200,169,110,0.06)";
-                (e.currentTarget as HTMLElement).style.borderColor = "rgba(200,169,110,0.3)";
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLElement).style.background = "rgba(13,26,51,0.3)";
-                (e.currentTarget as HTMLElement).style.borderColor = BORDER;
-              }}
-            >
-              <span style={{
-                width: 8, height: 8, background: "#1fbe82", borderRadius: "50%",
-                boxShadow: "0 0 10px rgba(31,190,130,0.6)",
-                animation: "h-pulse 2.8s infinite ease-in-out", flexShrink: 0
-              }} />
+            <a href="tel:+33652466694" className="h-phone-link">
+              {/* Live indicator */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                <span style={{
+                  width: 7, height: 7, background: "#1fbe82", borderRadius: "50%",
+                  boxShadow: "0 0 8px rgba(31,190,130,0.6)",
+                  animation: "h-pulse 2.8s infinite ease-in-out",
+                  flexShrink: 0, display: "block",
+                }} />
+                <span style={{
+                  fontSize: 8, fontWeight: 600, letterSpacing: "0.1em",
+                  textTransform: "uppercase", color: GOLD_DIM,
+                  fontFamily: "'Raleway', sans-serif",
+                }}>Live</span>
+              </div>
+
+              {/* Vertical divider */}
+              <div style={{ width: 1, height: 28, background: BORDER_MID, flexShrink: 0 }} />
+
+              {/* Number block */}
               <div>
                 <div style={{
-                  fontFamily: "'Raleway', sans-serif", fontSize: 8, fontWeight: 700,
-                  letterSpacing: "0.18em", textTransform: "uppercase", color: GOLD_DIM,
-                  marginBottom: 1,
-                }}>Speak With Us</div>
-                <div style={{
-                  fontFamily: "'Raleway', sans-serif",
-                  fontSize: scrolled ? 14.5 : 16,
-                  fontWeight: 600, letterSpacing: "0.03em",
-                  color: WHITE, transition: "font-size 0.4s ease",
+                  fontSize: 8, fontWeight: 500, letterSpacing: "0.2em",
+                  textTransform: "uppercase", color: GOLD_DIM,
+                  fontFamily: "'Raleway', sans-serif", marginBottom: 4,
                 }}>
-                  +33 6 52 46 66 94
+                  Call us now
+                </div>
+                <div className="h-phone-number" style={{ fontSize: scrolled ? 15 : 17 }}>
+                  +33 6 52&nbsp;&nbsp;46 66 94
                 </div>
               </div>
             </a>
 
             {/* Reserve CTA */}
-            <Link href="/reservation" className="h-book-btn" style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              padding: "0 26px",
-              height: scrolled ? 40 : 46,
-              color: WHITE,
-              fontFamily: "'Cinzel', serif", fontSize: 10.5, fontWeight: 600,
-              letterSpacing: "0.15em", textTransform: "uppercase", borderRadius: 7,
-              textDecoration: "none",
-              whiteSpace: "nowrap",
-            }}>
+            <Link
+              href="/reservation"
+              className="h-book-btn"
+              style={{
+                display: "inline-flex", alignItems: "center",
+                padding: "0 26px",
+                color: WHITE,
+                fontFamily: "'Cinzel', serif", fontSize: 10.5, fontWeight: 600,
+                letterSpacing: "0.15em", textTransform: "uppercase",
+                borderRadius: 7, textDecoration: "none", whiteSpace: "nowrap",
+              }}
+            >
               Reserve Now
             </Link>
           </div>
@@ -372,7 +385,7 @@ export default function Header() {
               width: 42, height: 42, alignItems: "center", justifyContent: "center",
               background: NAVY_SURFACE,
               border: `1px solid ${BORDER}`,
-              borderRadius: 8, cursor: "pointer"
+              borderRadius: 8, cursor: "pointer",
             }}
           >
             <span className="h-burger-line" />
@@ -387,8 +400,8 @@ export default function Header() {
         <div className="h-drawer">
           <div className="h-drawer-backdrop" onClick={() => setIsOpen(false)} />
           <div className="h-drawer-panel">
+
             <div className="h-drawer-top">
-              {/* Circle logo + brand text in drawer */}
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <div style={{
                   position: "relative", width: 44, height: 44, flexShrink: 0,
@@ -406,15 +419,16 @@ export default function Header() {
                 </div>
                 <div>
                   <div style={{
-                    fontFamily: "'Playfair Display', serif", fontWeight: 700,
-                    fontSize: 16, color: WHITE, letterSpacing: "0.02em", lineHeight: 1.1,
+                    fontFamily: "'Cinzel', serif", fontWeight: 600,
+                    fontSize: 15, color: WHITE, letterSpacing: "0.08em",
+                    textTransform: "uppercase", lineHeight: 1.1,
                   }}>
                     Paris Easy Move
                   </div>
                   <div style={{
-                    fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic",
+                    fontFamily: "'Raleway', sans-serif", fontWeight: 500,
                     fontSize: 10, color: GOLD_DIM, letterSpacing: "0.2em",
-                    textTransform: "uppercase", marginTop: 2,
+                    textTransform: "uppercase", marginTop: 3,
                   }}>
                     Prestige Chauffeur
                   </div>
@@ -475,27 +489,44 @@ export default function Header() {
             <div className="h-drawer-bottom">
               {/* Phone in drawer */}
               <a href="tel:+33652466694" style={{
-                display: "flex", alignItems: "center", gap: 12,
-                padding: "12px 14px",
+                display: "flex", alignItems: "center", gap: 14,
+                padding: "12px 16px",
                 border: `1px solid rgba(200,169,110,0.15)`,
                 borderRadius: 10, textDecoration: "none",
                 background: "rgba(200,169,110,0.04)",
               }}>
-                <span style={{
-                  width: 8, height: 8, background: "#1fbe82", borderRadius: "50%",
-                  boxShadow: "0 0 8px rgba(31,190,130,0.6)",
-                  animation: "h-pulse 2.8s infinite ease-in-out", flexShrink: 0,
-                }} />
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                  <span style={{
+                    width: 7, height: 7, background: "#1fbe82", borderRadius: "50%",
+                    boxShadow: "0 0 8px rgba(31,190,130,0.6)",
+                    animation: "h-pulse 2.8s infinite ease-in-out",
+                    flexShrink: 0, display: "block",
+                  }} />
+                  <span style={{
+                    fontSize: 8, fontWeight: 600, letterSpacing: "0.1em",
+                    textTransform: "uppercase", color: GOLD_DIM,
+                    fontFamily: "'Raleway', sans-serif",
+                  }}>Live</span>
+                </div>
+
+                <div style={{ width: 1, height: 28, background: BORDER_MID, flexShrink: 0 }} />
+
                 <div>
                   <div style={{
-                    fontFamily: "'Raleway', sans-serif", fontSize: 8, fontWeight: 700,
-                    letterSpacing: "0.16em", textTransform: "uppercase", color: GOLD_DIM,
-                    marginBottom: 2,
-                  }}>Speak With Us</div>
+                    fontSize: 8, fontWeight: 500, letterSpacing: "0.2em",
+                    textTransform: "uppercase", color: GOLD_DIM,
+                    fontFamily: "'Raleway', sans-serif", marginBottom: 4,
+                  }}>
+                    Call us now
+                  </div>
                   <div style={{
-                    fontFamily: "'Raleway', sans-serif", fontSize: 15,
-                    fontWeight: 600, color: WHITE,
-                  }}>+33 6 52 46 66 94</div>
+                    fontFamily: "'Raleway', sans-serif",
+                    fontSize: 18, fontWeight: 400,
+                    letterSpacing: "0.08em", color: WHITE,
+                    fontVariantNumeric: "tabular-nums",
+                  }}>
+                    +33 6 52&nbsp;&nbsp;46 66 94
+                  </div>
                 </div>
               </a>
 
@@ -508,6 +539,7 @@ export default function Header() {
                 Reserve Now
               </Link>
             </div>
+
           </div>
         </div>
       )}
