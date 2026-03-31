@@ -8,13 +8,13 @@ interface BookingEmailData {
   name: string; email: string; country: string; whatsapp: string;
   fromName: string; toName: string;
   date: string; time: string;
-  returnDate?: string | null; returnTime?: string | null;   // ← ADDED
+  returnDate?: string | null; returnTime?: string | null;
   passengers: number; kids: number; bags: number;
   vehicleName: string; vehicleModel: string;
   isRoundTrip: boolean;
   flightTrain: string; address: string; notes: string;
   nightSurcharge: number;
-  returnNightSurcharge?: number;                            // ← ADDED
+  returnNightSurcharge?: number;
   basePrice: number | null;
   totalPrice: number | null;
   onDemand: boolean;
@@ -49,6 +49,40 @@ function buildCustomerEmail(data: BookingEmailData): string {
 
   const totalPax = passengers + kids;
   const year = new Date().getFullYear();
+
+  // FIX 1: Pre-build the stats cells as a string to avoid .map() inside template literals
+  const statsCells = [
+    { label: "Date", value: date, icon: "📅" },
+    { label: "Pickup Time", value: time + (nightSurcharge > 0 ? " 🌙" : ""), icon: "🕐" },
+    { label: "Passengers", value: `${totalPax}`, icon: "👤" },
+    { label: "Luggage", value: `${bags} bag${bags !== 1 ? "s" : ""}`, icon: "🧳" },
+  ].map((s, i) => `
+    <td style="text-align:center;padding:18px 8px;background:rgba(255,255,255,0.03);border-radius:10px;">
+      <div style="font-size:18px;margin-bottom:8px;">${s.icon}</div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#666;margin-bottom:4px;">${s.label}</div>
+      <div style="font-size:13px;font-weight:700;color:#f5f0e8;">${s.value}</div>
+    </td>
+    ${i < 3 ? '<td width="6px"></td>' : ""}
+  `).join("");
+
+  // FIX 2: Pre-build the "What to Expect" rows
+  const expectRows = [
+    ["🚘", "Professional Chauffeur", "A licensed, vetted driver in a pristine vehicle awaits you."],
+    ["📍", "Meet & Greet Service", "Your chauffeur holds a name sign at arrivals — no searching required."],
+    ["📱", "Driver Will Contact You", "Expect a call or WhatsApp message before your pickup time."],
+    ["🔄", "Free Cancellation", "Cancel or modify your booking up to 24 hours before pickup."],
+    ["🧳", "Porter Service Included", "Your driver will assist with your luggage at no extra charge."],
+  ].map(([icon, title, sub]) => `
+    <tr>
+      <td width="44" style="vertical-align:top;padding:8px 14px 8px 0;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#f5f0e8;text-align:center;line-height:40px;font-size:18px;">${icon}</div>
+      </td>
+      <td style="vertical-align:top;padding:8px 0 8px;border-bottom:1px solid #f3f4f6;">
+        <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:3px;">${title}</div>
+        <div style="font-size:12px;color:#6b7280;line-height:1.5;">${sub}</div>
+      </td>
+    </tr>
+  `).join("");
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -133,20 +167,7 @@ function buildCustomerEmail(data: BookingEmailData): string {
       <!-- ─── QUICK STATS ─── -->
       <tr><td style="padding:0 48px 40px;">
         <table width="100%" cellpadding="0" cellspacing="0">
-          <tr>
-            ${[
-              { label: "Date", value: date, icon: "📅" },
-              { label: "Pickup Time", value: time + (nightSurcharge > 0 ? " 🌙" : ""), icon: "🕐" },
-              { label: "Passengers", value: `${totalPax}`, icon: "👤" },
-              { label: "Luggage", value: `${bags} bag${bags !== 1 ? "s" : ""}`, icon: "🧳" },
-            ].map((s, i) => `
-            <td style="text-align:center;padding:18px 8px;background:rgba(255,255,255,0.03);border-radius:10px;${i > 0 ? "margin-left:8px;" : ""}">
-              <div style="font-size:18px;margin-bottom:8px;">${s.icon}</div>
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#666;margin-bottom:4px;">${s.label}</div>
-              <div style="font-size:13px;font-weight:700;color:#f5f0e8;">${s.value}</div>
-            </td>
-            <td width="6px"></td>`).join("")}
-          </tr>
+          <tr>${statsCells}</tr>
         </table>
       </td></tr>
 
@@ -253,22 +274,7 @@ function buildCustomerEmail(data: BookingEmailData): string {
       </td></tr>
       <tr><td style="padding:24px;">
         <table width="100%" cellpadding="0" cellspacing="0">
-          ${[
-            ["🚘", "Professional Chauffeur", "A licensed, vetted driver in a pristine vehicle awaits you."],
-            ["📍", "Meet & Greet Service", "Your chauffeur holds a name sign at arrivals — no searching required."],
-            ["📱", "Driver Will Contact You", "Expect a call or WhatsApp message before your pickup time."],
-            ["🔄", "Free Cancellation", "Cancel or modify your booking up to 24 hours before pickup."],
-            ["🧳", "Porter Service Included", "Your driver will assist with your luggage at no extra charge."],
-          ].map(([icon, title, sub]) => `
-          <tr>
-            <td width="44" style="vertical-align:top;padding:8px 14px 8px 0;">
-              <div style="width:40px;height:40px;border-radius:10px;background:#f5f0e8;text-align:center;line-height:40px;font-size:18px;">${icon}</div>
-            </td>
-            <td style="vertical-align:top;padding:8px 0 8px;border-bottom:1px solid #f3f4f6;">
-              <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:3px;">${title}</div>
-              <div style="font-size:12px;color:#6b7280;line-height:1.5;">${sub}</div>
-            </td>
-          </tr>`).join("")}
+          ${expectRows}
         </table>
       </td></tr>
     </table>
@@ -329,6 +335,32 @@ function buildAdminEmail(data: BookingEmailData): string {
   const isNight = nightSurcharge > 0;
   const isReturnNight = returnNightSurcharge > 0;
 
+  // FIX 3: Pre-build admin stat cells to avoid .map() inside template literals
+  const adminStatCells = [
+    {
+      label: "Passengers",
+      value: `${totalPax}`,
+      sub: `${passengers} adult${passengers !== 1 ? "s" : ""}${kids > 0 ? ` + ${kids} child${kids !== 1 ? "ren" : ""}` : ""}`,
+    },
+    { label: "Luggage", value: `${bags}`, sub: `bag${bags !== 1 ? "s" : ""}` },
+    {
+      label: "Vehicle",
+      value: vehicleName.split(" ").slice(0, 2).join(" "),
+      sub: vehicleModel.split(" ").slice(0, 3).join(" "),
+    },
+    {
+      label: "Total Fare",
+      value: onDemand ? "On Demand" : `€${totalPrice}`,
+      sub: paymentMethod === "cash" ? "💵 Cash" : "💳 Card",
+    },
+  ].map((s, i) => `
+    <td style="text-align:center;padding:22px 12px;${i < 3 ? "border-right:1px solid #f3f4f6;" : ""}">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#9ca3af;margin-bottom:6px;">${s.label}</div>
+      <div style="font-size:18px;font-weight:800;color:#111827;margin-bottom:3px;">${s.value}</div>
+      <div style="font-size:11px;color:#9ca3af;">${s.sub}</div>
+    </td>
+  `).join("");
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -380,7 +412,7 @@ function buildAdminEmail(data: BookingEmailData): string {
       <td style="text-align:right;white-space:nowrap;">
         <div style="font-size:14px;font-weight:700;color:#c9a347;">${date}</div>
         <div style="font-size:13px;color:rgba(255,255,255,0.5);">${time}${isNight ? " 🌙" : ""}</div>
-        ${isRoundTrip && returnDate ? `<div style="font-size:11px;color:rgba(245,158,11,0.7);margin-top:4px;">🔄 Return: ${returnDate} ${returnTime || ""}${isReturnNight ? " 🌙" : ""}</div>` : ""}
+        ${isRoundTrip && returnDate ? `<div style="font-size:11px;color:rgba(245,158,11,0.7);margin-top:4px;">🔄 Return: ${returnDate} ${returnTime ?? ""}${isReturnNight ? " 🌙" : ""}</div>` : ""}
       </td>
     </tr></table>
   </td></tr>
@@ -388,19 +420,7 @@ function buildAdminEmail(data: BookingEmailData): string {
   <!-- ═══ KEY STATS ROW ═══ -->
   <tr><td style="background:#fff;padding:0;">
     <table width="100%" cellpadding="0" cellspacing="0">
-      <tr>
-        ${[
-          { label: "Passengers", value: `${totalPax}`, sub: `${passengers} adult${passengers!==1?"s":""}${kids>0?` + ${kids} child${kids!==1?"ren":""}":""}` },
-          { label: "Luggage", value: `${bags}`, sub: `bag${bags!==1?"s":""}` },
-          { label: "Vehicle", value: vehicleName.split(" ").slice(0,2).join(" "), sub: vehicleModel.split(" ").slice(0,3).join(" ") },
-          { label: "Total Fare", value: onDemand ? "On Demand" : `€${totalPrice}`, sub: paymentMethod === "cash" ? "💵 Cash" : "💳 Card" },
-        ].map((s, i) => `
-        <td style="text-align:center;padding:22px 12px;border-right:1px solid #f3f4f6;${i===3?"border-right:none;":""}">
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#9ca3af;margin-bottom:6px;">${s.label}</div>
-          <div style="font-size:18px;font-weight:800;color:#111827;margin-bottom:3px;">${s.value}</div>
-          <div style="font-size:11px;color:#9ca3af;">${s.sub}</div>
-        </td>`).join("")}
-      </tr>
+      <tr>${adminStatCells}</tr>
     </table>
   </td></tr>
 
@@ -519,8 +539,8 @@ export async function POST(req: NextRequest) {
     const customerHtml = buildCustomerEmail(data);
     const adminHtml    = buildAdminEmail(data);
 
-    const adminTo = process.env.ADMIN_EMAIL ?? "booking@pariseasymove.com";
-    const fromAddr = process.env.EMAIL_FROM ?? "noreply@pariseasymove.com";
+    const adminTo  = process.env.ADMIN_EMAIL ?? "booking@pariseasymove.com";
+    const fromAddr = process.env.EMAIL_FROM  ?? "noreply@pariseasymove.com";
 
     const customerSubject = `✅ Booking Confirmed — ${data.fromName} → ${data.toName} · Ref: ${data.bookingRef}`;
     const adminSubject    = `🚖 New Booking: ${data.name} — ${data.fromName} → ${data.toName} · ${data.date} ${data.time} · ${data.bookingRef}`;
@@ -545,7 +565,6 @@ export async function POST(req: NextRequest) {
         }),
       ]);
 
-      // Resend returns { error } on failure — surface it
       if (customerResult.error || adminResult.error) {
         console.error("[send-booking-email] Resend errors:", customerResult.error, adminResult.error);
         return NextResponse.json(
@@ -577,7 +596,6 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Verify connection before sending
     await transporter.verify();
 
     await Promise.all([
@@ -596,8 +614,10 @@ export async function POST(req: NextRequest) {
     ]);
 
     return NextResponse.json({ ok: true });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    // FIX 4: Replaced `any` with `unknown` + proper type narrowing
+    const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[send-booking-email] error:", err);
-    return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
