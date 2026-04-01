@@ -42,26 +42,11 @@ export default function ContactUs() {
         .cp-hero-overlay {
           position: absolute; inset: 0;
           background:
-            linear-gradient(to top, rgba(7,21,51,0.98) 0%, rgba(7,21,51,0.55) 50%, rgba(7,21,51,0.25) 100%),
-            linear-gradient(to right, rgba(7,21,51,0.75) 0%, transparent 65%);
+            linear-gradient(to top, rgba(4,8,16,0.97) 0%, rgba(4,8,16,0.52) 50%, rgba(4,8,16,0.20) 100%),
+            linear-gradient(to right, rgba(4,8,16,0.72) 0%, transparent 65%);
         }
 
-        .cp-hero-grid {
-          position: absolute; inset: 0;
-          background-image:
-            linear-gradient(rgba(245,240,232,0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(245,240,232,0.03) 1px, transparent 1px);
-          background-size: 48px 48px;
-        }
-
-        .cp-hero-glow {
-          position: absolute;
-          top: -30%; right: -10%;
-          width: 600px; height: 600px;
-          border-radius: 50%;
-          background: radial-gradient(circle, rgba(201,163,71,0.08) 0%, transparent 65%);
-          pointer-events: none;
-        }
+        .cp-hero-glow { display: none; }
 
         .cp-hero-topline {
           position: absolute; top: 0; left: 0; right: 0; height: 2px;
@@ -414,7 +399,6 @@ export default function ContactUs() {
         <div className="cp-hero">
           <div className="cp-hero-bg" />
           <div className="cp-hero-overlay" />
-          <div className="cp-hero-grid" />
           <div className="cp-hero-glow" />
           <div className="cp-hero-topline" />
           <div className="cp-hero-inner">
@@ -453,7 +437,7 @@ export default function ContactUs() {
                     <div className="cp-info-label">Address</div>
                     <div className="cp-info-value">Paris Easy Move</div>
                     <div className="cp-info-sub">
-                      11 square de l’avre, <br />
+                      11 square de l'avre, <br />
                       92100 Boulogne-Billancourt, <br />
                       France
                     </div>

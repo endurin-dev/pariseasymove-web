@@ -585,7 +585,7 @@ export default function FAQPage() {
           <p>Our team is available 24/7 — reach out and we'll be happy to help.</p>
           <div className="cta-btns">
             <a href="tel:+33" className="btn-primary">Call Us Now</a>
-            <a href="https://pariseasymove.com" className="btn-ghost">Book a Transfer</a>
+            <a href="https://pariseasymove.com/reservation" className="btn-ghost">Book a Transfer</a>
           </div>
         </div>
       </main>

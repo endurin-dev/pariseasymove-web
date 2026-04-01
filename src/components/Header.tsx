@@ -44,7 +44,7 @@ export default function Header() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400;1,600&family=Cinzel:wght@400;500;600;700&family=Cinzel+Decorative:wght@400;700&family=Raleway:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400;1,600&family=Cinzel:wght@400;500;600;700&family=Cinzel+Decorative:wght@400;700&family=Raleway:wght@300;400;500;600;700&family=Roboto+Mono:wght@300;400;500&display=swap');
 
         .h-logo-circle {
           border-radius: 50%;
@@ -158,18 +158,21 @@ export default function Header() {
         .h-book-btn {
           transition: all 0.38s cubic-bezier(0.23, 1, 0.32, 1) !important;
           position: relative; overflow: hidden;
-          background: linear-gradient(135deg, #0f1e40 0%, #080f1e 100%) !important;
-          border: 1px solid rgba(200,169,110,0.45) !important;
+          background: linear-gradient(135deg, #c8a96e 0%, #a8832e 100%) !important;
+          border: 1px solid rgba(200,169,110,0.7) !important;
+          box-shadow: 0 4px 18px rgba(200,169,110,0.3) !important;
+          color: #080f1e !important;
         }
         .h-book-btn::before {
           content: '';
           position: absolute; inset: 0;
-          background: linear-gradient(135deg, rgba(200,169,110,0.15) 0%, transparent 60%);
+          background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 60%);
           opacity: 0; transition: opacity 0.3s ease;
         }
         .h-book-btn:hover {
           transform: translateY(-2px) !important;
-          box-shadow: 0 8px 28px rgba(8,15,30,0.8), 0 0 0 1px rgba(200,169,110,0.6) !important;
+          background: linear-gradient(135deg, #d9bb80 0%, #b8921e 100%) !important;
+          box-shadow: 0 10px 32px rgba(200,169,110,0.5), 0 0 0 1px rgba(200,169,110,0.8) !important;
         }
         .h-book-btn:hover::before { opacity: 1; }
 
@@ -195,12 +198,14 @@ export default function Header() {
           background: rgba(200,169,110,0.06);
           border-color: rgba(200,169,110,0.3);
         }
+
+        /* Roboto Mono is a Google Font — guaranteed to load and look distinct */
         .h-phone-number {
-          font-family: 'Raleway', sans-serif;
-          font-weight: 400;
-          letter-spacing: 0.08em;
-          color: ${WHITE};
-          font-variant-numeric: tabular-nums;
+          font-family: 'Roboto Mono', monospace !important;
+          font-weight: 400 !important;
+          letter-spacing: 0.06em !important;
+          color: ${WHITE} !important;
+          font-variant-numeric: tabular-nums !important;
           transition: font-size 0.4s ease;
         }
 
@@ -325,7 +330,6 @@ export default function Header() {
 
             {/* Phone */}
             <a href="tel:+33652466694" className="h-phone-link">
-              {/* Live indicator */}
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                 <span style={{
                   width: 7, height: 7, background: "#1fbe82", borderRadius: "50%",
@@ -340,10 +344,8 @@ export default function Header() {
                 }}>Live</span>
               </div>
 
-              {/* Vertical divider */}
               <div style={{ width: 1, height: 28, background: BORDER_MID, flexShrink: 0 }} />
 
-              {/* Number block */}
               <div>
                 <div style={{
                   fontSize: 8, fontWeight: 500, letterSpacing: "0.2em",
@@ -353,7 +355,7 @@ export default function Header() {
                   Call us now
                 </div>
                 <div className="h-phone-number" style={{ fontSize: scrolled ? 15 : 17 }}>
-                  +33 6 52&nbsp;&nbsp;46 66 94
+                     +33 652 466 694
                 </div>
               </div>
             </a>
@@ -365,8 +367,8 @@ export default function Header() {
               style={{
                 display: "inline-flex", alignItems: "center",
                 padding: "0 26px",
-                color: WHITE,
-                fontFamily: "'Cinzel', serif", fontSize: 10.5, fontWeight: 600,
+                color: "#080f1e",
+                fontFamily: "'Cinzel', serif", fontSize: 10.5, fontWeight: 700,
                 letterSpacing: "0.15em", textTransform: "uppercase",
                 borderRadius: 7, textDecoration: "none", whiteSpace: "nowrap",
               }}
@@ -519,22 +521,18 @@ export default function Header() {
                   }}>
                     Call us now
                   </div>
-                  <div style={{
-                    fontFamily: "'Raleway', sans-serif",
-                    fontSize: 18, fontWeight: 400,
-                    letterSpacing: "0.08em", color: WHITE,
-                    fontVariantNumeric: "tabular-nums",
-                  }}>
-                    +33 6 52&nbsp;&nbsp;46 66 94
+                  {/* Same class as desktop — Roboto Mono applied consistently */}
+                  <div className="h-phone-number" style={{ fontSize: 18 }}>
+                    +33 652 466 694
                   </div>
                 </div>
               </a>
 
               <Link href="/reservation" className="h-book-btn" style={{
                 textAlign: "center", padding: "14px", borderRadius: 7,
-                fontFamily: "'Cinzel', serif", fontSize: 11, fontWeight: 600,
+                fontFamily: "'Cinzel', serif", fontSize: 11, fontWeight: 700,
                 letterSpacing: "0.12em", textTransform: "uppercase",
-                color: WHITE, textDecoration: "none",
+                color: "#080f1e", textDecoration: "none",
               }}>
                 Reserve Now
               </Link>
