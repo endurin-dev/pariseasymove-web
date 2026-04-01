@@ -128,7 +128,6 @@ function SummaryCard({ title, rows }: { title: string; rows: [string,string][] }
   );
 }
 
-// ── No excludeId: same location can appear in both Pickup and Drop-off ──
 function LocationSelect({ value, onChange, locations, placeholder, error }: {
   value: string; onChange: (id: string) => void; locations: Location[];
   placeholder: string; error?: string;
@@ -243,6 +242,11 @@ export default function ReservationPage() {
     return {...v,routePrice:final,baseRoutePrice:routeBase,onDemand:false,noRate:false,paxExceeded,lugExceeded,isDoubled:totalPax>=9};
   }).filter(v=>!v.noRate);
 
+  // True when a specific route is selected but has no matching rates at all
+  const noVehiclesForRoute = !!(trip.fromId && trip.toId && dataReady && vehiclesWithPrice.length === 0);
+  // When no route vehicles exist, skip vehicle step and treat as quote request
+  const isQuoteRequest = noVehiclesForRoute;
+
   const recommendedVehicle = vehiclesWithPrice.filter(v=>!v.paxExceeded&&!v.lugExceeded).sort((a,b)=>a.maxPassengers-b.maxPassengers)[0]??null;
   const vehicle = vehiclesWithPrice.find(v=>v.id===vehicleId)??null;
   const confirmedPrice = vehicle?.routePrice??0;
@@ -277,12 +281,12 @@ export default function ReservationPage() {
   const flightLabel    = isFromAirport?"Flight / Train No. (at pickup)":"Flight / Train No. (at drop-off)";
   const addressLabel   = isToCity?"Drop-off Address":isFromCity?"Pickup Address":"Address";
 
+  // Effective steps: if quote request, step 1 (vehicle) becomes an info screen, we still navigate all 4 steps
   const validate = () => {
     const e: Record<string,string> = {};
     if (step===0) {
       if (!trip.fromId) e.from="Required";
       if (!trip.toId)   e.to="Required";
-      // Same location is intentionally allowed (e.g. round tour returning to same point)
       if (!trip.date) e.date="Required";
       if (!trip.time) e.time="Required";
       if (isRoundTrip) {
@@ -291,21 +295,26 @@ export default function ReservationPage() {
         if (trip.returnDate&&trip.date&&trip.returnDate<trip.date) e.returnDate="Return date must be on or after departure date";
       }
     }
-    if (step===1&&!vehicleId) e.vehicle="Please select a vehicle";
+    // Skip vehicle validation when it's a quote request
+    if (step===1&&!vehicleId&&!isQuoteRequest) e.vehicle="Please select a vehicle";
     if (step===2) {
       if (!personal.name.trim())     e.name="Required";
       if (!personal.country.trim())  e.country="Required";
       if (!personal.whatsapp.trim()) e.whatsapp="Required";
       if (!personal.email.trim())    e.email="Required";
       else if (!/\S+@\S+\.\S+/.test(personal.email)) e.email="Invalid email";
-      if (!paymentMethod) e.paymentMethod="Please select a payment method";
+      if (!paymentMethod && !isQuoteRequest) e.paymentMethod="Please select a payment method";
     }
     setErrors(e);
     return Object.keys(e).length===0;
   };
 
-  const next = () => { if (validate()) setStep(s=>s+1); };
-  const back = () => { setStep(s=>s-1); setErrors({}); };
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const next = () => { if (validate()) { setStep(s=>s+1); scrollToTop(); } };
+  const back = () => { setStep(s=>s-1); setErrors({}); scrollToTop(); };
 
   const submit = async () => {
     setSending(true);
@@ -313,6 +322,7 @@ export default function ReservationPage() {
     const rawNumber = personal.whatsapp.trim().replace(/^\+\d{1,4}\s?/, "");
     const fullWhatsapp = code ? `${code}${rawNumber}` : personal.whatsapp;
     const noteParts = [
+      isQuoteRequest ? "⚠️ QUOTE REQUEST — no rate on file for this route" : "",
       isRoundTrip ? "ROUND TRIP" : "",
       isRoundTrip&&trip.returnDate ? `Return Date: ${trip.returnDate}` : "",
       isRoundTrip&&trip.returnTime ? `Return Time: ${trip.returnTime}` : "",
@@ -320,7 +330,7 @@ export default function ReservationPage() {
       trip.dropoffAddress ? `Address: ${trip.dropoffAddress}` : "",
       nightSurcharge>0 ? "OUTBOUND NIGHT SURCHARGE (+€15)" : "",
       returnNightSurcharge>0 ? "RETURN NIGHT SURCHARGE (+€15)" : "",
-      `Payment: ${paymentMethod==="cash"?"Cash to driver":"Card to driver"}`,
+      !isQuoteRequest ? `Payment: ${paymentMethod==="cash"?"Cash to driver":"Card to driver"}` : "",
       personal.notes,
     ].filter(Boolean).join(" | ");
 
@@ -333,10 +343,11 @@ export default function ReservationPage() {
           returnDate:isRoundTrip?trip.returnDate:null,
           returnTime:isRoundTrip?trip.returnTime:null,
           passengers:trip.passengers, kids:trip.kids, bags:trip.bags,
-          vehicleId,
+          vehicleId: isQuoteRequest ? null : vehicleId,
           name:personal.name, country:personal.country,
           whatsapp:fullWhatsapp, email:personal.email,
-          notes:noteParts, status:"new",
+          notes:noteParts,
+          status: isQuoteRequest ? "quote_request" : "new",
         }),
       });
       if (res.ok) {
@@ -354,17 +365,21 @@ export default function ReservationPage() {
               returnDate:isRoundTrip?trip.returnDate:null,
               returnTime:isRoundTrip?trip.returnTime:null,
               passengers:trip.passengers, kids:trip.kids, bags:trip.bags,
-              vehicleName:vehicle?.name??"", vehicleModel:vehicle?.model??"",
+              vehicleName: isQuoteRequest ? "Quote Request" : (vehicle?.name??""),
+              vehicleModel: isQuoteRequest ? "" : (vehicle?.model??""),
               isRoundTrip, flightTrain:trip.flightOrTrain, address:trip.dropoffAddress,
               notes:personal.notes, nightSurcharge, returnNightSurcharge,
-              basePrice:vehicle?.baseRoutePrice??null, totalPrice:confirmedPrice,
-              onDemand:vehicle?.onDemand??false, paymentMethod,
+              basePrice: isQuoteRequest ? null : (vehicle?.baseRoutePrice??null),
+              totalPrice: isQuoteRequest ? null : confirmedPrice,
+              onDemand: isQuoteRequest ? true : (vehicle?.onDemand??false),
+              paymentMethod: isQuoteRequest ? null : paymentMethod,
+              isQuoteRequest,
             }),
           });
         } catch(emailErr) { console.error("Email send failed:",emailErr); }
         const dataLayer=(window as any).dataLayer||[];
         (window as any).dataLayer=dataLayer;
-        dataLayer.push({ event:"booking_confirmed", booking_id:ref, value:confirmedPrice, currency:"EUR" });
+        dataLayer.push({ event: isQuoteRequest ? "quote_requested" : "booking_confirmed", booking_id:ref, value:confirmedPrice, currency:"EUR" });
         setDone(true);
       } else { alert("Something went wrong saving your booking. Please try again."); }
     } catch { alert("Network error. Please try again."); }
@@ -399,36 +414,53 @@ export default function ReservationPage() {
   if (done) return (
     <div style={{ display:"flex",alignItems:"center",justifyContent:"center",padding:40,background:"#f4f5f7",minHeight:"60vh" }}>
       <div style={{ maxWidth:520,width:"100%",background:"#fff",borderRadius:20,boxShadow:"0 8px 40px rgba(0,0,0,0.10)",padding:"48px 40px",textAlign:"center" }}>
-        <div style={{ width:72,height:72,borderRadius:"50%",background:"#dcfce7",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px" }}>
-          <svg width={36} height={36} fill="none" viewBox="0 0 24 24" stroke={GREEN} strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+        <div style={{ width:72,height:72,borderRadius:"50%",background: isQuoteRequest ? "#fef3c7" : "#dcfce7",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px" }}>
+          {isQuoteRequest
+            ? <span style={{ fontSize:34 }}>✉️</span>
+            : <svg width={36} height={36} fill="none" viewBox="0 0 24 24" stroke={GREEN} strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+          }
         </div>
-        <h2 style={{ fontSize:28,fontWeight:800,color:DARK,marginBottom:10 }}>Booking Confirmed!</h2>
-        <div style={{ display:"inline-block",background:"#f0fdf4",border:"1px solid #bbf7d0",color:GREEN,fontWeight:700,fontSize:13,padding:"5px 14px",borderRadius:8,marginBottom:12 }}>
+        <h2 style={{ fontSize:28,fontWeight:800,color:DARK,marginBottom:10 }}>
+          {isQuoteRequest ? "Quote Request Sent!" : "Booking Confirmed!"}
+        </h2>
+        <div style={{ display:"inline-block",background: isQuoteRequest ? "#fffbeb" : "#f0fdf4",border:`1px solid ${isQuoteRequest?"#fcd34d":"#bbf7d0"}`,color: isQuoteRequest ? "#92400e" : GREEN,fontWeight:700,fontSize:13,padding:"5px 14px",borderRadius:8,marginBottom:12 }}>
           Ref: {bookingRef}
         </div>
-        <p style={{ color:"#6b7280",marginBottom:28,fontSize:15 }}>Confirmation sent to <strong>{personal.email}</strong></p>
+        {isQuoteRequest
+          ? <p style={{ color:"#6b7280",marginBottom:28,fontSize:15,lineHeight:1.6 }}>
+              We don't have a fixed rate for this route yet, but we've received your request. <strong>We'll send you a personalised quote to {personal.email}</strong> shortly — usually within a few hours.
+            </p>
+          : <p style={{ color:"#6b7280",marginBottom:28,fontSize:15 }}>Confirmation sent to <strong>{personal.email}</strong></p>
+        }
         <div style={{ background:"#f9fafb",borderRadius:12,padding:20,marginBottom:28,textAlign:"left" }}>
           {([
             ["Trip Type", isRoundTrip?"🔄 Round Trip":"→ One Way"],
             ["Route",`${trip.fromName} → ${trip.toName}`],
             ["Departure",`${trip.date} at ${trip.time}`],
             ...(isRoundTrip ? [["Return", `${trip.returnDate} at ${trip.returnTime}`] as [string,string]] : []),
-            ["Vehicle",vehicle?.name??"—"],
-            ["Passengers",`${totalPax} pax${vehicle?.isDoubled?" (×2 rate)":""}`],
-            ["Payment",paymentMethod==="cash"?"💵 Cash to driver":"💳 Card to driver"],
+            ["Passengers",`${totalPax} pax`],
+            ...(!isQuoteRequest ? [["Vehicle", vehicle?.name??"—"] as [string,string]] : []),
+            ...(!isQuoteRequest ? [["Payment",paymentMethod==="cash"?"💵 Cash to driver":"💳 Card to driver"] as [string,string]] : []),
           ] as [string,string][]).map(([l,v])=>(
             <div key={l} style={{ display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #e5e7eb",fontSize:14 }}>
               <span style={{ color:"#6b7280" }}>{l}</span>
               <span style={{ fontWeight:600,color:DARK }}>{v}</span>
             </div>
           ))}
-          {nightSurcharge>0&&<div style={{ display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #e5e7eb",fontSize:14 }}><span style={{ color:"#6b7280" }}>🌙 Outbound Night Surcharge</span><span style={{ fontWeight:600,color:"#7c3aed" }}>+€{NIGHT_SURCHARGE}</span></div>}
-          {returnNightSurcharge>0&&<div style={{ display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #e5e7eb",fontSize:14 }}><span style={{ color:"#6b7280" }}>🌙 Return Night Surcharge</span><span style={{ fontWeight:600,color:"#7c3aed" }}>+€{NIGHT_SURCHARGE}</span></div>}
+          {!isQuoteRequest && nightSurcharge>0&&<div style={{ display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #e5e7eb",fontSize:14 }}><span style={{ color:"#6b7280" }}>🌙 Outbound Night Surcharge</span><span style={{ fontWeight:600,color:"#7c3aed" }}>+€{NIGHT_SURCHARGE}</span></div>}
+          {!isQuoteRequest && returnNightSurcharge>0&&<div style={{ display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #e5e7eb",fontSize:14 }}><span style={{ color:"#6b7280" }}>🌙 Return Night Surcharge</span><span style={{ fontWeight:600,color:"#7c3aed" }}>+€{NIGHT_SURCHARGE}</span></div>}
           <div style={{ display:"flex",justifyContent:"space-between",paddingTop:12,fontSize:18,fontWeight:800 }}>
-            <span>Total</span>
-            <span style={{ color:GREEN }}>{vehicle?.onDemand?"On Demand":`€${confirmedPrice}`}</span>
+            <span>{isQuoteRequest ? "Price" : "Total"}</span>
+            <span style={{ color: isQuoteRequest ? "#d97706" : GREEN }}>
+              {isQuoteRequest ? "Quote to follow by email" : (vehicle?.onDemand?"On Demand":`€${confirmedPrice}`)}
+            </span>
           </div>
         </div>
+        {isQuoteRequest && (
+          <div style={{ background:"#fffbeb",border:"1px solid #fde68a",borderRadius:12,padding:"14px 18px",marginBottom:24,fontSize:13,color:"#92400e",lineHeight:1.6,textAlign:"left" }}>
+            💡 <strong>What happens next?</strong> Our team will review your route and send you a personalised fare to <strong>{personal.email}</strong> and via WhatsApp if provided. You're under no obligation until you confirm.
+          </div>
+        )}
         <a href="/" style={{ display:"inline-block",padding:"14px 32px",background:DARK,color:"#fff",borderRadius:12,fontWeight:700,textDecoration:"none",fontSize:15 }}>← Back to Home</a>
       </div>
     </div>
@@ -503,6 +535,8 @@ export default function ReservationPage() {
         .rp-btn-ok{flex:1;padding:14px 24px;border-radius:12px;font-size:15px;font-weight:700;color:#fff;background:#16a34a;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
         .rp-btn-ok:hover:not(:disabled){background:#15803d}
         .rp-btn-ok:disabled{opacity:.55;cursor:not-allowed}
+        .rp-btn-ok.quote{background:#d97706}
+        .rp-btn-ok.quote:hover:not(:disabled){background:#b45309}
         .rp-pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
         @media(min-width:1024px){.rp-pills{display:none}}
         @keyframes spin{to{transform:rotate(360deg)}}
@@ -537,6 +571,11 @@ export default function ReservationPage() {
           .rp-pay-sub{max-width:none}
           .rp-pay-check{position:static;margin-left:auto;flex-shrink:0}
         }
+        .rp-quote-banner{background:linear-gradient(135deg,#fff7ed,#fffbeb);border:2px solid #fed7aa;border-radius:16px;padding:28px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:16px}
+        .rp-quote-icon{width:64px;height:64px;border-radius:50%;background:#ffedd5;display:flex;align-items:center;justify-content:center;font-size:30px}
+        .rp-quote-steps{display:flex;flex-direction:column;gap:10px;width:100%;max-width:360px;margin-top:4px}
+        .rp-quote-step{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #fed7aa;border-radius:10px;padding:10px 14px;font-size:13px;color:#92400e;text-align:left}
+        .rp-quote-step-num{width:24px;height:24px;border-radius:50%;background:#f59e0b;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
       `}</style>
 
       <div className="rp">
@@ -551,12 +590,20 @@ export default function ReservationPage() {
                     style={{ width:30,height:30,borderRadius:"50%",border:"2px solid",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,flexShrink:0 }}>
                     {i<step?<svg width={13} height={13} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>:i+1}
                   </div>
-                  <span style={{ fontSize:14,fontWeight:i===step?700:500,color:i===step?"#fff":i<step?"#4ade80":"rgba(255,255,255,.4)" }}>{s}</span>
+                  <span style={{ fontSize:14,fontWeight:i===step?700:500,color:i===step?"#fff":i<step?"#4ade80":"rgba(255,255,255,.4)" }}>
+                    {s}{i===1&&isQuoteRequest?" (Quote)":""}
+                  </span>
                 </div>
               ))}
             </div>
 
-            {trip.tripType&&(
+            {isQuoteRequest&&step>=1&&(
+              <div style={{ marginBottom:16,padding:"10px 12px",borderRadius:9,background:"rgba(245,158,11,.15)",border:"1px solid rgba(245,158,11,.3)",fontSize:12,fontWeight:700,color:"#f59e0b",display:"flex",alignItems:"center",gap:6 }}>
+                ✉️ Quote request — we'll email you rates
+              </div>
+            )}
+
+            {trip.tripType&&!isQuoteRequest&&(
               <div style={{ marginBottom:16,padding:"8px 12px",borderRadius:9,background:isRoundTrip?"rgba(245,158,11,.15)":"rgba(22,163,74,.1)",border:`1px solid ${isRoundTrip?"rgba(245,158,11,.3)":"rgba(22,163,74,.25)"}`,fontSize:12,fontWeight:700,color:isRoundTrip?"#f59e0b":"#4ade80",display:"flex",alignItems:"center",gap:6 }}>
                 {isRoundTrip?"🔄 Round Trip":"→ One Way"}
                 {isRoundTrip&&<span style={{ fontSize:10,color:"rgba(245,158,11,.7)",marginLeft:"auto" }}>×2 price</span>}
@@ -575,7 +622,7 @@ export default function ReservationPage() {
               </div>
             )}
 
-            {vehicle&&(
+            {vehicle&&!isQuoteRequest&&(
               <div style={{ borderTop:"1px solid rgba(255,255,255,.1)",paddingTop:18,marginBottom:20 }}>
                 <div style={{ fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"#4ade80",marginBottom:10 }}>Selected Vehicle</div>
                 <div style={{ background:"rgba(255,255,255,.06)",borderRadius:10,padding:12,border:"1px solid rgba(255,255,255,.08)" }}>
@@ -604,7 +651,7 @@ export default function ReservationPage() {
                   <div>👤 {trip.passengers} adult{trip.passengers!==1?"s":""}{trip.kids>0?` + ${trip.kids} child${trip.kids!==1?"ren":""}`:""}</div>
                   <div>🧳 {trip.bags} bag{trip.bags!==1?"s":""}</div>
                   {totalPax>=9&&<div style={{ marginTop:4,background:"rgba(245,158,11,.15)",border:"1px solid rgba(245,158,11,.3)",borderRadius:7,padding:"5px 9px",fontSize:10,color:"#f59e0b",fontWeight:700 }}>⚡ 9+ pax — price doubled</div>}
-                  {recommendedVehicle&&!vehicleId&&totalPax<9&&<div style={{ marginTop:6,background:"rgba(22,163,74,.15)",border:"1px solid rgba(22,163,74,.3)",borderRadius:7,padding:"6px 10px",fontSize:11,color:"#4ade80",fontWeight:600 }}>✦ We suggest: {recommendedVehicle.name}</div>}
+                  {recommendedVehicle&&!vehicleId&&totalPax<9&&!isQuoteRequest&&<div style={{ marginTop:6,background:"rgba(22,163,74,.15)",border:"1px solid rgba(22,163,74,.3)",borderRadius:7,padding:"6px 10px",fontSize:11,color:"#4ade80",fontWeight:600 }}>✦ We suggest: {recommendedVehicle.name}</div>}
                 </div>
               </div>
             )}
@@ -639,25 +686,27 @@ export default function ReservationPage() {
             <div className="rp-pills">
               {STEPS.map((s,i)=>(
                 <div key={s} style={{ display:"flex",alignItems:"center",gap:6,padding:"5px 12px",borderRadius:999,fontSize:11,fontWeight:600,background:i===step?"#dcfce7":i<step?GREEN:"#e5e7eb",color:i===step?GREEN:i<step?"#fff":"#6b7280" }}>
-                  {i<step?"✓":i+1} {s}
+                  {i<step?"✓":i+1} {s}{i===1&&isQuoteRequest?" (Quote)":""}
                 </div>
               ))}
             </div>
 
             <div className="rp-card">
               <div style={{ marginBottom:32 }}>
-                <div style={{ fontSize:11,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:GREEN,marginBottom:8 }}>
+                <div style={{ fontSize:11,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color: isQuoteRequest&&step===1?"#d97706":GREEN,marginBottom:8 }}>
                   Step {step+1} of {STEPS.length}
                   {!dataReady&&<span className="rp-dots"/>}
                 </div>
                 <h1 style={{ fontSize:28,fontWeight:800,color:DARK,marginBottom:8,lineHeight:1.2 }}>
-                  {["Trip Details","Choose Your Vehicle","Personal Details","Review & Confirm"][step]}
+                  {step===0?"Trip Details":step===1?(isQuoteRequest?"Request a Quote":"Choose Your Vehicle"):step===2?"Personal Details":"Review & Confirm"}
                 </h1>
                 <p style={{ fontSize:14,color:"#6b7280",lineHeight:1.6,margin:0 }}>
-                  {["Tell us about your journey — where, when, and how many.",
-                    trip.fromId&&trip.toId?`Prices for ${trip.fromName} → ${trip.toName} · ${totalPax} pax${isRoundTrip?" · Round trip (×2)":""}${totalPax>=9?" · 9+ rate (×2)":""}.`:"Select the vehicle that fits your needs and budget.",
-                    "Almost there — we just need your contact details.",
-                    "Double-check everything before we confirm your booking."][step]}
+                  {step===0?"Tell us about your journey — where, when, and how many."
+                   :step===1?(isQuoteRequest
+                      ? `We don't have a fixed rate for ${trip.fromName} → ${trip.toName} yet, but you can request a personalised quote below.`
+                      : (trip.fromId&&trip.toId?`Prices for ${trip.fromName} → ${trip.toName} · ${totalPax} pax${isRoundTrip?" · Round trip (×2)":""}${totalPax>=9?" · 9+ rate (×2)":""}.`:"Select the vehicle that fits your needs and budget."))
+                   :step===2?"Almost there — we just need your contact details."
+                   :"Double-check everything before we confirm your booking."}
                 </p>
               </div>
 
@@ -678,12 +727,10 @@ export default function ReservationPage() {
 
                   <div>
                     <label style={S.label}>Pickup Location <span style={{ color:GREEN }}>*</span></label>
-                    {/* No excludeId — same location allowed in both fields */}
                     <LocationSelect value={trip.fromId} onChange={setFrom} locations={locations} placeholder="Select pickup location…" error={errors.from}/>
                   </div>
                   <div>
                     <label style={S.label}>Drop-off Location <span style={{ color:GREEN }}>*</span></label>
-                    {/* No excludeId — same location allowed in both fields */}
                     <LocationSelect value={trip.toId} onChange={setTo} locations={locations} placeholder="Select drop-off location…" error={errors.to}/>
                   </div>
 
@@ -800,7 +847,7 @@ export default function ReservationPage() {
                   {totalPax>0&&totalPax<9&&(()=>{
                     const fits=vehiclesWithPrice.filter(v=>!v.paxExceeded&&!v.lugExceeded);
                     const smallest=fits.sort((a,b)=>a.maxPassengers-b.maxPassengers)[0];
-                    if(!smallest) return null;
+                    if(!smallest||isQuoteRequest) return null;
                     return (
                       <div style={{ background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:12,padding:"12px 16px",display:"flex",alignItems:"center",gap:12,fontSize:13 }}>
                         <div style={{ width:32,height:32,borderRadius:"50%",background:"#dcfce7",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
@@ -816,8 +863,41 @@ export default function ReservationPage() {
                 </div>
               )}
 
-              {/* ══ STEP 1 ══ */}
-              {step===1&&(
+              {/* ══ STEP 1 — QUOTE REQUEST ══ */}
+              {step===1&&isQuoteRequest&&(
+                <div style={{ display:"flex",flexDirection:"column",gap:20 }}>
+                  <div className="rp-quote-banner">
+                    <div className="rp-quote-icon">✉️</div>
+                    <div>
+                      <div style={{ fontSize:18,fontWeight:800,color:"#92400e",marginBottom:6 }}>We'll find you the best rate</div>
+                      <div style={{ fontSize:14,color:"#b45309",lineHeight:1.6,maxWidth:400 }}>
+                        We don't have a pre-set fare for <strong>{trip.fromName} → {trip.toName}</strong> yet.
+                        Leave your details in the next step and we'll send you a personalised quote — usually within a few hours.
+                      </div>
+                    </div>
+                    <div className="rp-quote-steps">
+                      {[
+                        ["1","You fill in your details on the next screen"],
+                        ["2","We review your route and group size"],
+                        ["3","You receive a tailored fare by email & WhatsApp"],
+                        ["4","Confirm when you're happy — no obligation"],
+                      ].map(([num,text])=>(
+                        <div key={num} className="rp-quote-step">
+                          <div className="rp-quote-step-num">{num}</div>
+                          <span>{text}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ background:"#fff7ed",border:"1px solid #fed7aa",borderRadius:10,padding:"10px 16px",fontSize:12,color:"#92400e",display:"flex",gap:8,alignItems:"flex-start",textAlign:"left",width:"100%",maxWidth:400,boxSizing:"border-box" as const }}>
+                      <span style={{ fontSize:16,flexShrink:0 }}>💡</span>
+                      <span>Your trip details — <strong>{totalPax} passenger{totalPax!==1?"s":""}</strong>, <strong>{trip.bags} bag{trip.bags!==1?"s":""}</strong>, <strong>{trip.date} at {trip.time}</strong>{isRoundTrip?`, return ${trip.returnDate} at ${trip.returnTime}`:""} — are already saved and will be included in your quote request.</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ══ STEP 1 — VEHICLE SELECTION ══ */}
+              {step===1&&!isQuoteRequest&&(
                 <div style={{ display:"flex",flexDirection:"column",gap:14 }}>
                   {errors.vehicle&&<div style={{ background:"#fef2f2",border:"1px solid #fecaca",color:"#dc2626",padding:"10px 16px",borderRadius:10,fontSize:14,fontWeight:600 }}>{errors.vehicle}</div>}
 
@@ -881,12 +961,6 @@ export default function ReservationPage() {
                       </div>
                     );
                   })()}
-
-                  {vehiclesWithPrice.length===0&&(
-                    <div style={{ background:"#fffbeb",border:"1px solid #fde68a",color:"#92400e",padding:"16px 20px",borderRadius:12,fontSize:14,textAlign:"center" }}>
-                      ⚠️ No vehicles available for this route. Please contact us directly.
-                    </div>
-                  )}
 
                   {vehiclesWithPrice.map(v => {
                     const sel=vehicleId===v.id;
@@ -969,6 +1043,12 @@ export default function ReservationPage() {
               {/* ══ STEP 2 ══ */}
               {step===2&&(
                 <div style={{ display:"flex",flexDirection:"column",gap:16 }}>
+                  {isQuoteRequest&&(
+                    <div style={{ background:"#fff7ed",border:"1.5px solid #fed7aa",borderRadius:12,padding:"12px 16px",display:"flex",gap:10,alignItems:"flex-start",fontSize:13,color:"#92400e",lineHeight:1.5 }}>
+                      <span style={{ fontSize:18,flexShrink:0 }}>✉️</span>
+                      <span>We'll send your personalised quote to the email and WhatsApp you provide below. Usually arrives within a few hours.</span>
+                    </div>
+                  )}
                   {field(<><label style={S.label}>Full Name <span style={{ color:GREEN }}>*</span></label><div className="rp-input-wrap" style={wrap(errors.name)}><input type="text" placeholder="e.g. John Smith" value={personal.name} onChange={e=>setPersonal(p=>({...p,name:e.target.value}))} style={S.input}/></div>{errEl(errors.name)}</>)}
                   {field(<><label style={S.label}>Country <span style={{ color:GREEN }}>*</span></label><div className="rp-input-wrap" style={wrap(errors.country)}><select value={personal.country} onChange={e=>setPersonal(p=>({...p,country:e.target.value}))} style={S.select}><option value="">Select your country…</option>{COUNTRIES.map(c=><option key={c}>{c}</option>)}</select></div>{errEl(errors.country)}</>)}
                   <div className="rp-grid">
@@ -986,29 +1066,40 @@ export default function ReservationPage() {
                     {field(<><label style={S.label}>Email Address <span style={{ color:GREEN }}>*</span></label><div className="rp-input-wrap" style={wrap(errors.email)}><input type="email" placeholder="you@example.com" value={personal.email} onChange={e=>setPersonal(p=>({...p,email:e.target.value}))} style={S.input}/></div>{errEl(errors.email)}</>)}
                   </div>
                   {field(<><label style={S.label}>Special Requests <span style={{ fontSize:12,color:"#9ca3af",fontWeight:400 }}>(optional)</span></label><textarea rows={4} placeholder="Special assistance, accessibility needs, extra stops…" value={personal.notes} onChange={e=>setPersonal(p=>({...p,notes:e.target.value}))} style={{ width:"100%",border:"1.5px solid #e5e7eb",borderRadius:10,padding:"12px 14px",fontSize:14,color:DARK,resize:"none",outline:"none",fontFamily:"inherit",boxSizing:"border-box" }}/></>)}
-                  <div>
-                    <label style={{ ...S.label,marginBottom:12 }}>Payment Method <span style={{ color:GREEN }}>*</span></label>
-                    <div className="rp-payment-grid">
-                      <div className={`rp-pay-opt${paymentMethod==="cash"?" selected":""}`} onClick={()=>setPaymentMethod("cash")} role="radio" aria-checked={paymentMethod==="cash"}>
-                        <div className="rp-pay-icon"><span style={{ filter:paymentMethod==="cash"?"invert(1) brightness(2)":"none",transition:"filter .2s" }}>💵</span></div>
-                        <div style={{ display:"flex",flexDirection:"column",gap:2,flex:1,minWidth:0 }}><div className="rp-pay-label">Cash to Driver</div><div className="rp-pay-sub">Pay in cash on arrival</div></div>
-                        <div className="rp-pay-check">{paymentMethod==="cash"&&<svg width={10} height={10} fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={3.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}</div>
+                  {!isQuoteRequest&&(
+                    <div>
+                      <label style={{ ...S.label,marginBottom:12 }}>Payment Method <span style={{ color:GREEN }}>*</span></label>
+                      <div className="rp-payment-grid">
+                        <div className={`rp-pay-opt${paymentMethod==="cash"?" selected":""}`} onClick={()=>setPaymentMethod("cash")} role="radio" aria-checked={paymentMethod==="cash"}>
+                          <div className="rp-pay-icon"><span style={{ filter:paymentMethod==="cash"?"invert(1) brightness(2)":"none",transition:"filter .2s" }}>💵</span></div>
+                          <div style={{ display:"flex",flexDirection:"column",gap:2,flex:1,minWidth:0 }}><div className="rp-pay-label">Cash to Driver</div><div className="rp-pay-sub">Pay in cash on arrival</div></div>
+                          <div className="rp-pay-check">{paymentMethod==="cash"&&<svg width={10} height={10} fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={3.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}</div>
+                        </div>
+                        <div className={`rp-pay-opt${paymentMethod==="card"?" selected":""}`} onClick={()=>setPaymentMethod("card")} role="radio" aria-checked={paymentMethod==="card"}>
+                          <div className="rp-pay-icon"><span style={{ filter:paymentMethod==="card"?"invert(1) brightness(2)":"none",transition:"filter .2s" }}>💳</span></div>
+                          <div style={{ display:"flex",flexDirection:"column",gap:2,flex:1,minWidth:0 }}><div className="rp-pay-label">Card to Driver</div><div className="rp-pay-sub">Visa & Mastercard accepted</div></div>
+                          <div className="rp-pay-check">{paymentMethod==="card"&&<svg width={10} height={10} fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={3.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}</div>
+                        </div>
                       </div>
-                      <div className={`rp-pay-opt${paymentMethod==="card"?" selected":""}`} onClick={()=>setPaymentMethod("card")} role="radio" aria-checked={paymentMethod==="card"}>
-                        <div className="rp-pay-icon"><span style={{ filter:paymentMethod==="card"?"invert(1) brightness(2)":"none",transition:"filter .2s" }}>💳</span></div>
-                        <div style={{ display:"flex",flexDirection:"column",gap:2,flex:1,minWidth:0 }}><div className="rp-pay-label">Card to Driver</div><div className="rp-pay-sub">Visa & Mastercard accepted</div></div>
-                        <div className="rp-pay-check">{paymentMethod==="card"&&<svg width={10} height={10} fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={3.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}</div>
-                      </div>
+                      {errEl(errors.paymentMethod)}
+                      {paymentMethod&&<div style={{ marginTop:10,padding:"9px 14px",background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:9,fontSize:12,color:"#166534",fontWeight:600,display:"flex",alignItems:"center",gap:8 }}><svg width={14} height={14} fill="none" viewBox="0 0 24 24" stroke={GREEN} strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>{paymentMethod==="cash"?"You'll pay cash directly to your driver upon arrival.":"You'll pay by card directly to your driver upon arrival."}</div>}
                     </div>
-                    {errEl(errors.paymentMethod)}
-                    {paymentMethod&&<div style={{ marginTop:10,padding:"9px 14px",background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:9,fontSize:12,color:"#166534",fontWeight:600,display:"flex",alignItems:"center",gap:8 }}><svg width={14} height={14} fill="none" viewBox="0 0 24 24" stroke={GREEN} strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>{paymentMethod==="cash"?"You'll pay cash directly to your driver upon arrival.":"You'll pay by card directly to your driver upon arrival."}</div>}
-                  </div>
+                  )}
                 </div>
               )}
 
               {/* ══ STEP 3 ══ */}
               {step===3&&(
                 <div style={{ display:"flex",flexDirection:"column",gap:14 }}>
+                  {isQuoteRequest&&(
+                    <div style={{ background:"linear-gradient(135deg,#fff7ed,#fffbeb)",border:"2px solid #fed7aa",borderRadius:14,padding:"16px 20px",display:"flex",gap:14,alignItems:"center" }}>
+                      <div style={{ width:44,height:44,borderRadius:"50%",background:"#ffedd5",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0 }}>✉️</div>
+                      <div>
+                        <div style={{ fontWeight:700,color:"#92400e",fontSize:14,marginBottom:3 }}>This is a quote request</div>
+                        <div style={{ fontSize:13,color:"#b45309",lineHeight:1.5 }}>No payment is taken now. We'll email you a personalised fare for this route and you can confirm once you're happy.</div>
+                      </div>
+                    </div>
+                  )}
                   <SummaryCard title="Trip Details" rows={[
                     ["Trip Type", isRoundTrip?"🔄 Round Trip (×2 price)":"→ One Way"],
                     ["Pickup", trip.fromName],["Drop-off",trip.toName],
@@ -1019,7 +1110,7 @@ export default function ReservationPage() {
                     ...(trip.flightOrTrain?[["Flight/Train",trip.flightOrTrain] as [string,string]]:[]),
                     ...(trip.dropoffAddress?[["Address",trip.dropoffAddress] as [string,string]]:[]),
                   ]}/>
-                  {vehicle&&(
+                  {vehicle&&!isQuoteRequest&&(
                     <div style={{ border:"1px solid #e5e7eb",borderRadius:14,overflow:"hidden" }}>
                       <div style={{ background:"#f9fafb",padding:"12px 20px",borderBottom:"1px solid #e5e7eb" }}><span style={{ fontSize:13,fontWeight:700,color:DARK }}>Vehicle</span></div>
                       <div style={{ display:"flex",alignItems:"center",gap:14,padding:"14px 20px" }}>
@@ -1031,38 +1122,43 @@ export default function ReservationPage() {
                   <SummaryCard title="Your Details" rows={[
                     ["Name",personal.name],["Country",personal.country],
                     ["WhatsApp",`${dialCode}${personal.whatsapp}`],["Email",personal.email],
-                    ["Payment",paymentMethod==="cash"?"💵 Cash to driver":"💳 Card to driver"],
+                    ...(!isQuoteRequest?[["Payment",paymentMethod==="cash"?"💵 Cash to driver":"💳 Card to driver"] as [string,string]]:[]),
                     ...(personal.notes?[["Notes",personal.notes] as [string,string]]:[]),
                   ]}/>
-                  <div style={{ border:"1px solid #e5e7eb",borderRadius:14,overflow:"hidden" }}>
-                    <div style={{ background:"#f9fafb",padding:"12px 20px",borderBottom:"1px solid #e5e7eb" }}><span style={{ fontSize:13,fontWeight:700,color:DARK }}>Fare Breakdown</span></div>
-                    <div style={{ padding:"4px 0" }}>
-                      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 20px",fontSize:14 }}>
-                        <span style={{ color:"#6b7280" }}>Base fare {isRoundTrip?"(×2 round trip)":""}{vehicle?.isDoubled?" (×2 9+ pax)":""}</span>
-                        <span style={{ fontWeight:600,color:DARK }}>{vehicle?.onDemand?"On Demand":vehicle?.baseRoutePrice!==null?`€${vehicle?.baseRoutePrice}`:"—"}</span>
-                      </div>
-                      {nightSurcharge>0&&<div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 20px",fontSize:14,background:"#f5f3ff",borderTop:"1px dashed #ddd6fe",borderBottom:"1px dashed #ddd6fe" }}><span style={{ color:"#7c3aed",display:"flex",alignItems:"center",gap:6,fontWeight:600 }}><span>🌙</span> Outbound Night Surcharge</span><span style={{ fontWeight:700,color:"#7c3aed" }}>+€{NIGHT_SURCHARGE}</span></div>}
-                      {returnNightSurcharge>0&&<div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 20px",fontSize:14,background:"#f5f3ff",borderTop:"1px dashed #ddd6fe",borderBottom:"1px dashed #ddd6fe" }}><span style={{ color:"#7c3aed",display:"flex",alignItems:"center",gap:6,fontWeight:600 }}><span>🌙</span> Return Night Surcharge</span><span style={{ fontWeight:700,color:"#7c3aed" }}>+€{NIGHT_SURCHARGE}</span></div>}
-                      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 20px",fontSize:17,fontWeight:800,borderTop:"2px solid #e5e7eb" }}>
-                        <span style={{ color:DARK }}>Total</span>
-                        <span style={{ color:GREEN }}>{vehicle?.onDemand?"On Demand":`€${confirmedPrice}`}</span>
+                  {!isQuoteRequest&&(
+                    <div style={{ border:"1px solid #e5e7eb",borderRadius:14,overflow:"hidden" }}>
+                      <div style={{ background:"#f9fafb",padding:"12px 20px",borderBottom:"1px solid #e5e7eb" }}><span style={{ fontSize:13,fontWeight:700,color:DARK }}>Fare Breakdown</span></div>
+                      <div style={{ padding:"4px 0" }}>
+                        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 20px",fontSize:14 }}>
+                          <span style={{ color:"#6b7280" }}>Base fare {isRoundTrip?"(×2 round trip)":""}{vehicle?.isDoubled?" (×2 9+ pax)":""}</span>
+                          <span style={{ fontWeight:600,color:DARK }}>{vehicle?.onDemand?"On Demand":vehicle?.baseRoutePrice!==null?`€${vehicle?.baseRoutePrice}`:"—"}</span>
+                        </div>
+                        {nightSurcharge>0&&<div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 20px",fontSize:14,background:"#f5f3ff",borderTop:"1px dashed #ddd6fe",borderBottom:"1px dashed #ddd6fe" }}><span style={{ color:"#7c3aed",display:"flex",alignItems:"center",gap:6,fontWeight:600 }}><span>🌙</span> Outbound Night Surcharge</span><span style={{ fontWeight:700,color:"#7c3aed" }}>+€{NIGHT_SURCHARGE}</span></div>}
+                        {returnNightSurcharge>0&&<div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 20px",fontSize:14,background:"#f5f3ff",borderTop:"1px dashed #ddd6fe",borderBottom:"1px dashed #ddd6fe" }}><span style={{ color:"#7c3aed",display:"flex",alignItems:"center",gap:6,fontWeight:600 }}><span>🌙</span> Return Night Surcharge</span><span style={{ fontWeight:700,color:"#7c3aed" }}>+€{NIGHT_SURCHARGE}</span></div>}
+                        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 20px",fontSize:17,fontWeight:800,borderTop:"2px solid #e5e7eb" }}>
+                          <span style={{ color:DARK }}>Total</span>
+                          <span style={{ color:GREEN }}>{vehicle?.onDemand?"On Demand":`€${confirmedPrice}`}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div style={{ background:DARK,borderRadius:14,padding:"18px 24px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:12 }}>
+                  )}
+                  <div style={{ background: isQuoteRequest?"linear-gradient(135deg,#78350f,#92400e)":DARK,borderRadius:14,padding:"18px 24px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:12 }}>
                     <div>
-                      <div style={{ fontSize:13,color:"rgba(255,255,255,.45)",marginBottom:3 }}>Total Fare · {totalPax} pax · {isRoundTrip?"Round Trip":"One Way"}</div>
-                      <div style={{ fontSize:11,color:"rgba(255,255,255,.25)" }}>Fixed · incl. VAT · Pay on arrival{isRoundTrip?" · RT ×2":""}{vehicle?.isDoubled?" · 9+pax ×2":""}{nightSurcharge>0?" · 🌙 outbound":""}{returnNightSurcharge>0?" · 🌙 return":""}</div>
+                      <div style={{ fontSize:13,color:"rgba(255,255,255,.45)",marginBottom:3 }}>
+                        {isQuoteRequest?"Quote for":"Total Fare ·"} {totalPax} pax · {isRoundTrip?"Round Trip":"One Way"}
+                      </div>
+                      <div style={{ fontSize:11,color:"rgba(255,255,255,.25)" }}>
+                        {isQuoteRequest?"Personalised rate will be sent to your email":"Fixed · incl. VAT · Pay on arrival"}
+                        {!isQuoteRequest&&isRoundTrip?" · RT ×2":""}
+                        {!isQuoteRequest&&vehicle?.isDoubled?" · 9+pax ×2":""}
+                        {!isQuoteRequest&&nightSurcharge>0?" · 🌙 outbound":""}
+                        {!isQuoteRequest&&returnNightSurcharge>0?" · 🌙 return":""}
+                      </div>
                     </div>
                     <div style={{ textAlign:"right",flexShrink:0 }}>
-                      <div style={{ fontSize:34,fontWeight:900,color:"#4ade80" }}>
-                        {vehicle?.onDemand?<span style={{ fontSize:20 }}>On Demand</span>:`€${confirmedPrice}`}
+                      <div style={{ fontSize: isQuoteRequest?20:34,fontWeight:900,color: isQuoteRequest?"#fbbf24":"#4ade80",lineHeight:1 }}>
+                        {isQuoteRequest?"Quote by email":(vehicle?.onDemand?<span style={{ fontSize:20 }}>On Demand</span>:`€${confirmedPrice}`)}
                       </div>
-                      {(isRoundTrip||vehicle?.isDoubled||(nightSurcharge+returnNightSurcharge)>0)&&(
-                        <div style={{ fontSize:10,color:"#f59e0b",marginTop:2 }}>
-                          {[isRoundTrip?"RT ×2":"",vehicle?.isDoubled?"9+pax ×2":"",(nightSurcharge+returnNightSurcharge)>0?`🌙 +€${nightSurcharge+returnNightSurcharge}`:""].filter(Boolean).join(" · ")}
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -1071,9 +1167,15 @@ export default function ReservationPage() {
               <div style={{ display:"flex",gap:12,marginTop:32 }}>
                 {step>0&&<button type="button" onClick={back} className="rp-btn-back">← Back</button>}
                 {step<3
-                  ?<button type="button" onClick={next} className="rp-btn-next">{step===2?"Review Booking →":"Continue →"}</button>
-                  :<button type="button" onClick={submit} disabled={sending} className="rp-btn-ok">
-                    {sending?<><div className="rp-spin"/> Sending…</>:<><svg width={17} height={17} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg> Confirm Booking</>}
+                  ?<button type="button" onClick={next} className={`rp-btn-next`}>
+                    {step===1&&isQuoteRequest?"Continue with Quote Request →":step===2?"Review Booking →":"Continue →"}
+                  </button>
+                  :<button type="button" onClick={submit} disabled={sending} className={`rp-btn-ok${isQuoteRequest?" quote":""}`}>
+                    {sending?<><div className="rp-spin"/> Sending…</>
+                      :isQuoteRequest
+                        ?<><span>✉️</span> Send Quote Request</>
+                        :<><svg width={17} height={17} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg> Confirm Booking</>
+                    }
                   </button>
                 }
               </div>
