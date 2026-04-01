@@ -19,15 +19,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   "Paris Travel Tips": "#6b8ec9",
 };
 
-// ── Category emoji used as visual placeholder (no external image deps) ──
-const CATEGORY_EMOJI: Record<string, string> = {
-  "Airport Transfers": "✈",
-  "Family Travel":     "✦",
-  "Paris Travel Tips": "🗼",
-};
-
 export default function BlogIndex() {
-  // Guard: if blogPosts is somehow empty/undefined, fail gracefully
   if (!blogPosts || blogPosts.length === 0) {
     return (
       <div style={{ background: "#0c0d0f", color: "#f5f0e8", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "sans-serif" }}>
@@ -57,7 +49,6 @@ export default function BlogIndex() {
           --stroke-mid:   rgba(245,240,232,0.14);
         }
 
-        /* ── Reset ── */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         .blog-root {
@@ -67,7 +58,6 @@ export default function BlogIndex() {
           min-height: 100vh;
         }
 
-        /* ── Breadcrumb ── */
         .breadcrumb {
           max-width: 1440px; margin: 0 auto;
           padding: 20px 5vw 0;
@@ -77,7 +67,6 @@ export default function BlogIndex() {
         .breadcrumb a { color: var(--ivory-faint); text-decoration: none; transition: color .2s; }
         .breadcrumb a:hover { color: var(--gold); }
 
-        /* ── Page header ── */
         .blog-header {
           position: relative;
           padding: 56px 5vw 48px;
@@ -99,7 +88,6 @@ export default function BlogIndex() {
         .blog-title em { font-style: italic; color: var(--gold); font-weight: 300; }
         .blog-subtitle { font-size: 15px; font-weight: 300; color: var(--ivory-faint); max-width: 520px; line-height: 1.7; }
 
-        /* ── Category filter pills ── */
         .blog-filters {
           max-width: 1440px; margin: 0 auto;
           padding: 24px 5vw;
@@ -117,12 +105,9 @@ export default function BlogIndex() {
         .filter-pill:hover,
         .filter-pill.active { border-color: var(--gold-stroke); color: var(--gold); background: var(--gold-pale); }
 
-        /* ── Main content area ── */
         .blog-main { max-width: 1440px; margin: 0 auto; padding: 48px 5vw 80px; }
 
-        /* ════════════════════════════════════════
-           FEATURED POST  (two-column card)
-        ════════════════════════════════════════ */
+        /* ── Featured post ── */
         .featured-post {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -137,33 +122,24 @@ export default function BlogIndex() {
         }
         .featured-post:hover { border-color: var(--gold-stroke); }
 
-        /* Image side */
+        /* Image panel — real photo */
         .featured-img {
           position: relative;
-          background: #1a1c21;
           min-height: 400px;
           overflow: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: center;
         }
-        /* Emoji placeholder — always visible, no external request */
-        .featured-img-emoji {
-          font-size: 110px;
-          opacity: .12;
-          user-select: none;
-          pointer-events: none;
-          z-index: 0;
+        .featured-img img {
+          width: 100%; height: 100%;
+          object-fit: cover;
+          display: block;
+          transition: transform .5s ease;
         }
-        /* Colour tint overlay matching category */
-        .featured-img-tint {
-          position: absolute; inset: 0;
-          opacity: .18;
-        }
+        .featured-post:hover .featured-img img { transform: scale(1.04); }
         /* Right-edge fade into card content */
         .featured-img-overlay {
           position: absolute; inset: 0;
-          background: linear-gradient(90deg, transparent 0%, rgba(19,21,26,0.85) 100%);
+          background: linear-gradient(90deg, transparent 0%, rgba(19,21,26,0.75) 100%);
+          pointer-events: none;
         }
 
         /* Content side */
@@ -204,9 +180,7 @@ export default function BlogIndex() {
         }
         .read-more:hover { gap: 14px; }
 
-        /* ════════════════════════════════════════
-           POST GRID  (remaining posts)
-        ════════════════════════════════════════ */
+        /* ── Post grid ── */
         .post-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
@@ -220,19 +194,22 @@ export default function BlogIndex() {
         }
         .post-card:hover { border-color: var(--gold-stroke); transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,.4); }
 
-        /* Card image placeholder */
+        /* Card image — real photo */
         .card-img {
-          height: 160px;
+          height: 190px;
           overflow: hidden; position: relative;
-          display: flex; align-items: center; justify-content: center;
         }
-        .card-img-emoji {
-          font-size: 64px; opacity: .14; user-select: none; pointer-events: none; z-index: 0;
+        .card-img img {
+          width: 100%; height: 100%;
+          object-fit: cover;
+          display: block;
+          transition: transform .45s ease;
         }
-        .card-img-tint { position: absolute; inset: 0; opacity: .25; }
+        .post-card:hover .card-img img { transform: scale(1.06); }
         .card-img-overlay {
           position: absolute; inset: 0;
-          background: linear-gradient(180deg, transparent 0%, rgba(19,21,26,0.7) 100%);
+          background: linear-gradient(180deg, transparent 30%, rgba(19,21,26,0.65) 100%);
+          pointer-events: none;
         }
 
         .card-body { padding: 20px 22px 22px; flex: 1; display: flex; flex-direction: column; }
@@ -272,13 +249,14 @@ export default function BlogIndex() {
         }
         .cta-strip-btn:hover { background: #e8c97a; }
 
-        /* ════════════════════════════════════════
-           RESPONSIVE
-        ════════════════════════════════════════ */
         @media (max-width: 900px) {
           .featured-post { grid-template-columns: 1fr; }
-          .featured-img  { min-height: 200px; }
+          .featured-img  { min-height: 240px; }
           .featured-content { padding: 26px 26px 28px; }
+          /* On mobile the overlay should fade bottom→top not right→left */
+          .featured-img-overlay {
+            background: linear-gradient(180deg, transparent 0%, rgba(19,21,26,0.75) 100%);
+          }
         }
         @media (max-width: 600px) {
           .blog-header   { padding: 48px 20px 36px; }
@@ -291,14 +269,12 @@ export default function BlogIndex() {
 
       <div className="blog-root">
 
-        {/* ── Breadcrumb ── */}
         <nav className="breadcrumb" aria-label="Breadcrumb">
           <a href="/">Home</a>
           <span>›</span>
           <span>Blog</span>
         </nav>
 
-        {/* ── Page header ── */}
         <header className="blog-header">
           <div className="blog-eyebrow">
             <div className="blog-eyebrow-line" />
@@ -311,7 +287,6 @@ export default function BlogIndex() {
           </p>
         </header>
 
-        {/* ── Category filter pills ── */}
         <div className="blog-filters">
           <span className="filter-pill active">All Articles</span>
           {["Airport Transfers", "Family Travel", "Paris Travel Tips"].map(cat => (
@@ -323,17 +298,12 @@ export default function BlogIndex() {
 
           {/* ── Featured post ── */}
           <article className="featured-post">
-            {/* Image panel */}
-            <div
-              className="featured-img"
-              style={{ background: `${CATEGORY_COLORS[featured.category]}18` }}
-            >
-              <span className="featured-img-emoji" aria-hidden="true">
-                {CATEGORY_EMOJI[featured.category] ?? "✈"}
-              </span>
-              <div
-                className="featured-img-tint"
-                style={{ background: CATEGORY_COLORS[featured.category] ?? "var(--gold)" }}
+            {/* Image panel — uses hero URL from blogData */}
+            <div className="featured-img">
+              <img
+                src={featured.hero}
+                alt={featured.title}
+                loading="eager"
               />
               <div className="featured-img-overlay" />
             </div>
@@ -377,13 +347,15 @@ export default function BlogIndex() {
           <div className="post-grid">
             {rest.map(post => {
               const color = CATEGORY_COLORS[post.category] ?? "#c9a84c";
-              const emoji = CATEGORY_EMOJI[post.category]  ?? "✈";
               return (
                 <Link key={post.slug} href={`/blog/${post.slug}`} className="post-card">
-                  {/* Card image */}
-                  <div className="card-img" style={{ background: `${color}15` }}>
-                    <span className="card-img-emoji" aria-hidden="true">{emoji}</span>
-                    <div className="card-img-tint" style={{ background: color }} />
+                  {/* Card image — uses hero URL from blogData */}
+                  <div className="card-img">
+                    <img
+                      src={post.hero}
+                      alt={post.title}
+                      loading="lazy"
+                    />
                     <div className="card-img-overlay" />
                   </div>
 

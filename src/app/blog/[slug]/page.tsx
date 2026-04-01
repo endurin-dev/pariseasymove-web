@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { blogPosts, getPostBySlug, getRelatedPosts, BlogSection } from "../blogData";
 
 type Props = {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 };
 
 export async function generateStaticParams() {
@@ -12,7 +12,8 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const post = getPostBySlug(params.slug);
+  const { slug } = await params;
+  const post = getPostBySlug(slug);
   if (!post) return {};
   return {
     title: post.metaTitle,
@@ -23,11 +24,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: post.metaDescription,
       type: "article",
       publishedTime: post.publishDate,
+      images: [{ url: post.hero }],
     },
     twitter: {
       card: "summary_large_image",
       title: post.metaTitle,
       description: post.metaDescription,
+      images: [post.hero],
     },
   };
 }
@@ -38,17 +41,10 @@ const CATEGORY_COLORS: Record<string, string> = {
   "Paris Travel Tips": "#6b8ec9",
 };
 
-const CATEGORY_EMOJI: Record<string, string> = {
-  "Airport Transfers": "✈",
-  "Family Travel":     "✦",
-  "Paris Travel Tips": "🗼",
-};
-
-// ── Section renderer ────────────────────────────────────────────────────────
 function renderSection(section: BlogSection, i: number): React.ReactNode {
   switch (section.type) {
     case "h2":
-      return <h2 key={i} className="article-h2">{section.text}</h2>;
+      return <h2 key={i} id={`h2-${i}`} className="article-h2">{section.text}</h2>;
     case "h3":
       return <h3 key={i} className="article-h3">{section.text}</h3>;
     case "p":
@@ -107,26 +103,26 @@ function renderSection(section: BlogSection, i: number): React.ReactNode {
   }
 }
 
-export default function BlogPost({ params }: Props) {
-  const post = getPostBySlug(params.slug);
+export default async function BlogPost({ params }: Props) {
+  const { slug } = await params;
+
+  const post = getPostBySlug(slug);
   if (!post) notFound();
 
   const related  = getRelatedPosts(post.slug, post.category, 3);
   const catColor = CATEGORY_COLORS[post.category] ?? "#c9a84c";
-  const catEmoji = CATEGORY_EMOJI[post.category]  ?? "✈";
 
-  // ── H2 headings for table of contents ──────────────────────────────────
   const h2Sections = post.content
     .map((s, i) => ({ ...s, originalIndex: i }))
     .filter(s => s.type === "h2");
 
-  // ── JSON-LD structured data ─────────────────────────────────────────────
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     headline: post.title,
     description: post.metaDescription,
     datePublished: post.publishDate,
+    image: post.hero,
     author: { "@type": "Organization", name: "PEM Transfers", url: "https://pemtransfers.com" },
     publisher: { "@type": "Organization", name: "PEM Transfers" },
     keywords: post.keywords.join(", "),
@@ -147,7 +143,6 @@ export default function BlogPost({ params }: Props) {
 
   return (
     <>
-      {/* ── JSON-LD ── */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {faqJsonLd && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
@@ -178,7 +173,6 @@ export default function BlogPost({ params }: Props) {
           min-height: 100vh;
         }
 
-        /* ── Breadcrumb ── */
         .breadcrumb {
           max-width: 1100px; margin: 0 auto;
           padding: 20px 5vw 0;
@@ -188,7 +182,6 @@ export default function BlogPost({ params }: Props) {
         .breadcrumb a { color: var(--ivory-faint); text-decoration: none; transition: color .2s; }
         .breadcrumb a:hover { color: var(--gold); }
 
-        /* ── Hero ── */
         .post-hero { max-width: 1100px; margin: 0 auto; padding: 36px 5vw 0; }
         .post-cat {
           display: inline-block;
@@ -207,28 +200,25 @@ export default function BlogPost({ params }: Props) {
         }
         .meta-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--ivory-faint); }
 
-        /* Hero image — self-contained, no external URL needed */
+        /* ── Hero image — real photo from blogData ── */
         .post-hero-img {
-          width: 100%; height: 380px;
+          width: 100%; height: 420px;
           border-radius: 14px; overflow: hidden;
-          margin-bottom: 0;
           border: 1px solid var(--stroke-mid);
           position: relative;
-          display: flex; align-items: center; justify-content: center;
         }
-        .post-hero-img-emoji {
-          font-size: 130px; opacity: .10;
-          user-select: none; pointer-events: none; z-index: 0;
+        .post-hero-img img {
+          width: 100%; height: 100%;
+          object-fit: cover;
+          display: block;
         }
-        .post-hero-img-tint { position: absolute; inset: 0; opacity: .20; }
+        /* Subtle bottom gradient so text in the layout below reads well */
         .post-hero-img-gradient {
-          position: absolute; bottom: 0; left: 0; right: 0; height: 55%;
+          position: absolute; bottom: 0; left: 0; right: 0; height: 40%;
           background: linear-gradient(to top, var(--ink) 0%, transparent 100%);
+          pointer-events: none;
         }
 
-        /* ════════════════════════════════════════
-           Two-column layout: article + sidebar
-        ════════════════════════════════════════ */
         .post-layout {
           max-width: 1100px; margin: 0 auto;
           padding: 48px 5vw 80px;
@@ -238,7 +228,6 @@ export default function BlogPost({ params }: Props) {
           align-items: start;
         }
 
-        /* ── Article body ── */
         .article-body { min-width: 0; }
 
         .article-h2 {
@@ -260,7 +249,6 @@ export default function BlogPost({ params }: Props) {
           color: var(--ivory-dim); margin-bottom: 16px;
         }
 
-        /* Lists */
         .article-ul,
         .article-ol {
           margin: 0 0 18px 0; padding: 0; list-style: none;
@@ -273,20 +261,17 @@ export default function BlogPost({ params }: Props) {
           color: var(--ivory-dim); line-height: 1.65;
           counter-increment: list-counter;
         }
-        /* Ordered: numbered prefix */
         .article-ol .article-li::before {
           content: counter(list-counter) ".";
           color: var(--gold); font-size: 12.5px; font-weight: 600;
           flex-shrink: 0; min-width: 20px; margin-top: 3px;
         }
-        /* Unordered: gold dot */
         .article-ul .article-li::before {
           content: '';
           width: 6px; height: 6px; border-radius: 50%;
           background: var(--gold); flex-shrink: 0; margin-top: 9px;
         }
 
-        /* Tip box */
         .article-tip {
           display: flex; gap: 14px; align-items: flex-start;
           background: rgba(201,168,76,.07);
@@ -297,7 +282,6 @@ export default function BlogPost({ params }: Props) {
         .article-tip .tip-icon { flex-shrink: 0; margin-top: 1px; }
         .article-tip p { font-size: 14px; font-weight: 300; color: var(--ivory-dim); line-height: 1.7; margin: 0; }
 
-        /* Blockquote */
         .article-quote {
           position: relative;
           border-left: 2px solid var(--gold);
@@ -315,7 +299,6 @@ export default function BlogPost({ params }: Props) {
           color: var(--ivory-dim); line-height: 1.65; margin: 0;
         }
 
-        /* In-article CTA */
         .article-cta {
           display: flex; align-items: center; justify-content: space-between;
           gap: 18px; flex-wrap: wrap;
@@ -337,7 +320,6 @@ export default function BlogPost({ params }: Props) {
         }
         .article-cta-btn:hover { background: #e8c97a; }
 
-        /* ── FAQ ── */
         .faq-section { margin-top: 48px; padding-top: 36px; border-top: 1px solid var(--stroke-mid); }
         .faq-title {
           font-family: 'Cormorant Garamond', serif; font-size: 30px; font-weight: 400;
@@ -362,7 +344,6 @@ export default function BlogPost({ params }: Props) {
           line-height: 1.75; padding-left: 34px;
         }
 
-        /* ── Keyword tags ── */
         .article-keywords {
           display: flex; flex-wrap: wrap; gap: 8px;
           margin-top: 44px; padding-top: 24px; border-top: 1px solid var(--stroke);
@@ -372,9 +353,6 @@ export default function BlogPost({ params }: Props) {
           border: 1px solid var(--stroke-mid); color: var(--ivory-faint); letter-spacing: .08em;
         }
 
-        /* ════════════════════════════════════════
-           SIDEBAR
-        ════════════════════════════════════════ */
         .post-sidebar {
           position: sticky; top: 100px;
           display: flex; flex-direction: column; gap: 18px;
@@ -389,7 +367,6 @@ export default function BlogPost({ params }: Props) {
           font-size: 9.5px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--gold);
         }
 
-        /* Book CTA sidebar card */
         .sidebar-book {
           padding: 20px 18px;
           background: linear-gradient(135deg, rgba(201,168,76,.08), rgba(201,168,76,.03));
@@ -416,7 +393,6 @@ export default function BlogPost({ params }: Props) {
         }
         .trust-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
 
-        /* Table of contents */
         .toc-list { padding: 10px 18px 14px; display: flex; flex-direction: column; gap: 1px; }
         .toc-item {
           display: block; font-size: 12.5px; font-weight: 300; color: var(--ivory-faint);
@@ -426,18 +402,25 @@ export default function BlogPost({ params }: Props) {
         .toc-item:last-child { border-bottom: none; }
         .toc-item:hover { color: var(--gold); }
 
-        /* Related posts */
+        /* ── Related posts — thumbnail images ── */
         .related-link {
-          display: flex; gap: 12px; align-items: flex-start;
+          display: flex; gap: 12px; align-items: center;
           padding: 12px 18px; border-bottom: 1px solid var(--stroke);
           text-decoration: none; transition: background .18s;
         }
         .related-link:last-child { border-bottom: none; }
         .related-link:hover { background: rgba(255,255,255,.025); }
-        .related-num {
-          font-family: 'Cormorant Garamond', serif; font-size: 22px;
-          color: var(--gold); opacity: .25; line-height: 1; flex-shrink: 0; margin-top: -1px;
+        .related-thumb {
+          width: 52px; height: 44px; border-radius: 6px;
+          overflow: hidden; flex-shrink: 0;
+          background: var(--ink);
         }
+        .related-thumb img {
+          width: 100%; height: 100%;
+          object-fit: cover; display: block;
+          transition: transform .3s ease;
+        }
+        .related-link:hover .related-thumb img { transform: scale(1.08); }
         .related-title {
           font-size: 12.5px; font-weight: 400; color: var(--ivory-dim);
           line-height: 1.4; transition: color .18s;
@@ -445,7 +428,6 @@ export default function BlogPost({ params }: Props) {
         .related-link:hover .related-title { color: var(--gold); }
         .related-cat { font-size: 9px; color: var(--ivory-faint); text-transform: uppercase; letter-spacing: .1em; margin-top: 4px; }
 
-        /* WhatsApp sidebar block */
         .wa-sidebar { padding: 18px; }
         .wa-sidebar-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
         .wa-circle {
@@ -460,25 +442,22 @@ export default function BlogPost({ params }: Props) {
         }
         .wa-sidebar-btn:hover { background: #1daf56; }
 
-        /* ════════════════════════════════════════
-           RESPONSIVE
-        ════════════════════════════════════════ */
         @media (max-width: 900px) {
           .post-layout { grid-template-columns: 1fr; gap: 36px; padding: 28px 5vw 52px; }
           .post-sidebar { position: static; }
-          .post-hero-img { height: 220px; }
+          .post-hero-img { height: 260px; }
         }
         @media (max-width: 600px) {
           .post-hero    { padding: 24px 20px 0; }
           .post-layout  { padding: 24px 20px 44px; }
           .breadcrumb   { padding: 14px 20px 0; }
           .article-cta  { flex-direction: column; align-items: flex-start; }
+          .post-hero-img { height: 200px; }
         }
       `}</style>
 
       <div className="post-root">
 
-        {/* ── Breadcrumb ── */}
         <nav className="breadcrumb" aria-label="Breadcrumb">
           <a href="/">Home</a>
           <span>›</span>
@@ -491,7 +470,6 @@ export default function BlogPost({ params }: Props) {
           </span>
         </nav>
 
-        {/* ── Hero ── */}
         <div className="post-hero">
           <span
             className="post-cat"
@@ -518,22 +496,22 @@ export default function BlogPost({ params }: Props) {
             <span style={{ color: catColor }}>{post.category}</span>
           </div>
 
-          {/* Hero image — emoji placeholder, no external request */}
-          <div className="post-hero-img" style={{ background: `${catColor}12` }}>
-            <span className="post-hero-img-emoji" aria-hidden="true">{catEmoji}</span>
-            <div className="post-hero-img-tint" style={{ background: catColor }} />
+          {/* ── Hero image — uses post.hero from blogData ── */}
+          <div className="post-hero-img">
+            <img
+              src={post.hero}
+              alt={post.title}
+              loading="eager"
+            />
             <div className="post-hero-img-gradient" />
           </div>
         </div>
 
-        {/* ── Main layout ── */}
         <div className="post-layout">
 
-          {/* ── Article ── */}
           <article className="article-body">
             {post.content.map((section, i) => renderSection(section, i))}
 
-            {/* FAQ */}
             {post.faq && post.faq.length > 0 && (
               <section className="faq-section" id="faq" itemScope itemType="https://schema.org/FAQPage">
                 <h2 className="faq-title">Frequently Asked Questions</h2>
@@ -548,7 +526,6 @@ export default function BlogPost({ params }: Props) {
               </section>
             )}
 
-            {/* Keyword tags */}
             {post.keywords && post.keywords.length > 0 && (
               <div className="article-keywords">
                 {post.keywords.map(kw => (
@@ -558,10 +535,8 @@ export default function BlogPost({ params }: Props) {
             )}
           </article>
 
-          {/* ── Sidebar ── */}
           <aside className="post-sidebar">
 
-            {/* Book CTA */}
             <div className="sidebar-book">
               <div className="sidebar-book-title">Book Your Transfer</div>
               <p className="sidebar-book-sub">Fixed price · Meet &amp; Greet · Free child seats · 24/7 available</p>
@@ -581,7 +556,6 @@ export default function BlogPost({ params }: Props) {
               </div>
             </div>
 
-            {/* Table of contents */}
             {h2Sections.length > 0 && (
               <div className="sidebar-card">
                 <div className="sidebar-card-head">In This Guide</div>
@@ -596,13 +570,15 @@ export default function BlogPost({ params }: Props) {
               </div>
             )}
 
-            {/* Related posts */}
             {related.length > 0 && (
               <div className="sidebar-card">
                 <div className="sidebar-card-head">Related Guides</div>
-                {related.map((rp, i) => (
+                {related.map((rp) => (
                   <Link key={rp.slug} href={`/blog/${rp.slug}`} className="related-link">
-                    <div className="related-num">{String(i + 1).padStart(2, "0")}</div>
+                    {/* Thumbnail image — uses related post's hero from blogData */}
+                    <div className="related-thumb">
+                      <img src={rp.hero} alt={rp.title} loading="lazy" />
+                    </div>
                     <div>
                       <div className="related-title">{rp.title}</div>
                       <div className="related-cat">{rp.category} · {rp.readTime}</div>
@@ -612,7 +588,6 @@ export default function BlogPost({ params }: Props) {
               </div>
             )}
 
-            {/* WhatsApp */}
             <div className="sidebar-card">
               <div className="wa-sidebar">
                 <div className="wa-sidebar-top">
