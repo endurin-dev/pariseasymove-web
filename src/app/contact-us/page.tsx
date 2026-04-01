@@ -1,6 +1,53 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 
 export default function ContactUs() {
+  const [form, setForm] = useState({
+    firstName: "", lastName: "", email: "", phone: "", subject: "", message: "",
+  });
+  const [status, setStatus] = useState("idle"); // idle | loading | success | error
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const handleChange = (e) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async () => {
+    if (!form.firstName || !form.email || !form.message) {
+      setErrorMsg("Please fill in your name, email and message.");
+      setStatus("error");
+      return;
+    }
+
+    setStatus("loading");
+    setErrorMsg("");
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "Something went wrong.");
+
+      // GTM dataLayer push
+      if (typeof window !== "undefined" && window.dataLayer) {
+        window.dataLayer.push({ event: "generate_lead" });
+      }
+
+      setStatus("success");
+      setForm({ firstName: "", lastName: "", email: "", phone: "", subject: "", message: "" });
+    } catch (err) {
+      setErrorMsg(err.message || "Failed to send. Please try again.");
+      setStatus("error");
+    }
+  };
+
   return (
     <>
       <style>{`
@@ -326,12 +373,33 @@ export default function ContactUs() {
           box-shadow: 0 4px 24px rgba(201,163,71,0.25);
           margin-top: 24px;
         }
-        .cp-submit:hover {
+        .cp-submit:hover:not(:disabled) {
           background: var(--cp-gold-light);
           transform: translateY(-2px);
           box-shadow: 0 8px 32px rgba(201,163,71,0.35);
         }
+        .cp-submit:disabled { opacity: 0.6; cursor: not-allowed; }
         .cp-submit svg { width: 16px; height: 16px; }
+
+        /* feedback banners */
+        .cp-banner {
+          display: flex; align-items: flex-start; gap: 10px;
+          padding: 14px 16px; border-radius: 10px;
+          font-family: 'Montserrat', sans-serif;
+          font-size: 12px; font-weight: 500; line-height: 1.5;
+          margin-top: 16px;
+        }
+        .cp-banner-success {
+          background: rgba(26,163,71,0.10);
+          border: 1px solid rgba(26,163,71,0.25);
+          color: #6ee7a0;
+        }
+        .cp-banner-error {
+          background: rgba(220,53,53,0.10);
+          border: 1px solid rgba(220,53,53,0.25);
+          color: #f87171;
+        }
+        .cp-banner svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
 
         .cp-form-note {
           display: flex; align-items: center; gap: 6px;
@@ -424,8 +492,6 @@ export default function ContactUs() {
               <span className="cp-section-label">Contact Details</span>
 
               <div className="cp-info-cards">
-
-                {/* Address */}
                 <div className="cp-info-card" style={{ cursor: "default" }}>
                   <div className="cp-info-icon">
                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
@@ -444,7 +510,6 @@ export default function ContactUs() {
                   </div>
                 </div>
 
-                {/* Phone */}
                 <a href="tel:+33652466694" className="cp-info-card">
                   <div className="cp-info-icon">
                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
@@ -458,7 +523,6 @@ export default function ContactUs() {
                   </div>
                 </a>
 
-                {/* Email */}
                 <a href="mailto:booking@pariseasymove.com" className="cp-info-card">
                   <div className="cp-info-icon">
                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
@@ -472,7 +536,6 @@ export default function ContactUs() {
                   </div>
                 </a>
 
-                {/* Website */}
                 <a href="https://pariseasymove.com" target="_blank" rel="noopener noreferrer" className="cp-info-card">
                   <div className="cp-info-icon">
                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
@@ -485,10 +548,8 @@ export default function ContactUs() {
                     <div className="cp-info-sub">Book online anytime</div>
                   </div>
                 </a>
-
               </div>
 
-              {/* Socials */}
               <div className="cp-socials">
                 <a href="https://facebook.com/ParisEasyMove" target="_blank" rel="noopener noreferrer" className="cp-social">
                   <svg viewBox="0 0 24 24" fill="currentColor">
@@ -512,7 +573,6 @@ export default function ContactUs() {
                 </a>
               </div>
 
-              {/* Map embed */}
               <div className="cp-map">
                 <iframe
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2626.5589155314524!2d2.2500230768451934!3d48.82847680281068!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47e67a92ad88a85f%3A0xa1d75abfab1e4f22!2s11%20Sq.%20de%20l&#39;Avre%2C%2092100%20Boulogne-Billancourt%2C%20France!5e0!3m2!1sen!2slk!4v1774846463586!5m2!1sen!2slk"
@@ -533,27 +593,39 @@ export default function ContactUs() {
                 <div className="cp-field-row">
                   <div className="cp-field">
                     <label className="cp-label">First Name</label>
-                    <input type="text" placeholder="Jean" className="cp-input" />
+                    <input
+                      type="text" name="firstName" placeholder="Jean"
+                      className="cp-input" value={form.firstName} onChange={handleChange}
+                    />
                   </div>
                   <div className="cp-field">
                     <label className="cp-label">Last Name</label>
-                    <input type="text" placeholder="Dupont" className="cp-input" />
+                    <input
+                      type="text" name="lastName" placeholder="Dupont"
+                      className="cp-input" value={form.lastName} onChange={handleChange}
+                    />
                   </div>
                 </div>
 
                 <div className="cp-field">
                   <label className="cp-label">Email Address</label>
-                  <input type="email" placeholder="your@email.com" className="cp-input" />
+                  <input
+                    type="email" name="email" placeholder="your@email.com"
+                    className="cp-input" value={form.email} onChange={handleChange}
+                  />
                 </div>
 
                 <div className="cp-field">
                   <label className="cp-label">Phone / WhatsApp</label>
-                  <input type="tel" placeholder="+33 6 00 00 00 00" className="cp-input" />
+                  <input
+                    type="tel" name="phone" placeholder="+33 6 00 00 00 00"
+                    className="cp-input" value={form.phone} onChange={handleChange}
+                  />
                 </div>
 
                 <div className="cp-field">
                   <label className="cp-label">Subject</label>
-                  <select className="cp-input cp-select">
+                  <select name="subject" className="cp-input cp-select" value={form.subject} onChange={handleChange}>
                     <option value="">Select a subject</option>
                     <option value="booking">New Booking</option>
                     <option value="quote">Request a Quote</option>
@@ -565,14 +637,52 @@ export default function ContactUs() {
 
                 <div className="cp-field">
                   <label className="cp-label">Message</label>
-                  <textarea placeholder="Tell us about your transfer needs — pickup location, destination, date, number of passengers..." className="cp-input cp-textarea" />
+                  <textarea
+                    name="message"
+                    placeholder="Tell us about your transfer needs — pickup location, destination, date, number of passengers..."
+                    className="cp-input cp-textarea"
+                    value={form.message} onChange={handleChange}
+                  />
                 </div>
 
-                <button type="submit" className="cp-submit">
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-                  </svg>
-                  Send Message
+                {status === "success" && (
+                  <div className="cp-banner cp-banner-success">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Message sent! We'll get back to you within the hour.
+                  </div>
+                )}
+
+                {status === "error" && (
+                  <div className="cp-banner cp-banner-error">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    {errorMsg}
+                  </div>
+                )}
+
+                <button
+                  className="cp-submit"
+                  onClick={handleSubmit}
+                  disabled={status === "loading"}
+                >
+                  {status === "loading" ? (
+                    <>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: "cp-spin 1s linear infinite" }}>
+                        <path strokeLinecap="round" d="M12 2a10 10 0 0 1 10 10"/>
+                      </svg>
+                      Sending…
+                    </>
+                  ) : (
+                    <>
+                      <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                      </svg>
+                      Send Message
+                    </>
+                  )}
                 </button>
 
                 <div className="cp-form-note">
@@ -605,6 +715,13 @@ export default function ContactUs() {
         </div>
 
       </div>
+
+      <style>{`
+        @keyframes cp-spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+      `}</style>
     </>
   );
 }
