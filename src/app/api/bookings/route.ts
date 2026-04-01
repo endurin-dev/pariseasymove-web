@@ -6,7 +6,7 @@ const shape = (r: any) => ({
   id:          r.id,
   fromLocId:   r.from_loc_id,
   toLocId:     r.to_loc_id,
-  from:        r.from_loc_name ?? r.from_loc_id,  // name for display
+  from:        r.from_loc_name ?? r.from_loc_id,
   to:          r.to_loc_name   ?? r.to_loc_id,
   date:        r.date,
   time:        r.time,
@@ -53,27 +53,61 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const b  = await req.json();
-  const id = b.id ?? Math.random().toString(36).slice(2, 9);
+  try {
+    const b = await req.json();
 
-  const { rows } = await pool.query(
-    `INSERT INTO bookings
-       (id, from_loc_id, to_loc_id, date, time,
-        passengers, kids, bags, vehicle_id,
-        name, country, whatsapp, email, notes, status)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
-     RETURNING id`,
-    [id,
-     b.fromLocId, b.toLocId,
-     b.date, b.time,
-     b.passengers ?? 1, b.kids ?? 0, b.bags ?? 1,
-     b.vehicleId,
-     b.name, b.country ?? '', b.whatsapp ?? '',
-     b.email ?? '', b.notes ?? '', b.status ?? 'new']
-  );
+    // Quote requests (no vehicle) skip the DB entirely —
+    // the email is sent directly from the frontend.
+    // This guard is a safety net in case the frontend ever
+    // calls this endpoint for a quote request by mistake.
+    if (!b.vehicleId) {
+      return NextResponse.json(
+        { error: "Quote requests do not get saved to the database." },
+        { status: 422 }
+      );
+    }
 
-  const { rows: full } = await pool.query(JOIN_QUERY + " WHERE b.id=$1", [rows[0].id]);
-  return NextResponse.json(shape(full[0]), { status: 201 });
+    const id = b.id ?? Math.random().toString(36).slice(2, 9);
+
+    const { rows } = await pool.query(
+      `INSERT INTO bookings
+         (id, from_loc_id, to_loc_id, date, time,
+          passengers, kids, bags, vehicle_id,
+          name, country, whatsapp, email, notes, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+       RETURNING id`,
+      [
+        id,
+        b.fromLocId  || null,
+        b.toLocId    || null,
+        b.date,
+        b.time,
+        b.passengers ?? 1,
+        b.kids       ?? 0,
+        b.bags       ?? 1,
+        b.vehicleId,
+        b.name,
+        b.country    ?? "",
+        b.whatsapp   ?? "",
+        b.email      ?? "",
+        b.notes      ?? "",
+        b.status     ?? "new",
+      ]
+    );
+
+    const { rows: full } = await pool.query(
+      JOIN_QUERY + " WHERE b.id=$1",
+      [rows[0].id]
+    );
+    return NextResponse.json(shape(full[0]), { status: 201 });
+
+  } catch (err: any) {
+    console.error("[POST /api/bookings] error:", err);
+    return NextResponse.json(
+      { error: err?.message ?? "Unknown database error" },
+      { status: 500 }
+    );
+  }
 }
 
 export async function PUT(req: NextRequest) {

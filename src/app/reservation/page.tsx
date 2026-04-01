@@ -242,9 +242,7 @@ export default function ReservationPage() {
     return {...v,routePrice:final,baseRoutePrice:routeBase,onDemand:false,noRate:false,paxExceeded,lugExceeded,isDoubled:totalPax>=9};
   }).filter(v=>!v.noRate);
 
-  // True when a specific route is selected but has no matching rates at all
   const noVehiclesForRoute = !!(trip.fromId && trip.toId && dataReady && vehiclesWithPrice.length === 0);
-  // When no route vehicles exist, skip vehicle step and treat as quote request
   const isQuoteRequest = noVehiclesForRoute;
 
   const recommendedVehicle = vehiclesWithPrice.filter(v=>!v.paxExceeded&&!v.lugExceeded).sort((a,b)=>a.maxPassengers-b.maxPassengers)[0]??null;
@@ -281,7 +279,6 @@ export default function ReservationPage() {
   const flightLabel    = isFromAirport?"Flight / Train No. (at pickup)":"Flight / Train No. (at drop-off)";
   const addressLabel   = isToCity?"Drop-off Address":isFromCity?"Pickup Address":"Address";
 
-  // Effective steps: if quote request, step 1 (vehicle) becomes an info screen, we still navigate all 4 steps
   const validate = () => {
     const e: Record<string,string> = {};
     if (step===0) {
@@ -295,7 +292,6 @@ export default function ReservationPage() {
         if (trip.returnDate&&trip.date&&trip.returnDate<trip.date) e.returnDate="Return date must be on or after departure date";
       }
     }
-    // Skip vehicle validation when it's a quote request
     if (step===1&&!vehicleId&&!isQuoteRequest) e.vehicle="Please select a vehicle";
     if (step===2) {
       if (!personal.name.trim())     e.name="Required";
@@ -309,81 +305,154 @@ export default function ReservationPage() {
     return Object.keys(e).length===0;
   };
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
+  const scrollToTop = () => { window.scrollTo({ top: 0, behavior: "smooth" }); };
   const next = () => { if (validate()) { setStep(s=>s+1); scrollToTop(); } };
   const back = () => { setStep(s=>s-1); setErrors({}); scrollToTop(); };
 
   const submit = async () => {
     setSending(true);
     const code = COUNTRY_CODES[personal.country] ?? "";
-    const rawNumber = personal.whatsapp.trim().replace(/^\+\d{1,4}\s?/, "");
+    const rawNumber = personal.whatsapp.trim().replace(/^\+\d{1,4}\s?/, "").replace(/^\+/, "");
     const fullWhatsapp = code ? `${code}${rawNumber}` : personal.whatsapp;
     const noteParts = [
       isQuoteRequest ? "⚠️ QUOTE REQUEST — no rate on file for this route" : "",
       isRoundTrip ? "ROUND TRIP" : "",
-      isRoundTrip&&trip.returnDate ? `Return Date: ${trip.returnDate}` : "",
-      isRoundTrip&&trip.returnTime ? `Return Time: ${trip.returnTime}` : "",
+      isRoundTrip && trip.returnDate ? `Return Date: ${trip.returnDate}` : "",
+      isRoundTrip && trip.returnTime ? `Return Time: ${trip.returnTime}` : "",
       trip.flightOrTrain ? `Flight/Train: ${trip.flightOrTrain}` : "",
       trip.dropoffAddress ? `Address: ${trip.dropoffAddress}` : "",
-      nightSurcharge>0 ? "OUTBOUND NIGHT SURCHARGE (+€15)" : "",
-      returnNightSurcharge>0 ? "RETURN NIGHT SURCHARGE (+€15)" : "",
-      !isQuoteRequest ? `Payment: ${paymentMethod==="cash"?"Cash to driver":"Card to driver"}` : "",
+      nightSurcharge > 0 ? "OUTBOUND NIGHT SURCHARGE (+€15)" : "",
+      returnNightSurcharge > 0 ? "RETURN NIGHT SURCHARGE (+€15)" : "",
+      !isQuoteRequest ? `Payment: ${paymentMethod === "cash" ? "Cash to driver" : "Card to driver"}` : "",
       personal.notes,
     ].filter(Boolean).join(" | ");
 
     try {
+      // ── Quote request: skip DB entirely, just send email ──
+      if (isQuoteRequest) {
+        const ref = "PEM-" + Date.now().toString(36).toUpperCase();
+        try {
+          await fetch("/api/send-booking-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              bookingRef: ref,
+              name: personal.name,
+              email: personal.email,
+              country: personal.country,
+              whatsapp: fullWhatsapp,
+              fromName: trip.fromName,
+              toName: trip.toName,
+              date: trip.date,
+              time: trip.time,
+              returnDate: isRoundTrip ? trip.returnDate : null,
+              returnTime: isRoundTrip ? trip.returnTime : null,
+              passengers: trip.passengers,
+              kids: trip.kids,
+              bags: trip.bags,
+              vehicleName: "Quote Request",
+              vehicleModel: "",
+              isRoundTrip,
+              flightTrain: trip.flightOrTrain,
+              address: trip.dropoffAddress,
+              notes: noteParts,
+              nightSurcharge,
+              returnNightSurcharge,
+              basePrice: null,
+              totalPrice: null,
+              onDemand: true,
+              paymentMethod: null,
+              isQuoteRequest: true,
+            }),
+          });
+        } catch (emailErr) {
+          console.error("Quote email send failed:", emailErr);
+        }
+        const dataLayer = (window as any).dataLayer || [];
+        (window as any).dataLayer = dataLayer;
+        dataLayer.push({ event: "quote_requested", booking_id: ref, value: 0, currency: "EUR" });
+        setBookingRef(ref);
+        setDone(true);
+        return;
+      }
+
+      // ── Normal booking: save to DB then send email ──
       const res = await fetch("/api/bookings", {
-        method:"POST", headers:{"Content-Type":"application/json"},
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          fromLocId:trip.fromId, toLocId:trip.toId,
-          date:trip.date, time:trip.time,
-          returnDate:isRoundTrip?trip.returnDate:null,
-          returnTime:isRoundTrip?trip.returnTime:null,
-          passengers:trip.passengers, kids:trip.kids, bags:trip.bags,
-          vehicleId: isQuoteRequest ? null : vehicleId,
-          name:personal.name, country:personal.country,
-          whatsapp:fullWhatsapp, email:personal.email,
-          notes:noteParts,
-          status: isQuoteRequest ? "quote_request" : "new",
+          fromLocId: trip.fromId,
+          toLocId: trip.toId,
+          date: trip.date,
+          time: trip.time,
+          returnDate: isRoundTrip ? trip.returnDate : null,
+          returnTime: isRoundTrip ? trip.returnTime : null,
+          passengers: trip.passengers,
+          kids: trip.kids,
+          bags: trip.bags,
+          vehicleId: vehicleId,
+          name: personal.name,
+          country: personal.country,
+          whatsapp: fullWhatsapp,
+          email: personal.email,
+          notes: noteParts,
+          status: "new",
         }),
       });
+
       if (res.ok) {
         const b = await res.json();
         const ref = (b.id ?? "PEM-" + Date.now().toString(36)).toUpperCase();
         setBookingRef(ref);
         try {
           await fetch("/api/send-booking-email", {
-            method:"POST", headers:{"Content-Type":"application/json"},
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              bookingRef:ref, name:personal.name, email:personal.email,
-              country:personal.country, whatsapp:fullWhatsapp,
-              fromName:trip.fromName, toName:trip.toName,
-              date:trip.date, time:trip.time,
-              returnDate:isRoundTrip?trip.returnDate:null,
-              returnTime:isRoundTrip?trip.returnTime:null,
-              passengers:trip.passengers, kids:trip.kids, bags:trip.bags,
-              vehicleName: isQuoteRequest ? "Quote Request" : (vehicle?.name??""),
-              vehicleModel: isQuoteRequest ? "" : (vehicle?.model??""),
-              isRoundTrip, flightTrain:trip.flightOrTrain, address:trip.dropoffAddress,
-              notes:personal.notes, nightSurcharge, returnNightSurcharge,
-              basePrice: isQuoteRequest ? null : (vehicle?.baseRoutePrice??null),
-              totalPrice: isQuoteRequest ? null : confirmedPrice,
-              onDemand: isQuoteRequest ? true : (vehicle?.onDemand??false),
-              paymentMethod: isQuoteRequest ? null : paymentMethod,
-              isQuoteRequest,
+              bookingRef: ref,
+              name: personal.name,
+              email: personal.email,
+              country: personal.country,
+              whatsapp: fullWhatsapp,
+              fromName: trip.fromName,
+              toName: trip.toName,
+              date: trip.date,
+              time: trip.time,
+              returnDate: isRoundTrip ? trip.returnDate : null,
+              returnTime: isRoundTrip ? trip.returnTime : null,
+              passengers: trip.passengers,
+              kids: trip.kids,
+              bags: trip.bags,
+              vehicleName: vehicle?.name ?? "",
+              vehicleModel: vehicle?.model ?? "",
+              isRoundTrip,
+              flightTrain: trip.flightOrTrain,
+              address: trip.dropoffAddress,
+              notes: personal.notes,
+              nightSurcharge,
+              returnNightSurcharge,
+              basePrice: vehicle?.baseRoutePrice ?? null,
+              totalPrice: confirmedPrice,
+              onDemand: vehicle?.onDemand ?? false,
+              paymentMethod,
+              isQuoteRequest: false,
             }),
           });
-        } catch(emailErr) { console.error("Email send failed:",emailErr); }
-        const dataLayer=(window as any).dataLayer||[];
-        (window as any).dataLayer=dataLayer;
-        dataLayer.push({ event: isQuoteRequest ? "quote_requested" : "booking_confirmed", booking_id:ref, value:confirmedPrice, currency:"EUR" });
+        } catch (emailErr) {
+          console.error("Email send failed:", emailErr);
+        }
+        const dataLayer = (window as any).dataLayer || [];
+        (window as any).dataLayer = dataLayer;
+        dataLayer.push({ event: "booking_confirmed", booking_id: ref, value: confirmedPrice, currency: "EUR" });
         setDone(true);
-      } else { alert("Something went wrong saving your booking. Please try again."); }
-    } catch { alert("Network error. Please try again."); }
-    finally { setSending(false); }
+      } else {
+        alert("Something went wrong saving your booking. Please try again.");
+      }
+    } catch {
+      alert("Network error. Please try again.");
+    } finally {
+      setSending(false);
+    }
   };
 
   const S: Record<string,React.CSSProperties> = {
@@ -1167,7 +1236,7 @@ export default function ReservationPage() {
               <div style={{ display:"flex",gap:12,marginTop:32 }}>
                 {step>0&&<button type="button" onClick={back} className="rp-btn-back">← Back</button>}
                 {step<3
-                  ?<button type="button" onClick={next} className={`rp-btn-next`}>
+                  ?<button type="button" onClick={next} className="rp-btn-next">
                     {step===1&&isQuoteRequest?"Continue with Quote Request →":step===2?"Review Booking →":"Continue →"}
                   </button>
                   :<button type="button" onClick={submit} disabled={sending} className={`rp-btn-ok${isQuoteRequest?" quote":""}`}>
