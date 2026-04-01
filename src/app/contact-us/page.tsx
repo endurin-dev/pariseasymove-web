@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 
 export default function ContactUs() {
   const [form, setForm] = useState({
@@ -10,7 +9,7 @@ export default function ContactUs() {
   const [status, setStatus] = useState("idle"); // idle | loading | success | error
   const [errorMsg, setErrorMsg] = useState("");
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
@@ -36,14 +35,14 @@ export default function ContactUs() {
       if (!res.ok) throw new Error(data.error || "Something went wrong.");
 
       // GTM dataLayer push
-      if (typeof window !== "undefined" && window.dataLayer) {
-        window.dataLayer.push({ event: "generate_lead" });
+      if (typeof window !== "undefined" && (window as any).dataLayer) {
+        (window as any).dataLayer.push({ event: "generate_lead" });
       }
 
       setStatus("success");
       setForm({ firstName: "", lastName: "", email: "", phone: "", subject: "", message: "" });
     } catch (err) {
-      setErrorMsg(err.message || "Failed to send. Please try again.");
+      setErrorMsg((err as Error).message || "Failed to send. Please try again.");
       setStatus("error");
     }
   };
