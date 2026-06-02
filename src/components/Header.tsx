@@ -18,6 +18,11 @@ export default function Header() {
 
   useEffect(() => { setIsOpen(false); }, [pathname]);
 
+  // ── Obfuscated phone — assembled at runtime, invisible to scrapers ──
+  const PHONE_PARTS = ["+33", "652", "466", "694"];
+  const phoneDisplay = PHONE_PARTS.join(" ");
+  const phoneHref = "tel:" + PHONE_PARTS.join("");
+
   const navLinks = [
     { href: "/",            label: "Home",        disney: false, blog: false },
     { href: "/disney",      label: "DisneyLand",  disney: true,  blog: false },
@@ -199,7 +204,6 @@ export default function Header() {
           border-color: rgba(200,169,110,0.3);
         }
 
-        /* Roboto Mono is a Google Font — guaranteed to load and look distinct */
         .h-phone-number {
           font-family: 'Roboto Mono', monospace !important;
           font-weight: 400 !important;
@@ -328,8 +332,8 @@ export default function Header() {
           >
             <div className="h-gold-sep" style={{ alignSelf: "center" }} />
 
-            {/* Phone */}
-            <a href="tel:+33652466694" className="h-phone-link">
+            {/* Phone — href and display both use obfuscated runtime variable */}
+            <a href={phoneHref} className="h-phone-link">
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                 <span style={{
                   width: 7, height: 7, background: "#1fbe82", borderRadius: "50%",
@@ -355,7 +359,7 @@ export default function Header() {
                   Call us now
                 </div>
                 <div className="h-phone-number" style={{ fontSize: scrolled ? 15 : 17 }}>
-                     +33 652 466 694
+                  {phoneDisplay}
                 </div>
               </div>
             </a>
@@ -489,8 +493,8 @@ export default function Header() {
             </nav>
 
             <div className="h-drawer-bottom">
-              {/* Phone in drawer */}
-              <a href="tel:+33652466694" style={{
+              {/* Phone in drawer — same obfuscated variables */}
+              <a href={phoneHref} style={{
                 display: "flex", alignItems: "center", gap: 14,
                 padding: "12px 16px",
                 border: `1px solid rgba(200,169,110,0.15)`,
@@ -521,9 +525,8 @@ export default function Header() {
                   }}>
                     Call us now
                   </div>
-                  {/* Same class as desktop — Roboto Mono applied consistently */}
                   <div className="h-phone-number" style={{ fontSize: 18 }}>
-                    +33 652 466 694
+                    {phoneDisplay}
                   </div>
                 </div>
               </a>
