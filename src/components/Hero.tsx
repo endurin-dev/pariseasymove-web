@@ -333,7 +333,18 @@ export default function HeroSection() {
                 <svg width={15} height={15} viewBox="0 0 24 24" fill="var(--h-ink)"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
                 Book Transfer
               </a>
-              <a href="/rates" className="cta-ghost">View All Rates</a>
+      <a
+  href="https://wa.me/33652466694"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="cta-ghost"
+  style={{
+    color: "#fff",
+    border: "2px solid #fff",
+  }}
+>
+  WhatsApp Us
+</a>
             </div>
           </div>
 

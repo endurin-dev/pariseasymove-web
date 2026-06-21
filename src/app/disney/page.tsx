@@ -559,7 +559,20 @@ export default function DisneylandParis() {
               </p>
               <div className="dp-hero-btns">
                 <Link href="/reservation" className="dp-btn dp-btn-gold">Book a Transfer</Link>
-                <Link href="/rates" className="dp-btn dp-btn-outline-white">View Rates</Link>
+           <a
+  href="https://wa.me/33652466694"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="dp-btn dp-btn-whatsapp"
+  style={{
+    color: "#fff",
+    border: "2px solid #fff",
+    borderRadius: "8px",
+    padding: "10px 20px",
+  }}
+>
+  WhatsApp Us
+</a>
               </div>
             </div>
           </div>
@@ -769,7 +782,15 @@ export default function DisneylandParis() {
             </div>
             <div className="dp-footer-btns">
               <Link href="/reservation" className="dp-btn dp-btn-gold">Book Your Transfer</Link>
-              <a href="https://wa.me/33652466694" target="_blank" rel="noopener noreferrer" className="dp-btn dp-btn-outline-white">WhatsApp Us</a>
+              <a
+  href="https://wa.me/33652466694"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="dp-btn dp-btn-outline-white"
+  style={{ color: "#fff" }}
+>
+  WhatsApp Us
+</a>
             </div>
           </div>
         </div>

@@ -286,6 +286,7 @@ export default function ReservationPage() {
       if (!trip.toId)   e.to="Required";
       if (!trip.date) e.date="Required";
       if (!trip.time) e.time="Required";
+      if (showFlightBox && !trip.flightOrTrain.trim()) e.flightOrTrain="Required";
       if (isRoundTrip) {
         if (!trip.returnDate) e.returnDate="Required for round trip";
         if (!trip.returnTime) e.returnTime="Required for round trip";
@@ -803,14 +804,15 @@ export default function ReservationPage() {
                     <LocationSelect value={trip.toId} onChange={setTo} locations={locations} placeholder="Select drop-off location…" error={errors.to}/>
                   </div>
 
-                  {showFlightBox&&(
-                    <div>
-                      <label style={S.label}>✈️ {flightLabel} <span style={{ fontSize:11,color:"#9ca3af",fontWeight:400 }}>(optional)</span></label>
-                      <div className="rp-input-wrap" style={wrap()}>
-                        <input type="text" placeholder="e.g. AF1234 or TGV 6201" value={trip.flightOrTrain} onChange={e=>setTrip(t=>({...t,flightOrTrain:e.target.value}))} style={S.input}/>
-                      </div>
-                    </div>
-                  )}
+                 {showFlightBox&&(
+  <div>
+    <label style={S.label}>✈️ {flightLabel} <span style={{ color:GREEN }}>*</span></label>
+    <div className="rp-input-wrap" style={wrap(errors.flightOrTrain)}>
+      <input type="text" placeholder="e.g. AF1234 or TGV 6201" value={trip.flightOrTrain} onChange={e=>setTrip(t=>({...t,flightOrTrain:e.target.value}))} style={S.input}/>
+    </div>
+    {errEl(errors.flightOrTrain)}
+  </div>
+)}
 
                   {showAddressBox&&(
                     <div>
