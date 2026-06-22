@@ -5,6 +5,7 @@ import {
   getParisEvents,
   getEuropeEvents,
   getFeaturedEvents,
+  getManualEvents, 
   mergeAndSort,
 } from "@/lib/events";
 import EventsClient from "./EventsClient";
@@ -65,6 +66,7 @@ async function EventsData() {
     getParisEvents(),
     getEuropeEvents(),
     getFeaturedEvents(),
+     getManualEvents(),
   ]);
 
   const allEvents = mergeAndSort([parisEvents, europeEvents]);
