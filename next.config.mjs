@@ -2,11 +2,15 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // Add any other settings you actually need here.
-  // Most simple projects can start with almost nothing.
-  // Examples you might want later:
-  // images: { remotePatterns: [...] },
-  // experimental: { ... },
+  images: {
+    domains: [
+      "images.unsplash.com",
+      "s1.ticketm.net",
+      "s2.ticketm.net",
+      "s3.ticketm.net",
+      // any other existing domains
+    ],
+  },
 };
 
 export default nextConfig;

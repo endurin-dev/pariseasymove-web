@@ -30,6 +30,7 @@ export default function Header() {
     { href: "/reservation", label: "Reservation", disney: false, blog: false },
     { href: "/faq",         label: "FAQ",         disney: false, blog: false },
     { href: "/blog",        label: "Blog",        disney: false, blog: true  },
+    { href: "/events",      label: "Events",      disney: false, blog: false },
     { href: "/contact-us",  label: "Contact",     disney: false, blog: false },
   ];
 
