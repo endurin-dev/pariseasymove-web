@@ -5,13 +5,13 @@ import {
   getParisEvents,
   getEuropeEvents,
   getFeaturedEvents,
-  getManualEvents, 
-  mergeAndSort, 
+  getManualEvents,
+  mergeAndSort,
 } from "@/lib/events";
 import EventsClient from "./EventsClient";
 import EventCardSkeleton from "@/components/EventCardSkeleton";
 
-export const revalidate = 21600; // 6 hours ISR
+export const revalidate = 21600;
 
 export const metadata: Metadata = {
   title: "Paris Events & Festivals | Paris Easy Move",
@@ -32,7 +32,6 @@ export const metadata: Metadata = {
   },
 };
 
-// JSON-LD structured data
 function EventsJsonLd() {
   return (
     <script
@@ -62,14 +61,14 @@ function SkeletonGrid() {
 }
 
 async function EventsData() {
-  const [parisEvents, europeEvents, featuredEvents] = await Promise.all([
+  const [parisEvents, europeEvents, featuredEvents, manualEvents] = await Promise.all([
     getParisEvents(),
     getEuropeEvents(),
     getFeaturedEvents(),
-     getManualEvents(),
+    getManualEvents(),
   ]);
 
-  const allEvents = mergeAndSort([parisEvents, europeEvents]);
+  const allEvents = mergeAndSort([parisEvents, europeEvents, manualEvents]);
 
   return (
     <EventsClient
@@ -86,9 +85,7 @@ export default function EventsPage() {
     <>
       <EventsJsonLd />
 
-      {/* ── Hero ──────────────────────────────────────────────────── */}
       <section className="relative min-h-105 flex items-end pb-16 overflow-hidden">
-        {/* Background */}
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
@@ -96,11 +93,9 @@ export default function EventsPage() {
               "url('https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1600&q=80')",
           }}
         />
-        {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/70 to-slate-900/30" />
 
         <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          {/* Eyebrow */}
           <p className="text-sky-400 text-sm font-semibold tracking-widest uppercase mb-3">
             Paris Easy Move
           </p>
@@ -115,7 +110,6 @@ export default function EventsPage() {
         </div>
       </section>
 
-      {/* ── Content ───────────────────────────────────────────────── */}
       <div className="bg-slate-50 min-h-screen">
         <Suspense fallback={<div className="max-w-6xl mx-auto px-4 py-16"><SkeletonGrid /></div>}>
           <EventsData />
