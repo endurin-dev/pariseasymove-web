@@ -4,12 +4,11 @@ import { google } from "googleapis";
 
 // 1. Initialize Google Calendar API Client
 const calendar = google.calendar("v3");
-const auth = new google.auth.JWT(
-  process.env.GOOGLE_CLIENT_EMAIL,
-  undefined,
-  process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"), // Fixes newline parsing across host environments
-  ["https://www.googleapis.com/auth/calendar"]
-);
+const auth = new google.auth.JWT({
+  email: process.env.GOOGLE_CLIENT_EMAIL,
+  key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"), // Fixes newline parsing across host environments
+  scopes: ["https://www.googleapis.com/auth/calendar"],
+});
 
 // Helper function to map database columns to clean frontend naming conventions
 const shape = (r: any) => ({
