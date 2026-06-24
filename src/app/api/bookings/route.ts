@@ -1,7 +1,17 @@
-// app/api/bookings/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { google } from "googleapis";
 
+// 1. Initialize Google Calendar API Client
+const calendar = google.calendar("v3");
+const auth = new google.auth.JWT(
+  process.env.GOOGLE_CLIENT_EMAIL,
+  undefined,
+  process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"), // Fixes newline parsing across host environments
+  ["https://www.googleapis.com/auth/calendar"]
+);
+
+// Helper function to map database columns to clean frontend naming conventions
 const shape = (r: any) => ({
   id:          r.id,
   fromLocId:   r.from_loc_id,
@@ -36,6 +46,7 @@ const JOIN_QUERY = `
   LEFT JOIN vehicles  v  ON b.vehicle_id  = v.id
 `;
 
+// GET: Fetch Bookings
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
@@ -52,14 +63,11 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(rows.map(shape));
 }
 
+// POST: Create Booking & Inject into Google Calendar
 export async function POST(req: NextRequest) {
   try {
     const b = await req.json();
 
-    // Quote requests (no vehicle) skip the DB entirely —
-    // the email is sent directly from the frontend.
-    // This guard is a safety net in case the frontend ever
-    // calls this endpoint for a quote request by mistake.
     if (!b.vehicleId) {
       return NextResponse.json(
         { error: "Quote requests do not get saved to the database." },
@@ -69,6 +77,7 @@ export async function POST(req: NextRequest) {
 
     const id = b.id ?? Math.random().toString(36).slice(2, 9);
 
+    // Save to PostgreSQL
     const { rows } = await pool.query(
       `INSERT INTO bookings
          (id, from_loc_id, to_loc_id, date, time,
@@ -95,11 +104,56 @@ export async function POST(req: NextRequest) {
       ]
     );
 
+    // Fetch newly created entry with relational names (Vehicle Name, Location names)
     const { rows: full } = await pool.query(
       JOIN_QUERY + " WHERE b.id=$1",
       [rows[0].id]
     );
-    return NextResponse.json(shape(full[0]), { status: 201 });
+    
+    const savedBooking = shape(full[0]);
+
+    // --- GOOGLE CALENDAR INTEGRATION ---
+    try {
+      // 1. Build a clean JS Date Object from strings
+      // Handles both ISO strings and standard 'YYYY-MM-DD' dates safely
+      const cleanDateStr = typeof savedBooking.date === 'string' ? savedBooking.date.split("T")[0] : savedBooking.date;
+      const startDateTime = new Date(`${cleanDateStr}T${savedBooking.time}`);
+      
+      // 2. Set event duration to default 1 hour ride time
+      const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000); 
+
+      // 3. Insert directly to the calendar
+      await calendar.events.insert({
+        auth,
+        calendarId: process.env.GOOGLE_CALENDAR_ID,
+        requestBody: {
+          summary: `🚗 Ride for ${savedBooking.name} (${savedBooking.vehicleName})`,
+          description: `
+            📍 Route: ${savedBooking.from} ➡️ ${savedBooking.to}
+            👥 Passengers: ${savedBooking.passengers} (Kids: ${savedBooking.kids})
+            💼 Luggage Bags: ${savedBooking.bags}
+            📧 Email: ${savedBooking.email}
+            📱 WhatsApp: ${savedBooking.whatsapp}
+            📝 Notes: ${savedBooking.notes}
+          `.replace(/^\s+/gm, ""), // Clean string interpolation alignment tabs
+          start: {
+            dateTime: startDateTime.toISOString(),
+            timeZone: "UTC", // Update to matching local company timezone if preferred (e.g., "America/New_York")
+          },
+          end: {
+            dateTime: endDateTime.toISOString(),
+            timeZone: "UTC",
+          },
+        },
+      });
+    } catch (calErr) {
+      // We log calendar integration faults separately. This isolates dependencies 
+      // ensuring that database-saved bookings don't drop out if external APIs face downtime.
+      console.error("⚠️ Google Calendar sync failed:", calErr);
+    }
+    // -----------------------------------
+
+    return NextResponse.json(savedBooking, { status: 201 });
 
   } catch (err: any) {
     console.error("[POST /api/bookings] error:", err);
@@ -110,6 +164,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// PUT: Update Booking Status
 export async function PUT(req: NextRequest) {
   const { id, status } = await req.json();
   await pool.query("UPDATE bookings SET status=$2 WHERE id=$1", [id, status]);
@@ -117,6 +172,7 @@ export async function PUT(req: NextRequest) {
   return NextResponse.json(shape(rows[0]));
 }
 
+// DELETE: Cancel/Remove Booking
 export async function DELETE(req: NextRequest) {
   const id = new URL(req.url).searchParams.get("id");
   await pool.query("DELETE FROM bookings WHERE id=$1", [id]);
