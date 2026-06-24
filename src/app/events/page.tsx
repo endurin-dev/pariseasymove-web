@@ -6,7 +6,7 @@ import {
   getEuropeEvents,
   getFeaturedEvents,
   getManualEvents, 
-  mergeAndSort,
+  mergeAndSort, 
 } from "@/lib/events";
 import EventsClient from "./EventsClient";
 import EventCardSkeleton from "@/components/EventCardSkeleton";
