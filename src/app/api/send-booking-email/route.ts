@@ -19,6 +19,8 @@ interface BookingEmailData {
   totalPrice: number | null;
   onDemand: boolean;
   paymentMethod: string;
+  promoCode?: string | null;
+  promoDiscountAmount?: number | null;
 }
 
 // ─── Shared row builder ───────────────────────────────────────────────────────
@@ -45,10 +47,16 @@ function buildCustomerEmail(data: BookingEmailData): string {
     nightSurcharge, returnNightSurcharge = 0,
     basePrice, totalPrice, onDemand,
     paymentMethod,
+    promoCode,
+    promoDiscountAmount = 0,
   } = data;
 
   const totalPax = passengers + kids;
   const year = new Date().getFullYear();
+  const normalizedPromoDiscount = promoDiscountAmount ?? 0;
+  const promoRow = promoCode && normalizedPromoDiscount > 0
+    ? buildRow("Promo Code", `${promoCode} (-€${normalizedPromoDiscount.toFixed(2)})`, true)
+    : "";
 
   // FIX 1: Pre-build the stats cells as a string to avoid .map() inside template literals
   const statsCells = [
@@ -222,6 +230,7 @@ function buildCustomerEmail(data: BookingEmailData): string {
         <span style="font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#92784a;">Fare Breakdown</span>
       </td></tr>
       ${buildRow(`Base fare${isRoundTrip ? " (×2 round trip)" : ""}`, onDemand ? "On Demand" : `€${basePrice}`)}
+      ${promoRow}
       ${nightSurcharge > 0 ? buildRow("🌙 Outbound Night Surcharge (10 PM – 6 AM)", `+€${nightSurcharge}`) : ""}
       ${returnNightSurcharge > 0 ? buildRow("🌙 Return Night Surcharge (10 PM – 6 AM)", `+€${returnNightSurcharge}`) : ""}
       <tr>
@@ -327,11 +336,17 @@ function buildAdminEmail(data: BookingEmailData): string {
     nightSurcharge, returnNightSurcharge = 0,
     basePrice, totalPrice, onDemand,
     paymentMethod,
+    promoCode,
+    promoDiscountAmount = 0,
   } = data;
 
   const totalPax = passengers + kids;
   const year = new Date().getFullYear();
   const now = new Date().toUTCString();
+  const normalizedPromoDiscount = promoDiscountAmount ?? 0;
+  const promoRow = promoCode && normalizedPromoDiscount > 0
+    ? buildRow("Promo Code", `${promoCode} (-€${normalizedPromoDiscount.toFixed(2)})`, true)
+    : "";
   const isNight = nightSurcharge > 0;
   const isReturnNight = returnNightSurcharge > 0;
 
@@ -455,6 +470,7 @@ function buildAdminEmail(data: BookingEmailData): string {
         <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:#6b7280;">💶 Fare</span>
       </td></tr>
       ${buildRow(`Base Fare${isRoundTrip ? " (×2 round trip)" : ""}`, onDemand ? "On Demand" : `€${basePrice}`)}
+      ${promoRow}
       ${isNight ? buildRow("🌙 Outbound Night Surcharge", `+€${nightSurcharge}`) : ""}
       ${isReturnNight ? buildRow("🌙 Return Night Surcharge", `+€${returnNightSurcharge}`) : ""}
       <tr>

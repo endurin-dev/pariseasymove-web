@@ -11,6 +11,9 @@ interface Category { id:string; name:string; icon:string; sortOrder:number; acti
 interface Location { id:string; name:string; categoryId:string|null; categoryName:string; categoryIcon:string; active:boolean; }
 interface Vehicle  { id:string; name:string; model:string; maxPassengers:number; maxLuggage:number; img:string; price:number; tag:string; special:string; active:boolean; sortOrder:number; }
 interface Feature  { id:string; text:string; active:boolean; sort_order:number; }
+interface PromoCode {
+  id:string; code:string; description:string; discountAmount:number; validFrom:string; validUntil:string; active:boolean;
+}
 interface Rate     {
   id:string; fromLocId:string; toLocId:string; vehicleId:string;
   fromLocName:string; toLocName:string; vehicleName:string;
@@ -125,7 +128,7 @@ function Toast({ msg, type }: { msg:string; type:"success"|"error" }) {
 }
 
 // ─── DASHBOARD ───────────────────────────────────────────────────────────────
-type Tab = "overview"|"bookings"|"calendar"|"categories"|"locations"|"vehicles"|"features"|"rates"|"events"|"settings";
+type Tab = "overview"|"bookings"|"calendar"|"categories"|"locations"|"vehicles"|"features"|"rates"|"events"|"promo-codes"|"settings";
 
 export default function Dashboard({ onLogout }: { onLogout: () => void }) {
   const [tab, setTab]               = useState<Tab>("overview");
@@ -134,6 +137,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
   const [locations,  setLocations]  = useState<Location[]>([]);
   const [vehicles,   setVehicles]   = useState<Vehicle[]>([]);
   const [features,   setFeatures]   = useState<Feature[]>([]);
+  const [promoCodes, setPromoCodes]  = useState<PromoCode[]>([]);
   const [rates,      setRates]      = useState<Rate[]>([]);
   const [bookings,   setBookings]   = useState<Booking[]>([]);
   const [loaded,     setLoaded]     = useState(false);
@@ -149,11 +153,12 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
       api("/api/locations"),
       api("/api/vehicles"),
       api("/api/features"),
+      api("/api/promo-codes"),
       api("/api/rates"),
       api("/api/bookings"),
-    ]).then(([cats, locs, vehs, feats, rts, books]) => {
+    ]).then(([cats, locs, vehs, feats, promos, rts, books]) => {
       setCategories(cats); setLocations(locs); setVehicles(vehs);
-      setFeatures(feats); setRates(rts); setBookings(books);
+      setFeatures(feats); setPromoCodes(promos); setRates(rts); setBookings(books);
       setLoaded(true);
     }).catch(() => { showToast("Failed to load data from database", "error"); setLoaded(true); });
   }, []);
@@ -168,6 +173,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
     { id:"features",   label:"Features",    icon:"M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
     { id:"rates",      label:"Rates",       icon:"M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
     { id:"events",   label:"Events",   icon:"M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
+    { id:"promo-codes", label:"Promo Codes", icon:"M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" },
     { id:"settings",   label:"Settings",    icon:"M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z" },
   ];
 
@@ -265,6 +271,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
             {loaded && tab === "features"   && <FeaturesTab   features={features} setFeatures={setFeatures} showToast={showToast} />}
             {loaded && tab === "rates"      && <RatesTab rates={rates} setRates={setRates} locations={locations} vehicles={vehicles} showToast={showToast} />}
             {loaded && tab === "events"   && <EventsTab />}
+            {loaded && tab === "promo-codes" && <PromoCodesTab promoCodes={promoCodes} setPromoCodes={setPromoCodes} showToast={showToast} />}
             {loaded && tab === "settings"   && <SettingsTab   showToast={showToast} />}
           </div>
         </div>
@@ -1127,6 +1134,150 @@ function VehiclesTab({ vehicles, setVehicles, showToast }: { vehicles:Vehicle[];
 // ════════════════════════════════════════════════════════════════
 //  FEATURES
 // ════════════════════════════════════════════════════════════════
+function PromoCodesTab({ promoCodes, setPromoCodes, showToast }: { promoCodes:PromoCode[]; setPromoCodes:any; showToast:any }) {
+  const empty = { id:"", code:"", description:"", discountAmount:10, validFrom:"", validUntil:"", active:true };
+  const [modal, setModal] = useState<"add"|"edit"|null>(null);
+  const [edit, setEdit] = useState<PromoCode | null>(null);
+  const [form, setForm] = useState<typeof empty>(empty);
+
+  const openAdd = () => {
+    setForm({ ...empty, validFrom: new Date().toISOString().split("T")[0] });
+    setEdit(null);
+    setModal("add");
+  };
+
+  const openEdit = (p: PromoCode) => {
+    setForm({ ...p });
+    setEdit(p);
+    setModal("edit");
+  };
+
+  const save = async () => {
+    if (!form.code.trim()) return showToast("Promo code required", "error");
+    if (!form.validFrom || !form.validUntil) return showToast("Date range required", "error");
+    if (form.validFrom > form.validUntil) return showToast("Valid until must be on or after valid from", "error");
+    if (form.discountAmount < 0) return showToast("Discount amount must be 0 or greater", "error");
+
+    try {
+      const payload = {
+        ...form,
+        code: form.code.trim().toUpperCase(),
+        description: form.description.trim(),
+        discountAmount: Number(form.discountAmount),
+      };
+
+      if (modal === "add") {
+        const saved = await api("/api/promo-codes", "POST", { ...payload, id: uid() });
+        setPromoCodes((prev: PromoCode[]) => [...prev, saved]);
+        showToast("Promo code added");
+      } else if (edit) {
+        const saved = await api("/api/promo-codes", "PUT", { ...edit, ...payload });
+        setPromoCodes((prev: PromoCode[]) => prev.map((p) => p.id === edit.id ? saved : p));
+        showToast("Promo code updated");
+      }
+
+      setModal(null);
+    } catch (err: any) {
+      showToast(err?.message || "Save failed", "error");
+    }
+  };
+
+  const del = async (id: string) => {
+    try {
+      await api(`/api/promo-codes?id=${id}`, "DELETE");
+      setPromoCodes((prev: PromoCode[]) => prev.filter((p) => p.id !== id));
+      showToast("Promo code deleted");
+    } catch (err: any) {
+      showToast(err?.message || "Delete failed", "error");
+    }
+  };
+
+  const toggle = async (p: PromoCode) => {
+    const updated = { ...p, active: !p.active };
+    try {
+      const saved = await api("/api/promo-codes", "PUT", updated);
+      setPromoCodes((prev: PromoCode[]) => prev.map((x) => x.id === p.id ? saved : x));
+    } catch (err: any) {
+      showToast(err?.message || "Toggle failed", "error");
+    }
+  };
+
+  return (
+    <div>
+      <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:14 }}>
+        <button className="btn b-gold" onClick={openAdd}>+ Add Promo Code</button>
+      </div>
+
+      <div className="card">
+        <div style={{ overflowX:"auto" }}>
+          <table className="t">
+            <thead>
+              <tr>
+                <th>Code</th><th>Description</th><th>Discount ($)</th><th>Valid Period</th><th>Active</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {promoCodes.length === 0 && (
+                <tr><td colSpan={6} style={{ padding:24, textAlign:"center", color:"#9ca3af" }}>No promo codes</td></tr>
+              )}
+              {promoCodes.map((p: PromoCode) => (
+                <tr key={p.id}>
+                  <td style={{ fontWeight:800, color:"#111827" }}>{p.code}</td>
+                  <td style={{ color:"#374151" }}>{p.description || "—"}</td>
+                  <td style={{ fontWeight:700, color:"#16a34a" }}>€{Number(p.discountAmount ?? 0).toFixed(2)}</td>
+                  <td style={{ color:"#6b7280", fontSize:12 }}>
+                    {p.validFrom} → {p.validUntil}
+                  </td>
+                  <td><Toggle on={p.active} onChange={() => toggle(p)} /></td>
+                  <td>
+                    <div style={{ display:"flex", gap:4 }}>
+                      <button className="btn b-ghost b-sm" onClick={() => openEdit(p)}>Edit</button>
+                      <button className="btn b-red b-sm" onClick={() => del(p.id)}>Del</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {modal && (
+        <Modal title={modal === "add" ? "Add Promo Code" : "Edit Promo Code"} onClose={() => setModal(null)}>
+          <div className="fg"><label style={LS}>Code *</label><input style={IS} value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))} placeholder="WELCOME10" /></div>
+          <div className="fg"><label style={LS}>Description</label><input style={IS} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Welcome discount" /></div>
+          <div className="fg2">
+            <div className="fg" style={{ marginBottom:0 }}>
+              <label style={LS}>Discount Amount ($)</label>
+              <input style={IS} type="number" min={0} step={0.01} value={form.discountAmount} onChange={e => setForm(f => ({ ...f, discountAmount: Number(e.target.value) }))} />
+            </div>
+            <div className="fg" style={{ marginBottom:0 }}>
+              <label style={LS}>Active</label>
+              <div style={{ display:"flex", alignItems:"center", height:42, paddingLeft:8, border:"1.5px solid #e5e7eb", borderRadius:8, background:"#fff" }}>
+                <Toggle on={form.active} onChange={() => setForm(f => ({ ...f, active: !f.active }))} />
+              </div>
+            </div>
+          </div>
+          <div className="fg2" style={{ marginTop:12 }}>
+            <div className="fg" style={{ marginBottom:0 }}>
+              <label style={LS}>Valid From *</label>
+              <input style={IS} type="date" value={form.validFrom} onChange={e => setForm(f => ({ ...f, validFrom: e.target.value }))} />
+            </div>
+            <div className="fg" style={{ marginBottom:0 }}>
+              <label style={LS}>Valid Until *</label>
+              <input style={IS} type="date" value={form.validUntil} onChange={e => setForm(f => ({ ...f, validUntil: e.target.value }))} />
+            </div>
+          </div>
+          <div style={{ display:"flex", gap:8, marginTop:18 }}>
+            <button className="btn b-ghost" style={{ flex:1 }} onClick={() => setModal(null)}>Cancel</button>
+            <button className="btn b-dark" style={{ flex:1 }} onClick={save}>{modal === "add" ? "Add Promo Code" : "Save Changes"}</button>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
 function FeaturesTab({ features, setFeatures, showToast }: { features:Feature[]; setFeatures:any; showToast:any }) {
   const [text,   setText]   = useState("");
   const [editId, setEditId] = useState<string|null>(null);

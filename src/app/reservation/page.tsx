@@ -30,6 +30,15 @@ interface Rate {
 interface Personal {
   name: string; country: string; whatsapp: string; email: string; notes: string;
 }
+interface PromoCode {
+  id: string;
+  code: string;
+  description: string;
+  discountAmount: number;
+  validFrom: string;
+  validUntil: string;
+  active: boolean;
+}
 
 const NIGHT_SURCHARGE = 15;
 
@@ -168,6 +177,9 @@ export default function ReservationPage() {
   const [vehicleId,setVehicleId] = useState("");
   const [personal, setPersonal]  = useState<Personal>({ name:"",country:"",whatsapp:"",email:"",notes:"" });
   const [paymentMethod, setPaymentMethod] = useState<"cash"|"card"|"">("");
+  const [promoCodeInput, setPromoCodeInput] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
+  const [promoFeedback, setPromoFeedback] = useState<{ type:"success"|"error"; text:string } | null>(null);
   const [sending,  setSending]   = useState(false);
   const [done,     setDone]      = useState(false);
   const [bookingRef,setBookingRef]= useState("");
@@ -247,7 +259,11 @@ export default function ReservationPage() {
 
   const recommendedVehicle = vehiclesWithPrice.filter(v=>!v.paxExceeded&&!v.lugExceeded).sort((a,b)=>a.maxPassengers-b.maxPassengers)[0]??null;
   const vehicle = vehiclesWithPrice.find(v=>v.id===vehicleId)??null;
-  const confirmedPrice = vehicle?.routePrice??0;
+  const confirmedPrice = vehicle?.routePrice ?? 0;
+  const promoDiscountAmount = appliedPromo && vehicle && !vehicle.onDemand && confirmedPrice > 0
+    ? Math.min(appliedPromo.discountAmount, confirmedPrice)
+    : 0;
+  const finalPrice = Math.max(confirmedPrice - promoDiscountAmount, 0);
 
   useEffect(() => {
     if (vehicleId&&trip.fromId&&trip.toId&&!vehiclesWithPrice.some(v=>v.id===vehicleId)) setVehicleId("");
@@ -310,6 +326,37 @@ export default function ReservationPage() {
   const next = () => { if (validate()) { setStep(s=>s+1); scrollToTop(); } };
   const back = () => { setStep(s=>s-1); setErrors({}); scrollToTop(); };
 
+  const applyPromoCode = async () => {
+    const trimmed = promoCodeInput.trim();
+    if (!trimmed) {
+      setAppliedPromo(null);
+      setPromoFeedback({ type:"error", text:"Please enter a promo code first." });
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/promo-codes?code=${encodeURIComponent(trimmed)}`);
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.error || "Invalid or expired promo code");
+      }
+
+      const promo = await res.json();
+      setAppliedPromo(promo);
+      setPromoCodeInput(promo.code);
+      setPromoFeedback({ type:"success", text:`Promo code ${promo.code} applied successfully.` });
+    } catch (err: any) {
+      setAppliedPromo(null);
+      setPromoFeedback({ type:"error", text: err?.message || "Invalid or expired promo code." });
+    }
+  };
+
+  const clearAppliedPromo = () => {
+    setAppliedPromo(null);
+    setPromoCodeInput("");
+    setPromoFeedback({ type:"success", text:"Applied promo code removed." });
+  };
+
   const submit = async () => {
     setSending(true);
     const code = COUNTRY_CODES[personal.country] ?? "";
@@ -324,6 +371,8 @@ export default function ReservationPage() {
       trip.dropoffAddress ? `Address: ${trip.dropoffAddress}` : "",
       nightSurcharge > 0 ? "OUTBOUND NIGHT SURCHARGE (+€15)" : "",
       returnNightSurcharge > 0 ? "RETURN NIGHT SURCHARGE (+€15)" : "",
+      appliedPromo ? `Promo Code: ${appliedPromo.code} (−€${appliedPromo.discountAmount.toFixed(2)})` : "",
+      appliedPromo ? `Promo Discount: €${promoDiscountAmount.toFixed(2)}` : "",
       !isQuoteRequest ? `Payment: ${paymentMethod === "cash" ? "Cash to driver" : "Card to driver"}` : "",
       personal.notes,
     ].filter(Boolean).join(" | ");
@@ -433,9 +482,11 @@ export default function ReservationPage() {
               nightSurcharge,
               returnNightSurcharge,
               basePrice: vehicle?.baseRoutePrice ?? null,
-              totalPrice: confirmedPrice,
+              totalPrice: finalPrice,
               onDemand: vehicle?.onDemand ?? false,
               paymentMethod,
+              promoCode: appliedPromo?.code ?? null,
+              promoDiscountAmount: appliedPromo ? promoDiscountAmount : null,
               isQuoteRequest: false,
             }),
           });
@@ -444,7 +495,7 @@ export default function ReservationPage() {
         }
         const dataLayer = (window as any).dataLayer || [];
         (window as any).dataLayer = dataLayer;
-        dataLayer.push({ event: "booking_confirmed", booking_id: ref, value: confirmedPrice, currency: "EUR" });
+        dataLayer.push({ event: "booking_confirmed", booking_id: ref, value: finalPrice, currency: "EUR" });
         setDone(true);
       } else {
         alert("Something went wrong saving your booking. Please try again.");
@@ -511,6 +562,7 @@ export default function ReservationPage() {
             ["Passengers",`${totalPax} pax`],
             ...(!isQuoteRequest ? [["Vehicle", vehicle?.name??"—"] as [string,string]] : []),
             ...(!isQuoteRequest ? [["Payment",paymentMethod==="cash"?"💵 Cash to driver":"💳 Card to driver"] as [string,string]] : []),
+            ...(appliedPromo && !isQuoteRequest ? [["Promo", `${appliedPromo.code} (−€${appliedPromo.discountAmount.toFixed(2)})`] as [string,string]] : []),
           ] as [string,string][]).map(([l,v])=>(
             <div key={l} style={{ display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #e5e7eb",fontSize:14 }}>
               <span style={{ color:"#6b7280" }}>{l}</span>
@@ -522,7 +574,7 @@ export default function ReservationPage() {
           <div style={{ display:"flex",justifyContent:"space-between",paddingTop:12,fontSize:18,fontWeight:800 }}>
             <span>{isQuoteRequest ? "Price" : "Total"}</span>
             <span style={{ color: isQuoteRequest ? "#d97706" : GREEN }}>
-              {isQuoteRequest ? "Quote to follow by email" : (vehicle?.onDemand?"On Demand":`€${confirmedPrice}`)}
+              {isQuoteRequest ? "Quote to follow by email" : (vehicle?.onDemand?"On Demand":`€${finalPrice.toFixed(2)}`)}
             </span>
           </div>
         </div>
@@ -706,7 +758,7 @@ export default function ReservationPage() {
                   <div style={{ borderTop:"1px solid rgba(255,255,255,.08)",paddingTop:8,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
                     <div style={{ fontSize:10,color:"rgba(255,255,255,.4)" }}>{isRoundTrip?"Round trip fare":"One way fare"}</div>
                     <div style={{ fontSize:18,fontWeight:900,color:"#4ade80" }}>
-                      {vehicle.onDemand?"On Demand":vehicle.routePrice!==null?`€${vehicle.routePrice}`:"—"}
+                      {vehicle.onDemand ? "On Demand" : vehicle.routePrice!==null ? `€${finalPrice.toFixed(2)}` : "—"}
                       {vehicle.isDoubled&&<span style={{ fontSize:10,color:"#f59e0b",marginLeft:4 }}>×2</span>}
                     </div>
                   </div>
@@ -1139,6 +1191,39 @@ export default function ReservationPage() {
                   {field(<><label style={S.label}>Special Requests <span style={{ fontSize:12,color:"#9ca3af",fontWeight:400 }}>(optional)</span></label><textarea rows={4} placeholder="Special assistance, accessibility needs, extra stops…" value={personal.notes} onChange={e=>setPersonal(p=>({...p,notes:e.target.value}))} style={{ width:"100%",border:"1.5px solid #e5e7eb",borderRadius:10,padding:"12px 14px",fontSize:14,color:DARK,resize:"none",outline:"none",fontFamily:"inherit",boxSizing:"border-box" }}/></>)}
                   {!isQuoteRequest&&(
                     <div>
+                      <label style={{ ...S.label,marginBottom:12 }}>Promo Code <span style={{ fontSize:12,color:"#9ca3af",fontWeight:400 }}>(optional)</span></label>
+                      <div style={{ display:"flex", gap:8, alignItems:"stretch", marginBottom:8 }}>
+                        <div className="rp-input-wrap" style={{ ...wrap(), flex:1 }}>
+                          <input type="text" placeholder="Enter promo code" value={promoCodeInput} onChange={e => setPromoCodeInput(e.target.value)} style={S.input}/>
+                        </div>
+                        <button type="button" className="btn b-dark" style={{ padding:"0 20px", whiteSpace:"nowrap", minWidth:130, fontWeight:900, letterSpacing:"0.02em", color:"#fff", background:"linear-gradient(135deg, #22c55e 0%, #16a34a 100%)", border:"1px solid #16a34a", boxShadow:"0 10px 22px rgba(34,197,94,0.28)", transform:"translateY(-1px)" }} onClick={applyPromoCode}>Apply Promo</button>
+                      </div>
+                      {promoFeedback && (
+                        <div style={{
+                          marginTop:0,
+                          padding:"8px 10px",
+                          borderRadius:8,
+                          fontSize:12,
+                          fontWeight:600,
+                          background: promoFeedback.type === "success" ? "#f0fdf4" : "#fef2f2",
+                          border: `1px solid ${promoFeedback.type === "success" ? "#bbf7d0" : "#fecaca"}`,
+                          color: promoFeedback.type === "success" ? "#166534" : "#b91c1c",
+                        }}>
+                          {promoFeedback.text}
+                        </div>
+                      )}
+                      {appliedPromo && confirmedPrice > 0 && (
+                        <div style={{ marginTop:8, padding:"9px 12px", borderRadius:9, background:"#f0fdf4", border:"1px solid #bbf7d0", color:"#166534", fontSize:12, fontWeight:700, display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
+                          <span>✓ {appliedPromo.code} applied — €{appliedPromo.discountAmount.toFixed(2)} off</span>
+                          <button type="button" onClick={clearAppliedPromo} style={{ border:"1px solid #166534", borderRadius:7, background:"transparent", color:"#166534", padding:"4px 8px", fontSize:11, fontWeight:700, cursor:"pointer" }}>
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {!isQuoteRequest&&(
+                    <div>
                       <label style={{ ...S.label,marginBottom:12 }}>Payment Method <span style={{ color:GREEN }}>*</span></label>
                       <div className="rp-payment-grid">
                         <div className={`rp-pay-opt${paymentMethod==="cash"?" selected":""}`} onClick={()=>setPaymentMethod("cash")} role="radio" aria-checked={paymentMethod==="cash"}>
@@ -1194,6 +1279,7 @@ export default function ReservationPage() {
                     ["Name",personal.name],["Country",personal.country],
                     ["WhatsApp",`${dialCode}${personal.whatsapp}`],["Email",personal.email],
                     ...(!isQuoteRequest?[["Payment",paymentMethod==="cash"?"💵 Cash to driver":"💳 Card to driver"] as [string,string]]:[]),
+                    ...(appliedPromo && !isQuoteRequest ? [["Promo", `${appliedPromo.code} (−€${appliedPromo.discountAmount.toFixed(2)})`] as [string,string]] : []),
                     ...(personal.notes?[["Notes",personal.notes] as [string,string]]:[]),
                   ]}/>
                   {!isQuoteRequest&&(
@@ -1206,9 +1292,15 @@ export default function ReservationPage() {
                         </div>
                         {nightSurcharge>0&&<div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 20px",fontSize:14,background:"#f5f3ff",borderTop:"1px dashed #ddd6fe",borderBottom:"1px dashed #ddd6fe" }}><span style={{ color:"#7c3aed",display:"flex",alignItems:"center",gap:6,fontWeight:600 }}><span>🌙</span> Outbound Night Surcharge</span><span style={{ fontWeight:700,color:"#7c3aed" }}>+€{NIGHT_SURCHARGE}</span></div>}
                         {returnNightSurcharge>0&&<div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 20px",fontSize:14,background:"#f5f3ff",borderTop:"1px dashed #ddd6fe",borderBottom:"1px dashed #ddd6fe" }}><span style={{ color:"#7c3aed",display:"flex",alignItems:"center",gap:6,fontWeight:600 }}><span>🌙</span> Return Night Surcharge</span><span style={{ fontWeight:700,color:"#7c3aed" }}>+€{NIGHT_SURCHARGE}</span></div>}
+                        {appliedPromo && confirmedPrice > 0 && (
+                          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 20px",fontSize:14,background:"#f0fdf4",borderTop:"1px dashed #bbf7d0",borderBottom:"1px dashed #bbf7d0" }}>
+                            <span style={{ color:"#166534",display:"flex",alignItems:"center",gap:6,fontWeight:700 }}><span>🎟️</span> Promo {appliedPromo.code}</span>
+                            <span style={{ fontWeight:800,color:"#16a34a" }}>-€{promoDiscountAmount.toFixed(2)}</span>
+                          </div>
+                        )}
                         <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 20px",fontSize:17,fontWeight:800,borderTop:"2px solid #e5e7eb" }}>
                           <span style={{ color:DARK }}>Total</span>
-                          <span style={{ color:GREEN }}>{vehicle?.onDemand?"On Demand":`€${confirmedPrice}`}</span>
+                          <span style={{ color:GREEN }}>{vehicle?.onDemand?"On Demand":`€${finalPrice.toFixed(2)}`}</span>
                         </div>
                       </div>
                     </div>
@@ -1224,11 +1316,12 @@ export default function ReservationPage() {
                         {!isQuoteRequest&&vehicle?.isDoubled?" · 9+pax ×2":""}
                         {!isQuoteRequest&&nightSurcharge>0?" · 🌙 outbound":""}
                         {!isQuoteRequest&&returnNightSurcharge>0?" · 🌙 return":""}
+                        {!isQuoteRequest&&appliedPromo?` · promo ${appliedPromo.code}`:""}
                       </div>
                     </div>
                     <div style={{ textAlign:"right",flexShrink:0 }}>
                       <div style={{ fontSize: isQuoteRequest?20:34,fontWeight:900,color: isQuoteRequest?"#fbbf24":"#4ade80",lineHeight:1 }}>
-                        {isQuoteRequest?"Quote by email":(vehicle?.onDemand?<span style={{ fontSize:20 }}>On Demand</span>:`€${confirmedPrice}`)}
+                        {isQuoteRequest?"Quote by email":(vehicle?.onDemand?<span style={{ fontSize:20 }}>On Demand</span>:`€${finalPrice.toFixed(2)}`)}
                       </div>
                     </div>
                   </div>
