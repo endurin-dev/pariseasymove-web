@@ -260,10 +260,21 @@ export default function ReservationPage() {
   const recommendedVehicle = vehiclesWithPrice.filter(v=>!v.paxExceeded&&!v.lugExceeded).sort((a,b)=>a.maxPassengers-b.maxPassengers)[0]??null;
   const vehicle = vehiclesWithPrice.find(v=>v.id===vehicleId)??null;
   const confirmedPrice = vehicle?.routePrice ?? 0;
-  const promoDiscountAmount = appliedPromo && vehicle && !vehicle.onDemand && confirmedPrice > 0
-    ? Math.min(appliedPromo.discountAmount, confirmedPrice)
+  const normalizedVehicleName = (vehicle?.name ?? "").trim().toLowerCase();
+  const isLuxuryPromoVehicle = normalizedVehicleName.includes("luxury class car") || normalizedVehicleName.includes("luxury class van");
+  const canApplyPromo = !!vehicle && !vehicle.onDemand && confirmedPrice > 0 && isLuxuryPromoVehicle;
+  const promoDiscountAmount = appliedPromo && canApplyPromo
+    ? Math.min(appliedPromo.discountAmount * (isRoundTrip ? 2 : 1), confirmedPrice)
     : 0;
   const finalPrice = Math.max(confirmedPrice - promoDiscountAmount, 0);
+
+  useEffect(() => {
+    if (appliedPromo && !canApplyPromo) {
+      setAppliedPromo(null);
+      setPromoCodeInput("");
+      setPromoFeedback({ type:"error", text:"Promo code is no longer available for this booking." });
+    }
+  }, [canApplyPromo, appliedPromo]);
 
   useEffect(() => {
     if (vehicleId&&trip.fromId&&trip.toId&&!vehiclesWithPrice.some(v=>v.id===vehicleId)) setVehicleId("");
@@ -371,7 +382,7 @@ export default function ReservationPage() {
       trip.dropoffAddress ? `Address: ${trip.dropoffAddress}` : "",
       nightSurcharge > 0 ? "OUTBOUND NIGHT SURCHARGE (+€15)" : "",
       returnNightSurcharge > 0 ? "RETURN NIGHT SURCHARGE (+€15)" : "",
-      appliedPromo ? `Promo Code: ${appliedPromo.code} (−€${appliedPromo.discountAmount.toFixed(2)})` : "",
+      appliedPromo ? `Promo Code: ${appliedPromo.code} (−€${promoDiscountAmount.toFixed(2)})` : "",
       appliedPromo ? `Promo Discount: €${promoDiscountAmount.toFixed(2)}` : "",
       !isQuoteRequest ? `Payment: ${paymentMethod === "cash" ? "Cash to driver" : "Card to driver"}` : "",
       personal.notes,
@@ -562,7 +573,7 @@ export default function ReservationPage() {
             ["Passengers",`${totalPax} pax`],
             ...(!isQuoteRequest ? [["Vehicle", vehicle?.name??"—"] as [string,string]] : []),
             ...(!isQuoteRequest ? [["Payment",paymentMethod==="cash"?"💵 Cash to driver":"💳 Card to driver"] as [string,string]] : []),
-            ...(appliedPromo && !isQuoteRequest ? [["Promo", `${appliedPromo.code} (−€${appliedPromo.discountAmount.toFixed(2)})`] as [string,string]] : []),
+            ...(appliedPromo && !isQuoteRequest ? [["Promo", `${appliedPromo.code} (−€${promoDiscountAmount.toFixed(2)})`] as [string,string]] : []),
           ] as [string,string][]).map(([l,v])=>(
             <div key={l} style={{ display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid #e5e7eb",fontSize:14 }}>
               <span style={{ color:"#6b7280" }}>{l}</span>
@@ -1189,7 +1200,7 @@ export default function ReservationPage() {
                     {field(<><label style={S.label}>Email Address <span style={{ color:GREEN }}>*</span></label><div className="rp-input-wrap" style={wrap(errors.email)}><input type="email" placeholder="you@example.com" value={personal.email} onChange={e=>setPersonal(p=>({...p,email:e.target.value}))} style={S.input}/></div>{errEl(errors.email)}</>)}
                   </div>
                   {field(<><label style={S.label}>Special Requests <span style={{ fontSize:12,color:"#9ca3af",fontWeight:400 }}>(optional)</span></label><textarea rows={4} placeholder="Special assistance, accessibility needs, extra stops…" value={personal.notes} onChange={e=>setPersonal(p=>({...p,notes:e.target.value}))} style={{ width:"100%",border:"1.5px solid #e5e7eb",borderRadius:10,padding:"12px 14px",fontSize:14,color:DARK,resize:"none",outline:"none",fontFamily:"inherit",boxSizing:"border-box" }}/></>)}
-                  {!isQuoteRequest&&(
+                  {!isQuoteRequest && isLuxuryPromoVehicle && (
                     <div>
                       <label style={{ ...S.label,marginBottom:12 }}>Promo Code <span style={{ fontSize:12,color:"#9ca3af",fontWeight:400 }}>(optional)</span></label>
                       <div style={{ display:"flex", gap:8, alignItems:"stretch", marginBottom:8 }}>
@@ -1212,14 +1223,19 @@ export default function ReservationPage() {
                           {promoFeedback.text}
                         </div>
                       )}
-                      {appliedPromo && confirmedPrice > 0 && (
+                      {appliedPromo && canApplyPromo && (
                         <div style={{ marginTop:8, padding:"9px 12px", borderRadius:9, background:"#f0fdf4", border:"1px solid #bbf7d0", color:"#166534", fontSize:12, fontWeight:700, display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
-                          <span>✓ {appliedPromo.code} applied — €{appliedPromo.discountAmount.toFixed(2)} off</span>
+                          <span>✓ {appliedPromo.code} applied — €{promoDiscountAmount.toFixed(2)} off</span>
                           <button type="button" onClick={clearAppliedPromo} style={{ border:"1px solid #166534", borderRadius:7, background:"transparent", color:"#166534", padding:"4px 8px", fontSize:11, fontWeight:700, cursor:"pointer" }}>
                             Remove
                           </button>
                         </div>
                       )}
+                    </div>
+                  )}
+                  {!isQuoteRequest && vehicle && !isLuxuryPromoVehicle && (
+                    <div style={{ marginTop:8, padding:"10px 12px", borderRadius:9, background:"#fff7ed", border:"1px solid #fed7aa", color:"#92400e", fontSize:12, fontWeight:600 }}>
+                      Promo codes are available only for the LUXURY CLASS CAR and LUXURY CLASS VAN.
                     </div>
                   )}
                   {!isQuoteRequest&&(
@@ -1279,7 +1295,7 @@ export default function ReservationPage() {
                     ["Name",personal.name],["Country",personal.country],
                     ["WhatsApp",`${dialCode}${personal.whatsapp}`],["Email",personal.email],
                     ...(!isQuoteRequest?[["Payment",paymentMethod==="cash"?"💵 Cash to driver":"💳 Card to driver"] as [string,string]]:[]),
-                    ...(appliedPromo && !isQuoteRequest ? [["Promo", `${appliedPromo.code} (−€${appliedPromo.discountAmount.toFixed(2)})`] as [string,string]] : []),
+                    ...(appliedPromo && !isQuoteRequest ? [["Promo", `${appliedPromo.code} (−€${promoDiscountAmount.toFixed(2)})`] as [string,string]] : []),
                     ...(personal.notes?[["Notes",personal.notes] as [string,string]]:[]),
                   ]}/>
                   {!isQuoteRequest&&(
