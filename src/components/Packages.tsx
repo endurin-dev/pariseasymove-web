@@ -223,7 +223,7 @@ export default function PremiumPackages() {
               </div>
 
               <div style={{ marginTop: 28 }}>
-                <a href="#booking" className="book-btn">
+                <a href="reservation" className="book-btn">
                   Book This Journey →
                 </a>
               </div>
