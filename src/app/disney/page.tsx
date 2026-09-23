@@ -1,800 +1,426 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 
-const PARKS = [
-  {
-    name: "Disneyland Park",
-    tag: "Since 1992",
-    desc: "The heart of the resort — five themed lands where iconic storytelling meets world-class attractions, anchored by the legendary Sleeping Beauty Castle.",
-    lands: ["Main Street U.S.A.", "Fantasyland", "Adventureland", "Frontierland", "Discoveryland"],
-    highlight: "Phantom Manor · Pirates of the Caribbean · Star Wars Hyperspace Mountain",
-    img: "https://images.unsplash.com/photo-1759773999019-ff4a66522a36?q=80&w=1074&auto=format&fit=crop",
-    num: "01",
-  },
-  {
-    name: "Disney Adventure World",
-    tag: "Rebranded 2025",
-    desc: "Reimagined with a €2 billion transformation. Home to the breathtaking World of Frozen land and Avengers Campus — the resort's most ambitious chapter yet.",
-    lands: ["World of Frozen", "Avengers Campus", "Worlds of Pixar", "Adventure Way", "World Premiere"],
-    highlight: "Frozen Ever After · Avengers Assemble: Flight Force · Raiponce Tangled Spin",
-    img: "https://images.unsplash.com/photo-1718870006030-d78d6c8f6297?q=80&w=1170&auto=format&fit=crop",
-    num: "02",
-  },
-];
-
-const NEWS = [
-  {
-    badge: "Open Now — January 2025",
-    title: "Disney Tales of Magic",
-    subtitle: "Nighttime Spectacular",
-    desc: "An extraordinary nighttime show transforming Sleeping Beauty Castle with synchronized drones, pyrotechnics, fountain choreography, and an exclusive original soundtrack.",
-    img: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=700&q=80",
-  },
-  {
-    badge: "Open Now — March 2025",
-    title: "Disney Adventure World",
-    subtitle: "Park Rebranded",
-    desc: "Walt Disney Studios Park officially relaunched as Disney Adventure World on March 29, 2025, unveiling the new World of Frozen land alongside Frozen Ever After.",
-    img: "https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=700&q=80",
-  },
-  {
-    badge: "Open 2025",
-    title: "Raiponce Tangled Spin",
-    subtitle: "New Attraction",
-    desc: "Guests board lantern-lit boats and drift beneath a canopy of floating lights while 'I See the Light' plays — a gentle, enchanting journey for all ages.",
-    img: "https://images.unsplash.com/photo-1433838552652-f9a46b332c40?w=700&q=80",
-  },
-  {
-    badge: "Coming — Fall 2025",
-    title: "The Lion King World",
-    subtitle: "Under Construction",
-    desc: "Construction begins for the first-ever immersive Lion King land, featuring a signature log flume and state-of-the-art Audio-Animatronics of unprecedented scale.",
-    img: "https://images.unsplash.com/photo-1647194104720-25d09b297910?q=80&w=1171&auto=format&fit=crop",
-  },
-];
-
-const ATTRACTIONS = [
-  { name: "Phantom Manor", type: "Dark Ride", thrill: "Mild", park: "Disneyland Park", desc: "Gothic storytelling at its finest — a masterclass in atmosphere and narrative that rivals any dark ride on earth.", img: "https://images.unsplash.com/photo-1508361001413-7a9dca21d08a?w=600&q=80" },
-  { name: "Pirates of the Caribbean", type: "Boat Ride", thrill: "Mild", park: "Disneyland Park", desc: "The definitive boat ride experience — swashbuckling scenes, stunning animatronics, and a leisurely drop through living history.", img: "https://lumiere-a.akamaihd.net/v1/images/r_pirates_deadmentellnotales_standee_header_3b0fb228.jpeg?region=0,0,2048,640" },
-  { name: "Big Thunder Mountain", type: "Coaster", thrill: "Moderate", park: "Disneyland Park", desc: "A mine train rollercoaster threading through dramatic red-rock canyon scenery — the self-proclaimed wildest ride in the wilderness.", img: "https://media.disneylandparis.com/d4th/en-int/images/n017799_2050jan01_big-thunder-mountain_16-9_tcm787-159525.jpg?w=640" },
-  { name: "Star Wars Hyperspace Mountain", type: "Coaster", thrill: "Thrilling", park: "Disneyland Park", desc: "A high-velocity indoor coaster plunging guests into a Star Wars battle — loops, inversions, and projection mapping at full throttle.", img: "https://media.disneylandparis.com/d4th/en-usd/images/n025830_2024may09_world_discoveryland-starport-x-wings-spaceship_16-9_tcm1861-290858.jpg?w=980" },
-  { name: "Frozen Ever After", type: "Boat Ride", thrill: "Mild", park: "Disney Adventure World", desc: "Sail through Arendelle in the centrepiece attraction of the new World of Frozen land — visually spectacular and emotionally resonant.", img: "https://media.disneylandparis.com/d4th/en-int/images/GU94518_2027dec31_world_HKDL-wof-frozen-ever-after-attraction_16-9_tcm787-291444.jpg?w=960" },
-  { name: "Avengers Assemble: Flight Force", type: "Coaster", thrill: "Thrilling", park: "Disney Adventure World", desc: "A launch coaster reaching extreme speeds alongside Iron Man and Captain Marvel — the most intense ride in the resort.", img: "https://images.unsplash.com/photo-1635805737707-575885ab0820?w=600&q=80" },
-  { name: "Crush's Coaster", type: "Coaster", thrill: "Moderate", park: "Disney Adventure World", desc: "A spinning coaster through an immersive underwater world inspired by Finding Nemo — deceptively thrilling and endlessly replayable.", img: "https://media.disneylandparis.com/d4th/en-gb/images/n018312_2050jan01_crushs-coaster-detail_16-9_tcm752-159257.jpg?w=240" },
-  { name: "Buzz Lightyear Laser Blast", type: "Interactive", thrill: "Mild", park: "Disneyland Park", desc: "An interactive target-shooting adventure across the galaxy — competitive, fun, and infinitely repeatable across all ages.", img: "https://news.disneylandparis.com//app/uploads/2025/07/BUZZ-LIGHTYEAR_2-1-scaled.jpg" },
-  { name: "Raiponce Tangled Spin", type: "Spinner", thrill: "Mild", park: "Disney Adventure World", desc: "Board a lantern boat and drift beneath a luminous canopy while 'I See the Light' plays — pure, unhurried enchantment.", img: "https://media.disneylandparis.com/d4th/en-usd/images/N042473_2032oct30_world_architecture-adventure-world_16-9_tcm1861-291523.jpg?w=960" },
-];
-
-const TIPS = [
-  { label: "Timing", title: "Best Season to Visit", body: "Spring (April–May) and autumn (September–October) offer the most manageable crowds and comfortable temperatures. School holiday periods and summer peak season demand significantly more patience at queue lines.", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
-  { label: "Booking", title: "Reserve in Advance", body: "Tickets, Disney Hotel stays, and popular dining experiences should all be secured well ahead of travel. Last-minute availability is limited during busy periods and premium dates.", icon: "M17 9V7a5 5 0 00-10 0v2m-3 0h16a2 2 0 012 2v9a2 2 0 01-2 2H6a2 2 0 01-2-2v-9a2 2 0 012-2z" },
-  { label: "Transit", title: "Getting to the Resort", body: "Both parks sit adjacent to each other, 32 km east of Paris. The RER A line connects central Paris to Marne-la-Vallée in approximately 40 minutes. Disney Hotel guests benefit from complimentary shuttle services.", icon: "M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" },
-  { label: "Transfer", title: "Private Door-to-Door", body: "A private transfer from your Paris hotel or airport eliminates the complexity of RER navigation with luggage and children. Fixed pricing, real-time flight tracking, and complimentary child seats included.", icon: "M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" },
-];
+/* =====================================================================
+   TODO BEFORE GO-LIVE
+   ---------------------------------------------------------------------
+   1. Make sure /images/Luxury-van-Mercedes-V-class.jpg and
+      /images/disney.webp exist in public/images before deploying.
+   2. Confirm the phone/WhatsApp number (+33 652 466 694) and business
+      name ("Paris Easy Move") below are correct.
+   3. Confirm the 4.9 Google / 5.0 TripAdvisor ratings match your
+      current live ratings (hero trust strip + reviews heading).
+   4. This page is 100% transfer-service content (no park descriptions,
+      ride lists, or "about the resort" sections) — intentional, for
+      Quality Score / ad relevance on the transfer keywords.
+===================================================================== */
 
 const ROUTES = [
-  { from: "CDG Airport", to: "Disneyland Paris", pax: "Up to 3 passengers" },
-  { from: "Orly Airport", to: "Disneyland Paris", pax: "Up to 3 passengers" },
-  { from: "Paris City Centre", to: "Disneyland Paris", pax: "Up to 3 passengers" },
-  { from: "Beauvais Airport", to: "Disneyland Paris", pax: "Up to 3 passengers" },
+  { name: "CDG Airport → Disneyland", eta: "~45 min", slug: "cdg-disney" },
+  { name: "Orly Airport → Disneyland", eta: "~60 min", slug: "orly-disney" },
+  { name: "Beauvais Airport → Disneyland", eta: "~75 min", slug: "beauvais-disney" },
+  { name: "Paris City → Disneyland", eta: "~40 min", slug: "paris-disney" },
 ];
 
-export default function DisneylandParis() {
+const VALUE_PROPS = [
+  { icon: "💶", title: "Fixed Price, No Surprises", body: "The price you're quoted is the price you pay — no meter, no hidden tolls, no luggage fees." },
+  { icon: "✈️", title: "Flight Tracked, Always Waiting", body: "We track your flight in real time and adjust automatically — land late and your driver is still there." },
+  { icon: "🧸", title: "Free Child Seats Included", body: "Infant and booster seats fitted before you land, at no extra cost." },
+  { icon: "👋", title: "Meet & Greet at Arrivals", body: "Your driver waits inside the terminal with a name board and helps with every bag." },
+];
+
+const STEPS = [
+  { title: "Book Online or WhatsApp", body: "Enter your flight number and hotel details in under two minutes." },
+  { title: "We Track Your Flight", body: "Landed early or delayed — your driver already knows and adjusts." },
+  { title: "Meet & Greet", body: "Your driver is waiting inside arrivals with a name board, ready to help with bags." },
+  { title: "Direct to Disneyland", body: "Relax in a private vehicle straight to your hotel or the park gates — on your schedule, with total comfort and flexibility." },
+];
+
+const FAQS = [
+  { q: "How far in advance should I book?", a: "We recommend booking as soon as your flights are confirmed, especially during school holidays and peak season when availability tightens." },
+  { q: "What if my flight is delayed?", a: "No problem — we track your flight in real time and adjust your driver's arrival automatically. There's no extra fee for reasonable delays." },
+  { q: "Do you provide child seats?", a: "Yes, infant and booster seats are included at no extra cost — just let us know the ages when you book." },
+  { q: "How many passengers and how much luggage?", a: "Standard vehicles seat up to 3 passengers with luggage; larger groups can book a 7-seater van. Message us on WhatsApp if you're unsure." },
+  { q: "Is the price really fixed?", a: "Yes — the quote you receive at booking is what you pay. No meter, no surge pricing, no last-minute add-ons." },
+  { q: "Can I book a round trip?", a: "Absolutely — many families book both the arrival and return transfer together. Ask about our round-trip rate." },
+];
+
+const REVIEWS = [
+  {
+    text: "Our driver Kavindu arrived exactly when our plane landed even though we booked an hour ahead in case of delays. … When we got through airport security, he came to meet us at arrivals to help-roll our bags to the car park. … We ordered a 6 sitter and the van was so clean and new it had a TV and led lights on the roof with some bottles of water. … the service was UNMATCHED.",
+    author: "Rayaa Onog",
+    source: "Google",
+  },
+  {
+    text: "Very professional service!! Staff is very professional!! Highly recommend it to Everyone!",
+    author: "John David",
+    source: "Google",
+  },
+  {
+    text: "The service was very professional and on time. The driver was polite and cooperative, the whole journey was comfortable. Communication was also easy and clear. I am very satisfied, will use again in the future.",
+    author: "Sylvain Legrand",
+    source: "Google",
+  },
+];
+
+const PHONE_DISPLAY = "+33 652 466 694";
+const PHONE_TEL = "+33652466694";
+const WHATSAPP_URL = "https://wa.me/33652466694";
+
+export default function DisneylandTransferPage() {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=DM+Sans:wght@400;500;600;700&display=swap');
+        .pem { --ink:#14161a; --ink-2:#1f2228; --gold:#b9924a; --gold-light:#d9b876;
+          --cream:#faf7f2; --cream-2:#f1ebe1; --line:#e7ddc9; --text:#2a2a2a; --muted:#6b6b6b;
+          --radius:14px; --maxw:1180px;
+          --pad-x:20px; --pad-y:64px;
+          font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+          color:var(--text); background:var(--cream); line-height:1.55; font-size:16px;
+          overflow-x:hidden; width:100%;
+          -webkit-text-size-adjust:100%;
+        }
+        .pem *{ box-sizing:border-box; }
+        .pem h1,.pem h2,.pem h3,.pem h4{ font-family:Georgia,"Times New Roman",Times,serif; font-weight:600; margin:0 0 .5em; color:var(--ink); overflow-wrap:break-word; }
+        .pem h1{ font-size:clamp(1.85rem, 6.5vw, 2.5rem); line-height:1.15; }
+        .pem h2{ font-size:clamp(1.5rem, 5vw, 2rem); line-height:1.2; }
+        .pem em{ font-style:normal; color:var(--gold); }
+        .pem a{ color:inherit; text-decoration:none; }
+        .pem img{ max-width:100%; height:auto; display:block; }
+        .pem .wrap{ max-width:var(--maxw); margin:0 auto; padding:0 var(--pad-x); }
+        .pem .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px;
+          padding:14px 26px; border-radius:999px; font-weight:600; font-size:.95rem; text-align:center;
+          cursor:pointer; border:2px solid transparent; transition:transform .15s ease,opacity .15s ease;
+          min-height:48px; -webkit-tap-highlight-color:transparent; }
+        .pem .btn:hover{ transform:translateY(-1px); }
+        .pem .btn-gold{ background:var(--gold); color:#1a1200; }
+        .pem .btn-gold:hover{ background:var(--gold-light); }
+        .pem .btn-outline{ background:transparent; border-color:rgba(255,255,255,.55); color:#fff; }
+        .pem .btn-outline:hover{ border-color:#fff; }
+        .pem .btn-block{ width:100%; }
+        .pem section{ padding:var(--pad-y) 0; }
+        .pem .eyebrow{ text-transform:uppercase; letter-spacing:.14em; font-size:.75rem; font-weight:700; color:var(--gold); margin-bottom:14px; display:block; }
+        .pem .center{ text-align:center; }
+        .pem .lead{ color:var(--muted); font-size:1.05rem; max-width:640px; }
+        .pem .center .lead{ margin-left:auto; margin-right:auto; }
 
-        :root {
-          --ink: #0F0E0C;
-          --ink-soft: #3A3731;
-          --ink-muted: #7A7468;
-          --paper: #F7F4EF;
-          --paper-warm: #F0EDE6;
-          --white: #FFFFFF;
-          --gold: #B8965A;
-          --gold-light: #D4B483;
-          --gold-pale: #F2E8D5;
-          --rule: #E2DDD6;
-          --display: 'Cormorant Garamond', Georgia, serif;
-          --body: 'DM Sans', system-ui, sans-serif;
-        }
+        /* HERO */
+        .pem .hero{ position:relative; color:#fff;
+          background:linear-gradient(180deg,rgba(15,16,19,.55),rgba(15,16,19,.82)),
+            url('/images/disney.webp') center/cover no-repeat;
+          padding:110px 0 90px; }
+        .pem .hero h1{ color:#fff; max-width:780px; }
+        .pem .hero .lead{ color:#e9e5da; max-width:600px; font-size:1.1rem; }
+        .pem .hero-ctas{ display:flex; gap:14px; flex-wrap:wrap; margin-top:30px; }
+        .pem .trust-strip{ margin-top:46px; display:flex; flex-wrap:wrap; gap:14px 28px; padding-top:26px; border-top:1px solid rgba(255,255,255,.18); font-size:.88rem; color:#d8d2c4; }
+        .pem .trust-strip .item{ display:flex; align-items:center; gap:8px; }
+        .pem .trust-strip strong{ color:#fff; }
 
-        .dp { background: var(--paper); font-family: var(--body); color: var(--ink); }
-        .dp * { box-sizing: border-box; margin: 0; padding: 0; }
-        .dp img { display: block; }
-        .dp a { text-decoration: none; color: inherit; }
+        /* VALUE PROPS */
+        .pem .grid-4{ display:grid; grid-template-columns:repeat(4,1fr); gap:24px; }
+        .pem .value-card{ background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:28px 22px; text-align:left; }
+        .pem .value-card .icon{ width:46px; height:46px; flex-shrink:0; border-radius:50%; background:var(--cream-2); display:flex; align-items:center; justify-content:center; font-size:1.3rem; margin-bottom:16px; }
+        .pem .value-card h3{ font-size:1.05rem; margin-bottom:8px; font-family:-apple-system,sans-serif; }
+        .pem .value-card p{ color:var(--muted); font-size:.92rem; margin:0; }
 
-        /* ─── HERO ─── */
-        .dp-hero {
-          min-height: 100vh;
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          position: relative;
-          overflow: hidden;
-        }
-        @media (max-width: 900px) { .dp-hero { grid-template-columns: 1fr; min-height: auto; } }
+        /* ROUTES */
+        .pem .routes-section{ background:var(--ink); color:#fff; }
+        .pem .routes-section h2{ color:#fff; }
+        .pem .grid-routes{ display:grid; grid-template-columns:repeat(4,1fr); gap:20px; margin-top:40px; }
+        .pem .route-card{ background:var(--ink-2); border:1px solid rgba(255,255,255,.09); border-radius:var(--radius); padding:26px 22px; display:flex; flex-direction:column; gap:14px; }
+        .pem .route-card .route-name{ font-weight:700; font-size:1.02rem; }
+        .pem .route-card .route-meta{ font-size:.82rem; color:#b7b2a5; display:flex; gap:14px; flex-wrap:wrap; }
+        .pem .route-card .btn{ margin-top:auto; white-space:normal; }
+        .pem .price-note{ font-size:.78rem; color:#a8a294; margin-top:28px; text-align:center; }
 
-        .dp-hero-left {
-          background: var(--ink);
-          display: flex; flex-direction: column;
-          justify-content: flex-end;
-          padding: 64px 56px;
-          position: relative;
-          overflow: hidden;
-        }
+        /* HOW IT WORKS */
+        .pem .steps{ display:grid; grid-template-columns:repeat(4,1fr); gap:24px; margin-top:44px; }
+        .pem .step{ position:relative; padding-left:52px; }
+        .pem .step .num{ position:absolute; left:0; top:0; width:38px; height:38px; border-radius:50%; background:var(--ink); color:var(--gold-light); display:flex; align-items:center; justify-content:center; font-family:Georgia,serif; font-weight:700; }
+        .pem .step h3{ font-size:1rem; font-family:-apple-system,sans-serif; margin-bottom:6px; }
+        .pem .step p{ font-size:.9rem; color:var(--muted); margin:0; }
 
-        .dp-hero-img-bg {
-          position: absolute; inset: 0;
-          background: url('https://images.unsplash.com/photo-1759773999019-ff4a66522a36?q=80&w=1074&auto=format&fit=crop') center/cover no-repeat;
-          opacity: 0.22;
-        }
+        /* FLEET */
+        .pem .fleet-section{ display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center; }
+        .pem .fleet-section img{ border-radius:var(--radius); width:100%; }
+        .pem .fleet-list{ list-style:none; margin:22px 0 0; padding:0; display:grid; gap:12px; }
+        .pem .fleet-list li{ display:flex; gap:10px; font-size:.95rem; color:var(--text); }
+        .pem .fleet-list li::before{ content:"✓"; color:var(--gold); font-weight:700; flex-shrink:0; }
 
-        .dp-hero-left-content { position: relative; z-index: 2; }
+        /* COMPLIANCE */
+        .pem .compliance{ background:var(--cream-2); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+        .pem .compliance-row{ display:flex; flex-wrap:wrap; gap:14px 36px; justify-content:center; padding:30px 0; font-size:.85rem; color:var(--muted); text-align:center; }
+        .pem .compliance strong{ color:var(--ink); }
 
-        .dp-hero-eyebrow {
-          display: flex; align-items: center; gap: 12px;
-          margin-bottom: 32px;
-        }
-        .dp-hero-eyebrow-line { width: 32px; height: 1px; background: var(--gold); }
-        .dp-hero-eyebrow-text {
-          font-family: var(--body); font-size: 10px; font-weight: 500;
-          letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold);
-        }
+        /* REVIEWS */
+        .pem .grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:24px; margin-top:40px; }
+        .pem .review-card{ background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:26px; display:flex; flex-direction:column; }
+        .pem .review-card .stars{ color:var(--gold); letter-spacing:2px; margin-bottom:10px; }
+        .pem .review-card p{ font-size:.92rem; color:var(--text); font-style:italic; margin:0;
+          display:-webkit-box; -webkit-line-clamp:8; -webkit-box-orient:vertical; overflow:hidden; }
+        .pem .review-card .who{ margin-top:auto; padding-top:14px; font-size:.82rem; color:var(--muted); font-style:normal; }
 
-        .dp-hero-title {
-          font-family: var(--display);
-          font-size: clamp(4rem, 7vw, 7rem);
-          font-weight: 700; line-height: 0.92;
-          color: var(--white);
-          margin-bottom: 8px;
-          letter-spacing: -0.01em;
-        }
-        .dp-hero-title em { font-style: italic; color: var(--gold-light); }
+        /* FAQ */
+        .pem .faq-item{ border-bottom:1px solid var(--line); }
+        .pem .faq-q{ width:100%; text-align:left; background:none; border:none; padding:20px 0; font-size:1rem; font-weight:600; color:var(--ink); cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:16px; font-family:Georgia,serif; min-height:48px; -webkit-tap-highlight-color:transparent; }
+        .pem .faq-q .plus{ color:var(--gold); font-size:1.3rem; transition:transform .2s ease; flex-shrink:0; }
+        .pem .faq-item.open .plus{ transform:rotate(45deg); }
+        .pem .faq-a{ max-height:0; overflow:hidden; transition:max-height .25s ease; font-size:.92rem; color:var(--muted); }
+        .pem .faq-a p{ margin:0; }
+        .pem .faq-item.open .faq-a{ max-height:400px; padding-bottom:18px; }
 
-        .dp-hero-subtitle {
-          font-family: var(--display);
-          font-size: clamp(1.5rem, 2.5vw, 2.2rem);
-          font-weight: 400; font-style: italic;
-          color: rgba(255,255,255,0.7);
-          margin-bottom: 40px;
-          letter-spacing: 0.04em;
-        }
+        /* FINAL CTA */
+        .pem .final-cta{ background:linear-gradient(135deg,var(--ink),#2a2416); color:#fff; text-align:center; border-radius:var(--radius); padding:56px 30px; }
+        .pem .final-cta h2{ color:#fff; }
+        .pem .final-cta .phone-big{ font-family:Georgia,serif; font-size:1.5rem; color:var(--gold-light); margin-top:18px; }
+        .pem .final-ctas{ display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-top:24px; }
 
-        .dp-hero-desc {
-          font-size: 14px; font-weight: 400; line-height: 1.85;
-          color: rgba(255,255,255,0.72); max-width: 380px; margin-bottom: 44px;
-          letter-spacing: 0.01em;
-        }
+        /* STICKY MOBILE CTA */
+        .pem .mobile-cta-bar{ display:none; position:fixed; bottom:0; left:0; right:0; z-index:60; background:var(--ink); border-top:1px solid rgba(255,255,255,.12); padding:10px 14px calc(10px + env(safe-area-inset-bottom)); gap:10px; }
+        .pem .mobile-cta-bar a{ flex:1; text-align:center; padding:12px 8px; border-radius:10px; font-size:.85rem; font-weight:700; min-height:44px; display:flex; align-items:center; justify-content:center; }
+        .pem .mobile-cta-bar .call{ background:rgba(255,255,255,.1); color:#fff; }
+        .pem .mobile-cta-bar .wa{ background:#2fae60; color:#fff; }
+        .pem .mobile-cta-bar .book{ background:var(--gold); color:#1a1200; }
 
-        .dp-hero-btns { display: flex; gap: 12px; flex-wrap: wrap; }
-
-        .dp-hero-right {
-          background: var(--ink);
-          display: flex; flex-direction: column;
-          position: relative;
-        }
-
-        .dp-hero-right-img {
-          flex: 1; min-height: 300px;
-          overflow: hidden; position: relative;
-        }
-        .dp-hero-right-img img {
-          width: 100%; height: 100%; object-fit: cover;
-          animation: dp-kenburns 14s ease-in-out infinite alternate;
-          transform-origin: center center;
-          filter: saturate(0.85) contrast(1.08);
-        }
-        @keyframes dp-kenburns {
-          0% { transform: scale(1.08) translate(0px, 0px); }
-          100% { transform: scale(1.18) translate(-20px, -10px); }
-        }
-        .dp-hero-right-img-overlay {
-          position: absolute; inset: 0;
-          background:
-            linear-gradient(to bottom, rgba(15,14,12,0.15) 0%, transparent 30%, transparent 55%, rgba(15,14,12,0.72) 100%),
-            linear-gradient(to right, rgba(15,14,12,0.35) 0%, transparent 40%);
-        }
-        .dp-hero-right-label {
-          position: absolute; bottom: 32px; left: 36px; right: 36px;
-          z-index: 2;
-        }
-        .dp-hero-right-label-eyebrow {
-          font-size: 8.5px; font-weight: 600; letter-spacing: 0.28em; text-transform: uppercase;
-          color: var(--gold); margin-bottom: 8px; display: block;
-        }
-        .dp-hero-right-label-title {
-          font-family: var(--display);
-          font-size: 1.9rem; font-weight: 600; line-height: 1.1;
-          color: var(--white);
-        }
-        .dp-hero-right-label-sub {
-          font-family: var(--display);
-          font-size: 1rem; font-style: italic; font-weight: 400;
-          color: rgba(255,255,255,0.6); margin-top: 4px;
+        /* ---------- TABLET (<= 960px) ---------- */
+        @media (max-width:960px){
+          .pem .grid-4{ grid-template-columns:repeat(2,1fr); }
+          .pem .grid-routes{ grid-template-columns:repeat(2,1fr); }
+          .pem .steps{ grid-template-columns:repeat(2,1fr); }
         }
 
-        .dp-hero-stats {
-          padding: 36px 48px;
-          display: grid; grid-template-columns: 1fr 1fr 1fr;
-          background: var(--ink);
-          border-top: 1px solid rgba(255,255,255,0.08);
-        }
-        .dp-hero-stat {
-          padding: 0 20px;
-          border-right: 1px solid rgba(255,255,255,0.08);
-          text-align: center;
-        }
-        .dp-hero-stat:first-child { padding-left: 0; }
-        .dp-hero-stat:last-child { border-right: none; padding-right: 0; }
-        .dp-hero-stat-val {
-          font-family: var(--display);
-          font-size: 2.6rem; font-weight: 600;
-          color: var(--white); line-height: 1; margin-bottom: 6px;
-        }
-        .dp-hero-stat-lbl {
-          font-size: 9px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase;
-          color: rgba(255,255,255,0.38);
+        /* ---------- SMALL TABLET (<= 860px) ---------- */
+        @media (max-width:860px){
+          .pem .fleet-section{ grid-template-columns:1fr; gap:28px; }
+          .pem .grid-3{ grid-template-columns:1fr; gap:18px; margin-top:28px; }
+          .pem .review-card p{ -webkit-line-clamp:10; }
         }
 
-        /* ─── SECTION SHARED ─── */
-        .dp-wrap { padding: 100px 6vw; }
-        .dp-wrap-dark { background: var(--ink); padding: 100px 6vw; }
-        .dp-wrap-warm { background: var(--paper-warm); padding: 100px 6vw; }
-        .dp-inner { max-width: 1240px; margin: 0 auto; }
+        /* ---------- MOBILE (<= 760px) ---------- */
+        @media (max-width:760px){
+          .pem{ --pad-x:16px; --pad-y:44px; padding-bottom:calc(72px + env(safe-area-inset-bottom)); }
+          .pem .mobile-cta-bar{ display:flex; }
+          .pem .lead{ font-size:1rem; }
 
-        .dp-section-header { margin-bottom: 64px; }
-        .dp-kicker {
-          display: flex; align-items: center; gap: 14px; margin-bottom: 20px;
-        }
-        .dp-kicker-num {
-          font-family: var(--display);
-          font-size: 11px; font-weight: 400; letter-spacing: 0.06em;
-          color: var(--gold);
-        }
-        .dp-kicker-line { flex: 1; max-width: 40px; height: 1px; background: var(--gold); }
-        .dp-kicker-text {
-          font-size: 10px; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase;
-          color: var(--ink-muted);
-        }
-        .dp-kicker-text-light { color: rgba(255,255,255,0.55); }
+          .pem .hero{ padding:56px 0 44px; }
+          .pem .hero .lead{ font-size:1rem; }
+          .pem .hero-ctas{ flex-direction:column; gap:12px; margin-top:24px; }
+          .pem .hero-ctas .btn{ width:100%; }
+          .pem .trust-strip{ display:grid; grid-template-columns:1fr 1fr; gap:12px 16px; margin-top:32px; padding-top:20px; font-size:.82rem; }
 
-        .dp-section-title {
-          font-family: var(--display);
-          font-size: clamp(2.8rem, 5vw, 5rem);
-          font-weight: 700; line-height: 1.02; letter-spacing: -0.01em;
-          color: var(--ink);
-        }
-        .dp-section-title em { font-style: italic; color: var(--gold); font-weight: 600; }
-        .dp-section-title-light { color: var(--white); }
-        .dp-section-title-light em { color: var(--gold-light); }
-
-        .dp-section-sub {
-          font-size: 15px; font-weight: 400; line-height: 1.9;
-          color: var(--ink-soft); max-width: 520px; margin-top: 18px;
-        }
-        .dp-section-sub-light { color: rgba(255,255,255,0.62); }
-
-        /* ─── BUTTONS ─── */
-        .dp-btn {
-          display: inline-flex; align-items: center; gap: 8px;
-          padding: 14px 28px;
-          font-family: var(--body); font-size: 11px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
-          cursor: pointer; border: none; transition: all 0.28s;
-          white-space: nowrap; text-decoration: none;
-        }
-        .dp-btn-gold {
-          background: var(--gold); color: var(--white);
-        }
-        .dp-btn-gold:hover { background: #A0824A; }
-        .dp-btn-outline-white {
-          background: transparent; color: var(--white);
-          border: 1px solid rgba(255,255,255,0.3);
-        }
-        .dp-btn-outline-white:hover { border-color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.06); }
-        .dp-btn-outline-ink {
-          background: transparent; color: var(--ink);
-          border: 1px solid rgba(0,0,0,0.18);
-        }
-        .dp-btn-outline-ink:hover { border-color: var(--ink); }
-
-        /* ─── RULE ─── */
-        .dp-rule { border: none; border-top: 1px solid var(--rule); }
-        .dp-rule-dark { border: none; border-top: 1px solid rgba(255,255,255,0.08); }
-
-        /* ─── PARKS ─── */
-        .dp-parks-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
-        @media (max-width: 800px) { .dp-parks-grid { grid-template-columns: 1fr; } }
-
-        .dp-park-card {
-          background: var(--white);
-          position: relative; overflow: hidden;
-        }
-        .dp-park-img-wrap { position: relative; overflow: hidden; height: 340px; }
-        .dp-park-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s cubic-bezier(0.25,0.1,0.25,1); }
-        .dp-park-card:hover .dp-park-img { transform: scale(1.04); }
-        .dp-park-num {
-          position: absolute; bottom: 16px; left: 20px;
-          font-family: var(--display); font-size: 60px; font-weight: 300;
-          color: rgba(255,255,255,0.18); line-height: 1; letter-spacing: -0.02em;
-          pointer-events: none;
-        }
-        .dp-park-body { padding: 36px 36px 40px; border-top: 1px solid var(--rule); }
-        .dp-park-year {
-          font-size: 9px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase;
-          color: var(--gold); margin-bottom: 14px;
-        }
-        .dp-park-name {
-          font-family: var(--display);
-          font-size: 2rem; font-weight: 700; line-height: 1.1;
-          color: var(--ink); margin-bottom: 14px;
-        }
-        .dp-park-desc {
-          font-size: 14px; font-weight: 400; line-height: 1.85;
-          color: var(--ink-soft); margin-bottom: 24px;
-        }
-        .dp-park-lands { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
-        .dp-land-pill {
-          padding: 5px 14px;
-          border: 1px solid var(--rule); background: var(--paper);
-          font-size: 9.5px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
-          color: var(--ink-soft);
-        }
-        .dp-park-highlight {
-          font-size: 11px; font-weight: 400; line-height: 1.7;
-          color: var(--ink-muted);
-          padding-top: 20px; border-top: 1px solid var(--rule);
-          letter-spacing: 0.02em;
+          .pem .final-cta{ padding:40px 20px; }
+          .pem .final-cta .phone-big{ font-size:1.25rem; }
+          .pem .final-ctas{ flex-direction:column; }
+          .pem .final-ctas .btn{ width:100%; }
         }
 
-        /* ─── NEWS ─── */
-        .dp-news-grid {
-          display: grid; grid-template-columns: 1fr 1fr;
-          gap: 1px; background: var(--rule);
-        }
-        @media (max-width: 760px) { .dp-news-grid { grid-template-columns: 1fr; } }
+        /* ---------- PHONE (<= 560px) ---------- */
+        @media (max-width:560px){
+          .pem .grid-4{ grid-template-columns:1fr; gap:14px; margin-top:28px !important; }
+          .pem .value-card{ display:flex; gap:14px; align-items:flex-start; padding:20px 18px; }
+          .pem .value-card .icon{ margin-bottom:0; }
 
-        .dp-news-card {
-          background: var(--white);
-          display: flex; flex-direction: column;
-          transition: background 0.2s;
-        }
-        .dp-news-card:hover { background: #FEFCF9; }
-        .dp-news-img-wrap { overflow: hidden; height: 200px; }
-        .dp-news-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s cubic-bezier(0.25,0.1,0.25,1); }
-        .dp-news-card:hover .dp-news-img { transform: scale(1.04); }
-        .dp-news-body { padding: 28px 32px 32px; flex: 1; }
-        .dp-news-badge {
-          font-size: 9px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase;
-          color: var(--gold); margin-bottom: 12px; display: block;
-        }
-        .dp-news-title {
-          font-family: var(--display);
-          font-size: 1.6rem; font-weight: 700; line-height: 1.1;
-          color: var(--ink); margin-bottom: 4px;
-        }
-        .dp-news-subtitle {
-          font-family: var(--display);
-          font-size: 1rem; font-weight: 400; font-style: italic;
-          color: var(--ink-muted); margin-bottom: 16px;
-        }
-        .dp-news-desc {
-          font-size: 13px; font-weight: 400; line-height: 1.85; color: var(--ink-soft);
+          .pem .grid-routes{ grid-template-columns:1fr; gap:14px; margin-top:28px; }
+          .pem .route-card{ padding:20px 18px; gap:12px; }
+
+          .pem .steps{ grid-template-columns:1fr; gap:22px; margin-top:32px; }
+
+          .pem .compliance-row{ flex-direction:column; gap:10px; padding:24px 0; }
+
+          .pem .review-card{ padding:20px; }
+          .pem .faq-q{ font-size:.95rem; padding:16px 0; }
         }
 
-        /* ─── ATTRACTIONS ─── */
-        .dp-attr-grid {
-          display: grid; grid-template-columns: repeat(3, 1fr);
-          gap: 1px; background: rgba(255,255,255,0.06);
+        /* ---------- VERY SMALL (<= 360px) ---------- */
+        @media (max-width:360px){
+          .pem .trust-strip{ grid-template-columns:1fr; }
+          .pem .mobile-cta-bar{ padding-left:10px; padding-right:10px; gap:6px; }
+          .pem .mobile-cta-bar a{ font-size:.78rem; padding:12px 4px; }
         }
-        @media (max-width: 900px) { .dp-attr-grid { grid-template-columns: 1fr 1fr; } }
-        @media (max-width: 560px) { .dp-attr-grid { grid-template-columns: 1fr; } }
-
-        .dp-attr-card {
-          background: rgba(255,255,255,0.03);
-          padding: 0; overflow: hidden;
-          transition: background 0.25s;
-        }
-        .dp-attr-card:hover { background: rgba(255,255,255,0.06); }
-        .dp-attr-img-wrap { overflow: hidden; height: 160px; position: relative; }
-        .dp-attr-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s; opacity: 0.75; }
-        .dp-attr-card:hover .dp-attr-img { transform: scale(1.05); opacity: 0.9; }
-        .dp-attr-body { padding: 22px 24px 26px; }
-        .dp-attr-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-        .dp-attr-type { font-size: 8.5px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); }
-        .dp-attr-thrill {
-          padding: 3px 10px; border: 1px solid;
-          font-size: 8px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
-        }
-        .dp-thrill-Mild { border-color: rgba(255,255,255,0.15); color: rgba(255,255,255,0.35); }
-        .dp-thrill-Moderate { border-color: rgba(184,150,90,0.4); color: var(--gold); }
-        .dp-thrill-Thrilling { border-color: rgba(255,255,255,0.4); color: var(--white); }
-        .dp-attr-name {
-          font-family: var(--display);
-          font-size: 1.35rem; font-weight: 700; line-height: 1.15;
-          color: var(--white); margin-bottom: 10px;
-        }
-        .dp-attr-desc { font-size: 12.5px; font-weight: 400; line-height: 1.8; color: rgba(255,255,255,0.6); }
-        .dp-attr-park {
-          margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.07);
-          font-size: 9px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
-          color: rgba(255,255,255,0.25);
-        }
-
-        /* ─── TRANSFER ─── */
-        .dp-transfer-layout {
-          display: grid; grid-template-columns: 1fr 1fr;
-          gap: 80px; align-items: start;
-        }
-        @media (max-width: 860px) { .dp-transfer-layout { grid-template-columns: 1fr; gap: 48px; } }
-
-        .dp-transfer-title {
-          font-family: var(--display);
-          font-size: clamp(2.2rem, 4vw, 3.6rem);
-          font-weight: 700; line-height: 1.08; letter-spacing: -0.01em;
-          color: var(--ink); margin-bottom: 18px;
-        }
-        .dp-transfer-title em { font-style: italic; color: var(--gold); font-weight: 600; }
-        .dp-transfer-desc {
-          font-size: 14px; font-weight: 400; line-height: 1.9;
-          color: var(--ink-soft); margin-bottom: 36px;
-        }
-        .dp-transfer-features { display: flex; flex-direction: column; gap: 12px; margin-bottom: 40px; }
-        .dp-transfer-feature {
-          display: flex; align-items: center; gap: 14px;
-        }
-        .dp-transfer-feature-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
-        .dp-transfer-feature-text { font-size: 12.5px; font-weight: 400; color: var(--ink-soft); }
-
-        .dp-routes { display: flex; flex-direction: column; }
-        .dp-route {
-          display: flex; align-items: center; justify-content: space-between;
-          padding: 22px 0;
-          border-bottom: 1px solid var(--rule);
-          transition: all 0.2s;
-          cursor: pointer;
-        }
-        .dp-route:first-child { border-top: 1px solid var(--rule); }
-        .dp-route:hover { padding-left: 6px; }
-        .dp-route-left {}
-        .dp-route-name {
-          font-family: var(--display);
-          font-size: 1.2rem; font-weight: 600; color: var(--ink);
-          margin-bottom: 4px; display: flex; align-items: center; gap: 10px;
-        }
-        .dp-route-arrow { font-size: 0.9rem; color: var(--gold); }
-        .dp-route-pax { font-size: 10px; font-weight: 400; letter-spacing: 0.08em; color: var(--ink-muted); }
-        .dp-route-price {
-          font-family: var(--display);
-          font-size: 1.4rem; font-weight: 300; color: var(--ink); white-space: nowrap;
-        }
-
-        /* ─── TIPS ─── */
-        .dp-tips-grid {
-          display: grid; grid-template-columns: 1fr 1fr;
-          gap: 1px; background: rgba(255,255,255,0.06);
-        }
-        @media (max-width: 640px) { .dp-tips-grid { grid-template-columns: 1fr; } }
-
-        .dp-tip {
-          background: rgba(255,255,255,0.02);
-          padding: 40px;
-          transition: background 0.2s;
-        }
-        .dp-tip:hover { background: rgba(255,255,255,0.05); }
-        .dp-tip-label {
-          font-size: 9px; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase;
-          color: var(--gold); margin-bottom: 16px;
-        }
-        .dp-tip-title {
-          font-family: var(--display);
-          font-size: 1.45rem; font-weight: 700; color: var(--white);
-          margin-bottom: 14px; line-height: 1.15;
-        }
-        .dp-tip-body {
-          font-size: 13px; font-weight: 400; line-height: 1.85; color: rgba(255,255,255,0.6);
-        }
-
-        /* ─── FOOTER CTA ─── */
-        .dp-footer-cta {
-          background: var(--ink);
-          padding: 90px 6vw;
-          position: relative; overflow: hidden;
-        }
-        .dp-footer-cta-inner {
-          max-width: 1240px; margin: 0 auto;
-          display: flex; align-items: center; justify-content: space-between;
-          flex-wrap: wrap; gap: 40px;
-        }
-        .dp-footer-cta-title {
-          font-family: var(--display);
-          font-size: clamp(2rem, 4vw, 3.2rem);
-          font-weight: 700; color: var(--white); line-height: 1.1;
-        }
-        .dp-footer-cta-title em { font-style: italic; color: var(--gold-light); font-weight: 600; }
-
-        .dp-footer-btns { display: flex; gap: 12px; flex-wrap: wrap; }
-
-        /* ─── DIVIDER ─── */
-        .dp-editorial-divider {
-          display: flex; align-items: center; gap: 0;
-          padding: 0 6vw;
-        }
-        .dp-ed-line { flex: 1; height: 1px; background: var(--rule); }
-        .dp-ed-text {
-          padding: 0 24px;
-          font-family: var(--display);
-          font-size: 11px; font-style: italic; font-weight: 300;
-          color: var(--ink-muted); letter-spacing: 0.1em;
-        }
-
-        /* ANIMATIONS */
-        @keyframes dp-fade { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-        .dp-hero-left-content > * { animation: dp-fade 0.7s ease both; }
-        .dp-hero-left-content > *:nth-child(1) { animation-delay: 0.1s; }
-        .dp-hero-left-content > *:nth-child(2) { animation-delay: 0.25s; }
-        .dp-hero-left-content > *:nth-child(3) { animation-delay: 0.35s; }
-        .dp-hero-left-content > *:nth-child(4) { animation-delay: 0.45s; }
-        .dp-hero-left-content > *:nth-child(5) { animation-delay: 0.55s; }
       `}</style>
 
-      <div className="dp">
-
-        {/* ── HERO ── */}
-        <div className="dp-hero">
-          <div className="dp-hero-left">
-            <div className="dp-hero-img-bg" />
-            <div className="dp-hero-left-content">
-              <div className="dp-hero-eyebrow">
-                <div className="dp-hero-eyebrow-line" />
-                <div className="dp-hero-eyebrow-text">Destination Guide — Europe&apos;s Premier Resort</div>
-              </div>
-              <h1 className="dp-hero-title">
-                Disneyland<br /><em>Paris</em>
-              </h1>
-              <p className="dp-hero-subtitle">Marne-la-Vallée, France</p>
-              <p className="dp-hero-desc">
-                Thirty-two kilometres east of Paris, the continent&apos;s most-visited theme park resort is in the midst of its most ambitious transformation — two iconic parks, seven hotels, and a €2 billion reinvention.
-              </p>
-              <div className="dp-hero-btns">
-                <Link href="/reservation" className="dp-btn dp-btn-gold">Book a Transfer</Link>
-           <a
-  href="https://wa.me/33652466694"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="dp-btn dp-btn-whatsapp"
-  style={{
-    color: "#fff",
-    border: "2px solid #fff",
-    borderRadius: "8px",
-    padding: "10px 20px",
-  }}
->
-  WhatsApp Us
-</a>
-              </div>
+      <div className="pem">
+        {/* ===================== HERO ===================== */}
+        <section className="hero">
+          <div className="wrap">
+            <span className="eyebrow" style={{ color: "var(--gold-light)" }}>Disneyland Paris Transfers</span>
+            <h1>Your Private, Door-to-Door Transfer to <em>Disneyland Paris</em></h1>
+            <p className="lead">Travel on your own schedule, in total comfort, with luggage and kids sorted before you even land. A private driver takes you door-to-door from CDG, Orly, Beauvais or your Paris hotel — straight to the Disneyland gates, fixed price, no surprises.</p>
+            <div className="hero-ctas">
+              <Link className="btn btn-gold" href="/reservation">Book Your Transfer</Link>
+              <a className="btn btn-outline" href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">WhatsApp Us Now</a>
+            </div>
+            <div className="trust-strip">
+              <div className="item">⭐ <strong>4.9</strong>&nbsp;Google</div>
+              <div className="item">⭐ <strong>5.0</strong>&nbsp;TripAdvisor</div>
+              <div className="item">🛡️ <strong>Licensed VTC</strong> Île-de-France</div>
+              <div className="item">🤝 <strong>Meet &amp; Greet</strong> Guaranteed</div>
             </div>
           </div>
-          <div className="dp-hero-right">
-            <div className="dp-hero-right-img">
-              <img src="https://images.unsplash.com/photo-1599076978500-38f6ba2ccd97?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Disney Adventure World" />
-              <div className="dp-hero-right-img-overlay" />
-              <div className="dp-hero-right-label">
-                <span className="dp-hero-right-label-eyebrow">Now Open — 2025</span>
-                <div className="dp-hero-right-label-title">Disney Adventure World</div>
-                <div className="dp-hero-right-label-sub">World of Frozen · Avengers Campus</div>
-              </div>
-            </div>
-            <div className="dp-hero-stats">
-              <div className="dp-hero-stat">
-                <div className="dp-hero-stat-val">2</div>
-                <div className="dp-hero-stat-lbl">Theme Parks</div>
-              </div>
-              <div className="dp-hero-stat">
-                <div className="dp-hero-stat-val">7</div>
-                <div className="dp-hero-stat-lbl">Disney Hotels</div>
-              </div>
-              <div className="dp-hero-stat">
-                <div className="dp-hero-stat-val">€2B</div>
-                <div className="dp-hero-stat-lbl">Transformation</div>
-              </div>
-            </div>
-          </div>
-        </div>
+        </section>
 
-        {/* ── PARKS ── */}
-        <div className="dp-wrap" style={{ paddingTop: 80, paddingBottom: 0 }}>
-          <div className="dp-inner">
-            <div className="dp-section-header">
-              <div className="dp-kicker">
-                <span className="dp-kicker-num">§ 01</span>
-                <div className="dp-kicker-line" />
-                <span className="dp-kicker-text">Two Worlds of Magic</span>
-              </div>
-              <h2 className="dp-section-title">The <em>Parks</em></h2>
-              <p className="dp-section-sub">Two distinct destinations sitting side by side — from timeless fairytale grandeur to the most forward-looking land in the resort&apos;s history.</p>
+        {/* ===================== VALUE PROPS ===================== */}
+        <section>
+          <div className="wrap">
+            <div className="center" style={{ marginBottom: 8 }}>
+              <span className="eyebrow">Why Families Choose Us</span>
+              <h2>Comfort and Flexibility, Built Around You</h2>
+              <p className="lead">The details that matter when you're travelling with children and luggage.</p>
             </div>
-          </div>
-        </div>
-        <div style={{ maxWidth: 1240, margin: "0 auto", padding: "0 6vw 80px" }}>
-          <div className="dp-parks-grid">
-            {PARKS.map((p, i) => (
-              <div key={i} className="dp-park-card">
-                <div className="dp-park-img-wrap">
-                  <img src={p.img} alt={p.name} className="dp-park-img" />
-                  <div className="dp-park-num">{p.num}</div>
-                </div>
-                <div className="dp-park-body">
-                  <div className="dp-park-year">{p.tag}</div>
-                  <h3 className="dp-park-name">{p.name}</h3>
-                  <p className="dp-park-desc">{p.desc}</p>
-                  <div className="dp-park-lands">{p.lands.map(l => <span key={l} className="dp-land-pill">{l}</span>)}</div>
-                  <div className="dp-park-highlight">{p.highlight}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ── EDITORIAL DIVIDER ── */}
-        <div className="dp-editorial-divider">
-          <div className="dp-ed-line" />
-          <div className="dp-ed-text">What&apos;s new at the resort</div>
-          <div className="dp-ed-line" />
-        </div>
-
-        {/* ── NEWS ── */}
-        <div className="dp-wrap dp-wrap-warm">
-          <div className="dp-inner">
-            <div className="dp-section-header">
-              <div className="dp-kicker">
-                <span className="dp-kicker-num">§ 02</span>
-                <div className="dp-kicker-line" />
-                <span className="dp-kicker-text">Resort News & Openings</span>
-              </div>
-              <h2 className="dp-section-title">Latest <em>Additions</em></h2>
-              <p className="dp-section-sub">Disneyland Paris is mid-transformation. Here is everything that has opened recently — and what is coming next.</p>
-            </div>
-            <div className="dp-news-grid">
-              {NEWS.map((n, i) => (
-                <div key={i} className="dp-news-card">
-                  <div className="dp-news-img-wrap">
-                    <img src={n.img} alt={n.title} className="dp-news-img" />
-                  </div>
-                  <div className="dp-news-body">
-                    <span className="dp-news-badge">{n.badge}</span>
-                    <h3 className="dp-news-title">{n.title}</h3>
-                    <div className="dp-news-subtitle">{n.subtitle}</div>
-                    <p className="dp-news-desc">{n.desc}</p>
+            <div className="grid-4" style={{ marginTop: 40 }}>
+              {VALUE_PROPS.map((v) => (
+                <div key={v.title} className="value-card">
+                  <div className="icon">{v.icon}</div>
+                  <div>
+                    <h3>{v.title}</h3>
+                    <p>{v.body}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* ── ATTRACTIONS ── */}
-        <div className="dp-wrap-dark">
-          <div className="dp-inner">
-            <div className="dp-section-header">
-              <div className="dp-kicker">
-                <span className="dp-kicker-num" style={{ color: "var(--gold)" }}>§ 03</span>
-                <div className="dp-kicker-line" />
-                <span className="dp-kicker-text dp-kicker-text-light">Essential Attractions</span>
-              </div>
-              <h2 className="dp-section-title dp-section-title-light">Must-Do <em>Rides</em></h2>
-              <p className="dp-section-sub dp-section-sub-light">From classic dark rides to high-velocity coasters — the attractions that define a visit to the resort.</p>
+        {/* ===================== ROUTES ===================== */}
+        <section className="routes-section">
+          <div className="wrap">
+            <div className="center">
+              <span className="eyebrow" style={{ color: "var(--gold-light)" }}>Routes</span>
+              <h2>Choose Your Route to Disneyland Paris</h2>
+              <p className="lead" style={{ color: "#c9c3b5" }}>Every transfer seats up to 3 passengers with luggage. Need a larger group? WhatsApp us for a 7-seater quote.</p>
             </div>
-            <div className="dp-attr-grid">
-              {ATTRACTIONS.map((a, i) => (
-                <div key={i} className="dp-attr-card">
-                  <div className="dp-attr-img-wrap">
-                    <img src={a.img} alt={a.name} className="dp-attr-img" />
-                  </div>
-                  <div className="dp-attr-body">
-                    <div className="dp-attr-top">
-                      <div className="dp-attr-type">{a.type}</div>
-                      <div className={`dp-attr-thrill dp-thrill-${a.thrill}`}>{a.thrill}</div>
-                    </div>
-                    <div className="dp-attr-name">{a.name}</div>
-                    <div className="dp-attr-desc">{a.desc}</div>
-                    <div className="dp-attr-park">{a.park}</div>
-                  </div>
+            <div className="grid-routes">
+              {ROUTES.map((r) => (
+                <div key={r.slug} className="route-card">
+                  <div className="route-name">{r.name}</div>
+                  <div className="route-meta"><span>⏱ {r.eta}</span><span>👥 Up to 3</span></div>
+                  <Link className="btn btn-gold btn-block" href={`/reservation?route=${r.slug}`}>Get Your Fixed Price</Link>
+                </div>
+              ))}
+            </div>
+            <p className="price-note">Fixed price per vehicle, not per person. Not sure which airport? <a href={WHATSAPP_URL} style={{ color: "var(--gold-light)", textDecoration: "underline" }}>WhatsApp us your flight number</a> for an instant quote.</p>
+          </div>
+        </section>
+
+        {/* ===================== HOW IT WORKS ===================== */}
+        <section>
+          <div className="wrap">
+            <div className="center">
+              <span className="eyebrow">How It Works</span>
+              <h2>Four Steps to the Happiest Place on Earth</h2>
+            </div>
+            <div className="steps">
+              {STEPS.map((s, i) => (
+                <div key={s.title} className="step">
+                  <div className="num">{i + 1}</div>
+                  <h3>{s.title}</h3>
+                  <p>{s.body}</p>
                 </div>
               ))}
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* ── TRANSFER ── */}
-        <div className="dp-wrap">
-          <div className="dp-inner">
-            <div className="dp-transfer-layout">
-              <div>
-                <div className="dp-kicker" style={{ marginBottom: 20 }}>
-                  <span className="dp-kicker-num">§ 04</span>
-                  <div className="dp-kicker-line" />
-                  <span className="dp-kicker-text">Private Transfer Service</span>
-                </div>
-                <h2 className="dp-transfer-title">The <em>intelligent</em> way to arrive</h2>
-                <p className="dp-transfer-desc">Avoid the complexity of RER navigation with luggage and children. Our private door-to-door transfers deliver you directly from airport or hotel to the resort entrance — relaxed, on time, and ready.</p>
-                <div className="dp-transfer-features">
-                  {["Fixed pricing — no hidden charges", "Real-time flight tracking included", "Complimentary child seats provided", "Meet & greet at arrivals hall"].map(f => (
-                    <div key={f} className="dp-transfer-feature">
-                      <div className="dp-transfer-feature-dot" />
-                      <div className="dp-transfer-feature-text">{f}</div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                  <Link href="/reservation" className="dp-btn dp-btn-gold">Book a Transfer</Link>
-                  <Link href="/rates" className="dp-btn dp-btn-outline-ink">All Rates</Link>
-                </div>
-              </div>
-              <div>
-                <div className="dp-routes">
-                  {ROUTES.map((r, i) => (
-                    <div key={i} className="dp-route">
-                      <div className="dp-route-left">
-                        <div className="dp-route-name">
-                          {r.from} <span className="dp-route-arrow">→</span> {r.to}
-                        </div>
-                        <div className="dp-route-pax">{r.pax}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+        {/* ===================== FLEET ===================== */}
+        <section style={{ background: "var(--cream-2)" }}>
+          <div className="wrap fleet-section">
+            <img src="/images/Luxury-van-Mercedes-V-class.jpg" alt="Luxury Mercedes V-Class private transfer van" />
+            <div>
+              <span className="eyebrow">Our Fleet</span>
+              <h2>Comfortable, Private, Built for Families</h2>
+              <p className="lead">Executive sedans and Mercedes V-Class vans, air-conditioned and driven by licensed professionals — sized to fit strollers, suitcases, and everything Disneyland sends you home with.</p>
+              <ul className="fleet-list">
+                <li>Seats 1–7 passengers plus luggage</li>
+                <li>Free child and booster seats, fitted in advance</li>
+                <li>Air-conditioned, non-shared, door-to-door</li>
+                <li>Licensed, French-speaking professional drivers</li>
+              </ul>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* ── TIPS ── */}
-        <div className="dp-wrap-dark" style={{ paddingTop: 80, paddingBottom: 80 }}>
-          <div className="dp-inner">
-            <div className="dp-section-header">
-              <div className="dp-kicker">
-                <span className="dp-kicker-num" style={{ color: "var(--gold)" }}>§ 05</span>
-                <div className="dp-kicker-line" />
-                <span className="dp-kicker-text dp-kicker-text-light">Visitor Intelligence</span>
-              </div>
-              <h2 className="dp-section-title dp-section-title-light">Planning <em>Notes</em></h2>
-              <p className="dp-section-sub dp-section-sub-light">What to know before you travel — curated from experience, not guesswork.</p>
+        {/* ===================== COMPLIANCE STRIP ===================== */}
+        <section className="compliance" style={{ padding: 0 }}>
+          <div className="wrap">
+            <div className="compliance-row">
+              <div><strong>Licensed VTC</strong> Île-de-France</div>
+              <div><strong>SIRET</strong> Verified</div>
+              <div><strong>Fully Insured</strong></div>
+              <div><strong>24/7</strong> Availability</div>
+              <div><strong>Cash, Visa, Mastercard, Amex</strong> Accepted</div>
             </div>
-            <div className="dp-tips-grid">
-              {TIPS.map((t, i) => (
-                <div key={i} className="dp-tip">
-                  <div className="dp-tip-label">{t.label}</div>
-                  <h3 className="dp-tip-title">{t.title}</h3>
-                  <p className="dp-tip-body">{t.body}</p>
+          </div>
+        </section>
+
+        {/* ===================== REVIEWS ===================== */}
+        <section>
+          <div className="wrap">
+            <div className="center">
+              <span className="eyebrow">What Families Say</span>
+              <h2>Rated 4.9 on Google · 5.0 on TripAdvisor</h2>
+            </div>
+            <div className="grid-3">
+              {REVIEWS.map((r, i) => (
+                <div key={i} className="review-card">
+                  <div className="stars">★★★★★</div>
+                  <p>&quot;{r.text}&quot;</p>
+                  <div className="who">— {r.author}, {r.source}</div>
                 </div>
               ))}
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* ── FOOTER CTA ── */}
-        <div className="dp-footer-cta">
-          <div className="dp-footer-cta-inner">
-            <div className="dp-footer-cta-title">
-              Ready to plan your<br /><em>Disneyland Paris</em> visit?
+        {/* ===================== FAQ ===================== */}
+        <section style={{ background: "var(--cream-2)" }}>
+          <div className="wrap" style={{ maxWidth: 820 }}>
+            <div className="center">
+              <span className="eyebrow">Questions</span>
+              <h2>Before You Book</h2>
             </div>
-            <div className="dp-footer-btns">
-              <Link href="/reservation" className="dp-btn dp-btn-gold">Book Your Transfer</Link>
-              <a
-  href="https://wa.me/33652466694"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="dp-btn dp-btn-outline-white"
-  style={{ color: "#fff" }}
->
-  WhatsApp Us
-</a>
+            <div style={{ marginTop: 30 }}>
+              {FAQS.map((f, i) => (
+                <div key={f.q} className={`faq-item${openFaq === i ? " open" : ""}`}>
+                  <button
+                    className="faq-q"
+                    aria-expanded={openFaq === i}
+                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  >
+                    <span>{f.q}</span> <span className="plus">+</span>
+                  </button>
+                  <div className="faq-a"><p>{f.a}</p></div>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
+        </section>
 
+        {/* ===================== FINAL CTA ===================== */}
+        <section>
+          <div className="wrap">
+            <div className="final-cta">
+              <span className="eyebrow" style={{ color: "var(--gold-light)" }}>Ready When You Are</span>
+              <h2>Ready for a Stress-Free Start to Your Disneyland Trip?</h2>
+              <p style={{ color: "#d8d2c4", maxWidth: 520, margin: "10px auto 0" }}>Fixed price. Free child seats. A driver waiting with your name on it.</p>
+              <div className="phone-big">📞 {PHONE_DISPLAY}</div>
+              <div className="final-ctas">
+                <Link className="btn btn-gold" href="/reservation">Book Your Transfer</Link>
+                <a className="btn btn-outline" href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">WhatsApp Us</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ===================== STICKY MOBILE CTA ===================== */}
+        <div className="mobile-cta-bar">
+          <a className="call" href={`tel:${PHONE_TEL}`}>📞 Call</a>
+          <a className="wa" href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+          <Link className="book" href="/reservation">Book Now</Link>
+        </div>
       </div>
     </>
   );
