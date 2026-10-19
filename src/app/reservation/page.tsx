@@ -685,23 +685,24 @@ export default function ReservationPage() {
         .rp-inner{max-width:1280px;margin:0 auto;padding:0 24px;display:flex;gap:32px;align-items:flex-start}
         .rp-side{display:none}
         @media(min-width:1024px){.rp-side{display:flex;flex-direction:column;width:272px;min-width:272px;flex-shrink:0;background:#111827;color:#fff;border-radius:18px;padding:28px;position:sticky;top:108px}}
-        .rp-body{flex:1;min-width:0}
-        .rp-card{background:#fff;border-radius:18px;box-shadow:0 2px 24px rgba(0,0,0,0.08);padding:40px}
+        .rp-body{flex:1;min-width:0;overflow-x:clip}
+        .rp-card{background:#fff;border-radius:18px;box-shadow:0 2px 24px rgba(0,0,0,0.08);padding:40px;min-width:0;max-width:100%;box-sizing:border-box}
         @media(max-width:640px){.rp-card{padding:20px}.rp-inner{padding:0 12px}}
         @media(max-width:480px){.rp-card{padding:16px}}
         .rp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
         .rp-grid>*{min-width:0}
-        @media(max-width:600px){.rp-grid{grid-template-columns:minmax(0,1fr)}}
+        @media(max-width:640px){.rp-grid{grid-template-columns:minmax(0,1fr)}}
         .rp-input-wrap:focus-within{border-color:#16a34a!important;box-shadow:0 0 0 3px rgba(22,163,74,0.1)}
-        .rp-input-wrap{box-sizing:border-box;width:100%;min-width:0}
 
         /* ── Mobile-friendly date & time pickers ── */
-        .rp-pick{position:relative;box-sizing:border-box;width:100%;min-width:0;min-height:54px;padding:8px 14px;display:flex;align-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
-        .rp-pick-val{display:flex;align-items:center;gap:10px;min-width:0;width:100%;font-size:15px;font-weight:500;color:#111827;pointer-events:none;white-space:nowrap}
-        .rp-pick-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+        .rp-input-wrap{box-sizing:border-box;width:100%;max-width:100%;min-width:0}
+        .rp-pick{position:relative;box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:54px;padding:8px 14px;display:flex;align-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent;overflow:hidden}
+        .rp-pick-val{display:flex;align-items:center;gap:10px;min-width:0;width:100%;max-width:100%;font-size:15px;font-weight:500;color:#111827;pointer-events:none;white-space:nowrap}
+        .rp-pick-text{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis}
         .rp-pick-val.empty{color:#9ca3af;font-weight:400}
-        .rp-pick-input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;outline:none;background:transparent;font-size:16px;-webkit-appearance:none;appearance:none}
+        .rp-pick-input{position:absolute;top:0;left:0;width:100%;max-width:100%;min-width:0;height:100%;margin:0;padding:0;opacity:0;cursor:pointer;border:none;outline:none;background:transparent;font-size:16px;-webkit-appearance:none;appearance:none;box-sizing:border-box;-webkit-min-logical-width:0}
         .rp-pick-input::-webkit-calendar-picker-indicator{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+        .rp-pick-input::-webkit-date-and-time-value{min-width:0;text-align:left}
         .rp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
         .rp-chips-scroll{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
         .rp-chips-scroll::-webkit-scrollbar{display:none}
@@ -772,13 +773,18 @@ export default function ReservationPage() {
         @keyframes spin{to{transform:rotate(360deg)}}
         .rp-spin{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
         .rp-dots{display:inline-block;width:10px;height:10px;border:2px solid rgba(22,163,74,0.3);border-top-color:#16a34a;border-radius:50%;animation:spin .7s linear infinite;margin-left:8px;vertical-align:middle}
-        .rp-night-banner{background:linear-gradient(135deg,#1e1b4b,#312e81);border:1.5px solid #4338ca;border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:14px;margin-top:8px}
+        .rp-night-banner{box-sizing:border-box;max-width:100%;background:linear-gradient(135deg,#1e1b4b,#312e81);border:1.5px solid #4338ca;border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:14px;margin-top:8px}
+        @media(max-width:480px){
+          .rp-night-banner{flex-wrap:wrap;padding:12px 14px;gap:10px}
+          .rp-night-banner>div:last-child{margin-left:auto}
+        }
         @keyframes nightPulse{0%,100%{opacity:1}50%{opacity:.7}}
         .rp-night-star{animation:nightPulse 2s ease-in-out infinite}
         .dial-prefix{display:flex;align-items:center;padding:0 12px;background:#f9fafb;border-right:1px solid #e5e7eb;font-size:14px;font-weight:700;color:#374151;white-space:nowrap;flex-shrink:0;min-width:56px;justify-content:center}
         optgroup{font-weight:700;color:#374151}
         option{font-weight:400;color:#111827}
-        .rp-return-box{background:linear-gradient(135deg,#fffbeb,#fef9ec);border:1.5px solid #fcd34d;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;margin-top:4px}
+        .rp-return-box{min-width:0;max-width:100%;box-sizing:border-box;background:linear-gradient(135deg,#fffbeb,#fef9ec);border:1.5px solid #fcd34d;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;margin-top:4px}
+        @media(max-width:480px){.rp-return-box{padding:14px 12px}}
         .rp-return-header{display:flex;align-items:center;gap:10px}
         .rp-return-icon{width:34px;height:34px;border-radius:10px;background:#f59e0b;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
         .rp-return-title{font-size:13px;font-weight:700;color:#92400e}
