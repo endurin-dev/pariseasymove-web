@@ -531,6 +531,11 @@ export default function ReservationPage() {
           whatsapp: fullWhatsapp,
           email: personal.email,
           notes: noteParts,
+          flightOrTrain: trip.flightOrTrain,
+          address: trip.dropoffAddress,
+          totalPrice: finalPrice,
+          paymentMethod,
+          specialRequests: personal.notes,
           status: "new",
         }),
       });

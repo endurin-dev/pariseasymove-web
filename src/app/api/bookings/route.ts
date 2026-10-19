@@ -33,6 +33,77 @@ const shape = (r: any) => ({
   createdAt:   r.created_at,
 });
 
+const buildCalendarDescription = (
+  booking: ReturnType<typeof shape>,
+  details: {
+    date: string | Date;
+    startDateTime: Date;
+    endDateTime: Date;
+    pickup: string;
+    dropoff: string;
+    flightOrTrain?: string;
+    address?: string;
+    totalPrice?: number;
+    paymentMethod?: string;
+    specialRequests?: string;
+  }
+) => {
+  const dateString = typeof details.date === "string"
+    ? details.date.split("T")[0]
+    : details.date.toISOString().split("T")[0];
+  const dateLabel = new Intl.DateTimeFormat("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${dateString}T00:00:00Z`));
+  const formatTime = (date: Date) =>
+    date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  const paymentLabel = details.paymentMethod === "cash"
+    ? "Cash to driver"
+    : details.paymentMethod === "card"
+      ? "Card to driver"
+      : details.paymentMethod;
+  const totalPassengers = Number(booking.passengers ?? 0) + Number(booking.kids ?? 0);
+
+  return [
+    "🚘 BOOKING DETAILS",
+    "",
+    "🗓️ TRIP",
+    `Date: ${dateLabel}`,
+    `Departure time: ${formatTime(details.startDateTime)}`,
+    `Calendar slot: ${formatTime(details.startDateTime)}–${formatTime(details.endDateTime)}`,
+    "",
+    "📍 ROUTE",
+    `Pickup: ${details.pickup}`,
+    ...(details.flightOrTrain ? [`Flight / train: ${details.flightOrTrain}`] : []),
+    `Drop-off: ${details.dropoff}`,
+    ...(details.address ? [`Address: ${details.address}`] : []),
+    "",
+    "👥 PASSENGERS & LUGGAGE",
+    `Adults: ${booking.passengers}`,
+    `Children: ${booking.kids}`,
+    `Total passengers: ${totalPassengers}`,
+    `Luggage bags: ${booking.bags}`,
+    `Vehicle: ${booking.vehicleName}`,
+    "",
+    "💶 PAYMENT",
+    ...(typeof details.totalPrice === "number"
+      ? [`Total charged: ${new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(details.totalPrice)}`]
+      : []),
+    ...(paymentLabel ? [`Method: ${paymentLabel}`] : []),
+    "",
+    "👤 CUSTOMER",
+    `Name: ${booking.name}`,
+    `WhatsApp: ${booking.whatsapp}`,
+    ...(booking.email ? [`Email: ${booking.email}`] : []),
+    "",
+    "📝 SPECIAL REQUESTS",
+    details.specialRequests?.trim() || "None provided",
+  ].join("\n");
+};
+
 const JOIN_QUERY = `
   SELECT
     b.*,
@@ -127,14 +198,18 @@ export async function POST(req: NextRequest) {
         calendarId: process.env.GOOGLE_CALENDAR_ID,
         requestBody: {
           summary: `🚗 Ride for ${savedBooking.name} (${savedBooking.vehicleName})`,
-          description: `
-            📍 Route: ${savedBooking.from} ➡️ ${savedBooking.to}
-            👥 Passengers: ${savedBooking.passengers} (Kids: ${savedBooking.kids})
-            💼 Luggage Bags: ${savedBooking.bags}
-            📧 Email: ${savedBooking.email}
-            📱 WhatsApp: ${savedBooking.whatsapp}
-            📝 Notes: ${savedBooking.notes}
-          `.replace(/^\s+/gm, ""), // Clean string interpolation alignment tabs
+          description: buildCalendarDescription(savedBooking, {
+            date: savedBooking.date,
+            startDateTime,
+            endDateTime,
+            pickup: savedBooking.from,
+            dropoff: savedBooking.to,
+            flightOrTrain: b.flightOrTrain,
+            address: b.address,
+            totalPrice: b.totalPrice,
+            paymentMethod: b.paymentMethod,
+            specialRequests: b.specialRequests,
+          }),
           start: {
             dateTime: startDateTime.toISOString(),
             timeZone: "UTC", // Update to matching local company timezone if preferred (e.g., "America/New_York")
@@ -142,6 +217,13 @@ export async function POST(req: NextRequest) {
           end: {
             dateTime: endDateTime.toISOString(),
             timeZone: "UTC",
+          },
+          reminders: {
+            useDefault: false,
+            overrides: [
+              { method: "popup", minutes: 1440 },
+              { method: "popup", minutes: 120 },
+            ],
           },
         },
       });
@@ -156,14 +238,18 @@ export async function POST(req: NextRequest) {
           calendarId: process.env.GOOGLE_CALENDAR_ID,
           requestBody: {
             summary: `↩️ Return ride for ${savedBooking.name} (${savedBooking.vehicleName})`,
-            description: `
-              📍 Return Route: ${savedBooking.to} ➡️ ${savedBooking.from}
-              👥 Passengers: ${savedBooking.passengers} (Kids: ${savedBooking.kids})
-              💼 Luggage Bags: ${savedBooking.bags}
-              📧 Email: ${savedBooking.email}
-              📱 WhatsApp: ${savedBooking.whatsapp}
-              📝 Notes: ${savedBooking.notes}
-            `.replace(/^\s+/gm, ""),
+            description: buildCalendarDescription(savedBooking, {
+              date: b.returnDate,
+              startDateTime: returnStartDateTime,
+              endDateTime: returnEndDateTime,
+              pickup: savedBooking.to,
+              dropoff: savedBooking.from,
+              flightOrTrain: b.flightOrTrain,
+              address: b.address,
+              totalPrice: b.totalPrice,
+              paymentMethod: b.paymentMethod,
+              specialRequests: b.specialRequests,
+            }),
             start: {
               dateTime: returnStartDateTime.toISOString(),
               timeZone: "UTC",
@@ -171,6 +257,13 @@ export async function POST(req: NextRequest) {
             end: {
               dateTime: returnEndDateTime.toISOString(),
               timeZone: "UTC",
+            },
+            reminders: {
+              useDefault: false,
+              overrides: [
+                { method: "popup", minutes: 1440 },
+                { method: "popup", minutes: 120 },
+              ],
             },
           },
         });
