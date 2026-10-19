@@ -58,6 +58,78 @@ const calcPrice = (rate: Rate, pax: number): number | null => {
   return map[pax] ?? null;
 };
 
+/* ── Date / time helpers (local time, not UTC) ── */
+const pad = (n: number) => String(n).padStart(2, "0");
+const toLocalISO = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const addDaysTo = (baseISO: string, n: number) => {
+  const d = baseISO ? new Date(baseISO + "T00:00:00") : new Date();
+  d.setDate(d.getDate() + n);
+  return toLocalISO(d);
+};
+const formatDate = (iso: string) =>
+  iso
+    ? new Date(iso + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" })
+    : "";
+const openPicker = (e: React.MouseEvent<HTMLInputElement>) => {
+  try { (e.currentTarget as HTMLInputElement & { showPicker?: () => void }).showPicker?.(); } catch {}
+};
+
+const QUICK_DATES = [
+  { label: "Today", offset: 0 },
+  { label: "Tomorrow", offset: 1 },
+  { label: "In 2 days", offset: 2 },
+];
+const QUICK_RETURN_DATES = [
+  { label: "Same day", offset: 0 },
+  { label: "+1 day", offset: 1 },
+  { label: "+3 days", offset: 3 },
+  { label: "+7 days", offset: 7 },
+];
+const QUICK_TIMES = ["06:00", "09:00", "12:00", "15:00", "18:00", "21:00"];
+
+/* ── Touch-friendly picker: whole box is tappable, native picker opens on tap ── */
+function PickerField({ type, value, onChange, min, placeholder, ariaLabel, hasError, icon }: {
+  type: "date" | "time"; value: string; onChange: (v: string) => void;
+  min?: string; placeholder: string; ariaLabel: string; hasError?: boolean; icon: string;
+}) {
+  const shown = type === "date" ? formatDate(value) : value;
+  return (
+    <div className="rp-input-wrap" style={{ border:`1.5px solid ${hasError?"#dc2626":"#e5e7eb"}`,borderRadius:10,background:"#fff",display:"flex",alignItems:"center",overflow:"hidden" }}>
+      <div className="rp-pick">
+        <span className={`rp-pick-val${value ? "" : " empty"}`}>
+          <span style={{ fontSize:16,flexShrink:0 }}>{icon}</span>
+          <span style={{ overflow:"hidden",textOverflow:"ellipsis" }}>{shown || placeholder}</span>
+        </span>
+        <input
+          type={type}
+          className="rp-pick-input"
+          value={value}
+          min={min}
+          step={type === "time" ? 300 : undefined}
+          onClick={openPicker}
+          onChange={e => onChange(e.target.value)}
+          aria-label={ariaLabel}
+        />
+      </div>
+    </div>
+  );
+}
+
+function QuickChips({ options, value, onPick, scroll }: {
+  options: { label: string; value: string }[]; value: string;
+  onPick: (v: string) => void; scroll?: boolean;
+}) {
+  return (
+    <div className={`rp-chips${scroll ? " rp-chips-scroll" : ""}`}>
+      {options.map(o => (
+        <button key={o.label} type="button" className={`rp-chip${value === o.value ? " active" : ""}`} onClick={() => onPick(o.value)}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 const COUNTRIES = [
   "Afghanistan","Albania","Algeria","Andorra","Angola","Argentina","Armenia","Australia","Austria",
   "Azerbaijan","Bahrain","Bangladesh","Belarus","Belgium","Bolivia","Bosnia and Herzegovina","Brazil",
@@ -184,6 +256,8 @@ export default function ReservationPage() {
   const [done,     setDone]      = useState(false);
   const [bookingRef,setBookingRef]= useState("");
   const [errors,   setErrors]    = useState<Record<string,string>>({});
+
+  const today = toLocalISO(new Date());
 
   useEffect(() => {
     (async () => {
@@ -613,6 +687,21 @@ export default function ReservationPage() {
         .rp-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
         @media(max-width:600px){.rp-grid{grid-template-columns:1fr}}
         .rp-input-wrap:focus-within{border-color:#16a34a!important;box-shadow:0 0 0 3px rgba(22,163,74,0.1)}
+
+        /* ── Mobile-friendly date & time pickers ── */
+        .rp-pick{position:relative;width:100%;min-height:54px;padding:8px 14px;display:flex;align-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+        .rp-pick-val{display:flex;align-items:center;gap:10px;min-width:0;width:100%;font-size:15px;font-weight:500;color:#111827;pointer-events:none;white-space:nowrap}
+        .rp-pick-val.empty{color:#9ca3af;font-weight:400}
+        .rp-pick-input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;outline:none;background:transparent;font-size:16px;-webkit-appearance:none;appearance:none}
+        .rp-pick-input::-webkit-calendar-picker-indicator{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+        .rp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+        .rp-chips-scroll{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+        .rp-chips-scroll::-webkit-scrollbar{display:none}
+        .rp-chip{flex:0 0 auto;min-height:36px;padding:6px 14px;font-family:inherit;font-size:12px;font-weight:600;color:#4b5563;background:#fff;border:1.5px solid #e5e7eb;border-radius:999px;cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent}
+        .rp-chip:hover{border-color:#9ca3af}
+        .rp-chip.active{background:#111827;border-color:#111827;color:#fff}
+        @media(max-width:480px){.rp-pick{min-height:58px}.rp-chip{min-height:40px}}
+
         .rp-step-active{background:#16a34a;border-color:#16a34a;color:#fff}
         .rp-step-done{background:rgba(74,222,128,0.15);border-color:#4ade80;color:#4ade80}
         .rp-step-idle{background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.12);color:rgba(255,255,255,0.3)}
@@ -867,15 +956,15 @@ export default function ReservationPage() {
                     <LocationSelect value={trip.toId} onChange={setTo} locations={locations} placeholder="Select drop-off location…" error={errors.to}/>
                   </div>
 
-                 {showFlightBox&&(
-  <div>
-    <label style={S.label}>✈️ {flightLabel} <span style={{ color:GREEN }}>*</span></label>
-    <div className="rp-input-wrap" style={wrap(errors.flightOrTrain)}>
-      <input type="text" placeholder="e.g. AF1234 or TGV 6201" value={trip.flightOrTrain} onChange={e=>setTrip(t=>({...t,flightOrTrain:e.target.value}))} style={S.input}/>
-    </div>
-    {errEl(errors.flightOrTrain)}
-  </div>
-)}
+                  {showFlightBox&&(
+                    <div>
+                      <label style={S.label}>✈️ {flightLabel} <span style={{ color:GREEN }}>*</span></label>
+                      <div className="rp-input-wrap" style={wrap(errors.flightOrTrain)}>
+                        <input type="text" placeholder="e.g. AF1234 or TGV 6201" value={trip.flightOrTrain} onChange={e=>setTrip(t=>({...t,flightOrTrain:e.target.value}))} style={S.input}/>
+                      </div>
+                      {errEl(errors.flightOrTrain)}
+                    </div>
+                  )}
 
                   {showAddressBox&&(
                     <div>
@@ -889,16 +978,31 @@ export default function ReservationPage() {
                   <div className="rp-grid">
                     {field(<>
                       <label style={S.label}>{isRoundTrip?"Departure Date":"Travel Date"} <span style={{ color:GREEN }}>*</span></label>
-                      <div className="rp-input-wrap" style={wrap(errors.date)}>
-                        <input type="date" value={trip.date} min={new Date().toISOString().split("T")[0]} onChange={e=>setTrip(t=>({...t,date:e.target.value}))} style={S.input}/>
-                      </div>
+                      <PickerField
+                        type="date" icon="📅" value={trip.date} min={today}
+                        placeholder="Select date" ariaLabel="Travel date" hasError={!!errors.date}
+                        onChange={v=>setTrip(t=>({...t,date:v}))}
+                      />
+                      <QuickChips
+                        options={QUICK_DATES.map(q=>({ label:q.label, value:addDaysTo(today,q.offset) }))}
+                        value={trip.date}
+                        onPick={v=>setTrip(t=>({...t,date:v}))}
+                      />
                       {errEl(errors.date)}
                     </>)}
                     {field(<>
                       <label style={S.label}>{isRoundTrip?"Departure Time":"Pickup Time"} <span style={{ color:GREEN }}>*</span></label>
-                      <div className="rp-input-wrap" style={wrap(errors.time)}>
-                        <input type="time" value={trip.time} onChange={e=>setTrip(t=>({...t,time:e.target.value}))} style={S.input}/>
-                      </div>
+                      <PickerField
+                        type="time" icon="🕒" value={trip.time}
+                        placeholder="Select time" ariaLabel="Pickup time" hasError={!!errors.time}
+                        onChange={v=>setTrip(t=>({...t,time:v}))}
+                      />
+                      <QuickChips
+                        scroll
+                        options={QUICK_TIMES.map(t=>({ label:t, value:t }))}
+                        value={trip.time}
+                        onPick={v=>setTrip(t=>({...t,time:v}))}
+                      />
                       {errEl(errors.time)}
                       {isNightTime(trip.time)&&(
                         <div className="rp-night-banner" style={{ marginTop:10 }}>
@@ -930,16 +1034,32 @@ export default function ReservationPage() {
                       <div className="rp-grid">
                         {field(<>
                           <label style={S.label}>Return Date <span style={{ color:"#d97706" }}>*</span></label>
-                          <div className="rp-input-wrap" style={wrap(errors.returnDate)}>
-                            <input type="date" value={trip.returnDate} min={trip.date||new Date().toISOString().split("T")[0]} onChange={e=>setTrip(t=>({...t,returnDate:e.target.value}))} style={S.input}/>
-                          </div>
+                          <PickerField
+                            type="date" icon="📅" value={trip.returnDate} min={trip.date||today}
+                            placeholder="Select return date" ariaLabel="Return date" hasError={!!errors.returnDate}
+                            onChange={v=>setTrip(t=>({...t,returnDate:v}))}
+                          />
+                          <QuickChips
+                            scroll
+                            options={QUICK_RETURN_DATES.map(q=>({ label:q.label, value:addDaysTo(trip.date||today,q.offset) }))}
+                            value={trip.returnDate}
+                            onPick={v=>setTrip(t=>({...t,returnDate:v}))}
+                          />
                           {errEl(errors.returnDate)}
                         </>)}
                         {field(<>
                           <label style={S.label}>Return Pickup Time <span style={{ color:"#d97706" }}>*</span></label>
-                          <div className="rp-input-wrap" style={wrap(errors.returnTime)}>
-                            <input type="time" value={trip.returnTime} onChange={e=>setTrip(t=>({...t,returnTime:e.target.value}))} style={S.input}/>
-                          </div>
+                          <PickerField
+                            type="time" icon="🕒" value={trip.returnTime}
+                            placeholder="Select return time" ariaLabel="Return pickup time" hasError={!!errors.returnTime}
+                            onChange={v=>setTrip(t=>({...t,returnTime:v}))}
+                          />
+                          <QuickChips
+                            scroll
+                            options={QUICK_TIMES.map(t=>({ label:t, value:t }))}
+                            value={trip.returnTime}
+                            onPick={v=>setTrip(t=>({...t,returnTime:v}))}
+                          />
                           {errEl(errors.returnTime)}
                           {isNightTime(trip.returnTime)&&(
                             <div className="rp-night-banner" style={{ marginTop:10 }}>

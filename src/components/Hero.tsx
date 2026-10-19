@@ -11,6 +11,27 @@ interface Location {
   id: string; name: string; categoryIcon: string; categoryName: string; active: boolean;
 }
 
+/* ── Date / time helpers (local time, not UTC) ── */
+const pad = (n: number) => String(n).padStart(2, "0");
+const toLocalISO = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const addDays = (n: number) => { const d = new Date(); d.setDate(d.getDate() + n); return toLocalISO(d); };
+
+const formatDate = (iso: string) =>
+  iso
+    ? new Date(iso + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" })
+    : "";
+
+const openPicker = (e: React.MouseEvent<HTMLInputElement>) => {
+  try { (e.currentTarget as HTMLInputElement & { showPicker?: () => void }).showPicker?.(); } catch {}
+};
+
+const QUICK_DATES = [
+  { label: "Today", offset: 0 },
+  { label: "Tomorrow", offset: 1 },
+  { label: "In 2 days", offset: 2 },
+];
+const QUICK_TIMES = ["06:00", "09:00", "12:00", "15:00", "18:00", "21:00"];
+
 export default function HeroSection() {
   const [tripType, setTripType] = useState<"one-way"|"round-trip">("one-way");
   const [fromId, setFromId]     = useState("");
@@ -23,7 +44,7 @@ export default function HeroSection() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [allRates, setAllRates]   = useState<Rate[]>([]);
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = toLocalISO(new Date());
 
   useEffect(() => {
     Promise.all([fetch("/api/locations"), fetch("/api/rates")])
@@ -93,6 +114,12 @@ export default function HeroSection() {
           --h-stroke:      rgba(245,240,232,0.10);
           --h-stroke-gold: rgba(201,168,76,0.28);
           --h-ease:        cubic-bezier(0.25,0.1,0.25,1);
+
+          /* FIX: dark base + pull hero up under the fixed header.
+             Cancels the 88px top padding the layout adds for the header,
+             so no white strip shows on any screen size. */
+          background: var(--h-ink);
+          margin-top: -88px;
         }
         .hero-root *, .hero-root *::before, .hero-root *::after { box-sizing:border-box; margin:0; padding:0; }
 
@@ -154,72 +181,66 @@ export default function HeroSection() {
         .route-select option { background:#16181d; color:#f5f0e8; }
         .route-select optgroup { background:#0a1f44; color:rgba(245,240,232,.5); font-size:11px; }
 
-        /* ══ Date & Time native inputs ══ */
-        .dt-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:0; }
+        /* ══ Date & Time (mobile-friendly) ══ */
+        .dt-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
 
         .dt-field {
-          background: rgba(255,255,255,.04);
-          border: 1px solid var(--h-stroke);
-          border-radius: 10px;
-          padding: 9px 12px 8px;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          cursor: pointer;
-          transition: border-color .2s, background .2s;
+          position:relative;
+          background:rgba(255,255,255,.04);
+          border:1px solid var(--h-stroke);
+          border-radius:12px;
+          padding:10px 12px;
+          min-height:56px;
+          display:flex; flex-direction:column; justify-content:center; gap:4px;
+          cursor:pointer;
+          transition:border-color .2s, background .2s;
+          -webkit-tap-highlight-color:transparent;
         }
-        .dt-field:focus-within {
-          border-color: var(--h-stroke-gold);
-          background: rgba(201,168,76,.05);
-        }
-        .dt-field-label {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          font-size: 8.5px;
-          font-weight: 600;
-          letter-spacing: .18em;
-          text-transform: uppercase;
-          color: var(--h-ivory-faint);
-          pointer-events: none;
-        }
-        .dt-field:focus-within .dt-field-label { color: var(--h-gold); }
-        .dt-field:focus-within .dt-field-label svg { opacity: 1; }
-        .dt-field-label svg { opacity: .55; flex-shrink: 0; }
+        .dt-field:focus-within,
+        .dt-field:active { border-color:var(--h-stroke-gold); background:rgba(201,168,76,.06); }
 
-        /* Native input — let browser render its own date/time picker */
+        .dt-field-label {
+          display:flex; align-items:center; gap:5px;
+          font-size:9px; font-weight:600; letter-spacing:.18em; text-transform:uppercase;
+          color:var(--h-ivory-faint); pointer-events:none;
+        }
+        .dt-field:focus-within .dt-field-label { color:var(--h-gold); }
+
+        /* Visible, formatted text */
+        .dt-display {
+          font-size:14px; font-weight:400; color:var(--h-ivory);
+          pointer-events:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+        }
+        .dt-display.empty { color:rgba(245,240,232,.38); }
+
+        /* Real input sits invisibly over the whole field, so any tap opens the native picker */
         .dt-input {
-          background: transparent;
-          border: none;
-          outline: none;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 13px;
-          font-weight: 400;
-          color: var(--h-ivory);
-          width: 100%;
-          cursor: pointer;
-          padding: 0;
-          color-scheme: dark;
-          min-width: 0;
+          position:absolute; inset:0; width:100%; height:100%;
+          opacity:0; cursor:pointer; border:none; outline:none; background:transparent;
+          font-size:16px;           /* prevents iOS zoom on focus */
+          color-scheme:dark;
+          -webkit-appearance:none; appearance:none;
         }
-        /* placeholder colour when empty */
-        .dt-input:not([value])::-webkit-datetime-edit-text,
-        .dt-input:not([value])::-webkit-datetime-edit-month-field,
-        .dt-input:not([value])::-webkit-datetime-edit-day-field,
-        .dt-input:not([value])::-webkit-datetime-edit-year-field,
-        .dt-input:not([value])::-webkit-datetime-edit-hour-field,
-        .dt-input:not([value])::-webkit-datetime-edit-minute-field,
-        .dt-input:not([value])::-webkit-datetime-edit-ampm-field {
-          color: rgba(245,240,232,.35);
-        }
-        /* chrome/safari picker icon — keep it but tint it */
         .dt-input::-webkit-calendar-picker-indicator {
-          filter: invert(78%) sepia(30%) saturate(600%) hue-rotate(2deg) brightness(95%);
-          cursor: pointer;
-          opacity: .55;
-          margin-left: 2px;
+          position:absolute; inset:0; width:100%; height:100%;
+          opacity:0; cursor:pointer;
         }
-        .dt-input::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+
+        /* Quick-select chips */
+        .chip-row { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+        .chip-row-scroll { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; padding-bottom:2px; }
+        .chip-row-scroll::-webkit-scrollbar { display:none; }
+        .chip {
+          flex:0 0 auto;
+          min-height:34px; padding:6px 14px;
+          font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; letter-spacing:.04em;
+          color:var(--h-ivory-dim); background:transparent;
+          border:1px solid var(--h-stroke); border-radius:100px;
+          cursor:pointer; transition:all .18s var(--h-ease);
+          -webkit-tap-highlight-color:transparent;
+        }
+        .chip:hover { border-color:var(--h-stroke-gold); color:var(--h-gold); }
+        .chip.active { background:var(--h-gold); border-color:var(--h-gold); color:var(--h-ink); font-weight:600; }
 
         /* ══ Pax ══ */
         .pax-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; margin-top:10px; }
@@ -287,6 +308,13 @@ export default function HeroSection() {
           .foot-badges { display:none; }
           .hero-foot { padding:16px 4vw; }
         }
+        @media (max-width:480px) {
+          .dt-row { grid-template-columns:1fr; }
+          .dt-field { min-height:60px; }
+          .dt-display { font-size:15px; }
+          .pax-btn { width:32px; height:32px; font-size:20px; }
+          .chip { min-height:38px; }
+        }
         @media (max-width:400px) {
           .hero-body { padding:90px 4vw 24px; }
           .card-body { padding:12px 14px 16px; }
@@ -294,7 +322,6 @@ export default function HeroSection() {
           .ttabs { padding:12px 14px 0; }
           .ttab { font-size:9.5px; padding:6px 4px; }
           .wa-float { bottom:18px; right:18px; width:46px; height:46px; }
-          .dt-row { grid-template-columns:1fr; }
         }
       `}</style>
 
@@ -333,18 +360,15 @@ export default function HeroSection() {
                 <svg width={15} height={15} viewBox="0 0 24 24" fill="var(--h-ink)"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
                 Book Transfer
               </a>
-      <a
-  href="https://wa.me/33652466694"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="cta-ghost"
-  style={{
-    color: "#fff",
-    border: "2px solid #fff",
-  }}
->
-  WhatsApp Us
-</a>
+              <a
+                href="https://wa.me/33652466694"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cta-ghost"
+                style={{ color: "#fff", border: "2px solid #fff" }}
+              >
+                WhatsApp Us
+              </a>
             </div>
           </div>
 
@@ -415,7 +439,7 @@ export default function HeroSection() {
                   </div>
                 </div>
 
-                {/* Date & Time — simple native inputs */}
+                {/* Date & Time */}
                 <div className="dt-row">
                   <label className="dt-field">
                     <span className="dt-field-label">
@@ -424,12 +448,17 @@ export default function HeroSection() {
                       </svg>
                       Date
                     </span>
+                    <span className={`dt-display${date ? "" : " empty"}`}>
+                      {date ? formatDate(date) : "Select date"}
+                    </span>
                     <input
                       type="date"
                       className="dt-input"
                       value={date}
                       min={today}
+                      onClick={openPicker}
                       onChange={e => { setDate(e.target.value); setShowPrice(false); }}
+                      aria-label="Pickup date"
                     />
                   </label>
 
@@ -440,13 +469,50 @@ export default function HeroSection() {
                       </svg>
                       Time
                     </span>
+                    <span className={`dt-display${time ? "" : " empty"}`}>
+                      {time || "Select time"}
+                    </span>
                     <input
                       type="time"
                       className="dt-input"
                       value={time}
+                      step={300}
+                      onClick={openPicker}
                       onChange={e => { setTime(e.target.value); setShowPrice(false); }}
+                      aria-label="Pickup time"
                     />
                   </label>
+                </div>
+
+                {/* Quick date chips */}
+                <div className="chip-row">
+                  {QUICK_DATES.map(q => {
+                    const v = addDays(q.offset);
+                    return (
+                      <button
+                        key={q.label}
+                        type="button"
+                        className={`chip${date === v ? " active" : ""}`}
+                        onClick={() => { setDate(v); setShowPrice(false); }}
+                      >
+                        {q.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Quick time chips */}
+                <div className="chip-row chip-row-scroll">
+                  {QUICK_TIMES.map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      className={`chip${time === t ? " active" : ""}`}
+                      onClick={() => { setTime(t); setShowPrice(false); }}
+                    >
+                      {t}
+                    </button>
+                  ))}
                 </div>
 
                 {/* Passengers */}
@@ -460,8 +526,8 @@ export default function HeroSection() {
                       <span className="pax-val">{adults}</span>
                     </div>
                     <div className="pax-controls">
-                      <button className="pax-btn" onClick={() => setAdults(Math.max(1, adults - 1))}>−</button>
-                      <button className="pax-btn" onClick={() => setAdults(Math.min(16, adults + 1))}>+</button>
+                      <button type="button" className="pax-btn" onClick={() => setAdults(Math.max(1, adults - 1))} aria-label="Remove adult">−</button>
+                      <button type="button" className="pax-btn" onClick={() => setAdults(Math.min(16, adults + 1))} aria-label="Add adult">+</button>
                     </div>
                   </div>
                   <div className="pax-block">
@@ -476,8 +542,8 @@ export default function HeroSection() {
                       <span className="pax-val">{kids}</span>
                     </div>
                     <div className="pax-controls">
-                      <button className="pax-btn" onClick={() => setKids(Math.max(0, kids - 1))}>−</button>
-                      <button className="pax-btn" onClick={() => setKids(Math.min(6, kids + 1))}>+</button>
+                      <button type="button" className="pax-btn" onClick={() => setKids(Math.max(0, kids - 1))} aria-label="Remove child">−</button>
+                      <button type="button" className="pax-btn" onClick={() => setKids(Math.min(6, kids + 1))} aria-label="Add child">+</button>
                     </div>
                   </div>
                 </div>
@@ -501,7 +567,7 @@ export default function HeroSection() {
                 )}
 
                 {!showPrice
-                  ? <button className="card-submit" onClick={() => setShowPrice(true)}>
+                  ? <button type="button" className="card-submit" onClick={() => setShowPrice(true)}>
                       <svg width={15} height={15} viewBox="0 0 24 24" fill="var(--h-ink)"><path d="M21.41 11.58l-9-9A2 2 0 0011 2H4a2 2 0 00-2 2v7a2 2 0 00.59 1.42l9 9A2 2 0 0013 22a2 2 0 001.41-.59l7-7A2 2 0 0022 13a2 2 0 00-.59-1.42zM5.5 7A1.5 1.5 0 114 5.5 1.5 1.5 0 015.5 7z"/></svg>
                       See Price
                     </button>
@@ -553,7 +619,7 @@ export default function HeroSection() {
       </section>
 
       {/* WhatsApp */}
-      <a href="https://wa.me/33652466694" target="_blank" rel="noopener noreferrer" className="wa-float">
+      <a href="https://wa.me/33652466694" target="_blank" rel="noopener noreferrer" className="wa-float" aria-label="Chat on WhatsApp">
         <svg width={28} height={28} viewBox="0 0 24 24" fill="white">
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.198-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.297-.497.099-.198.05-.371-.025-.52-.074-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.29.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
         </svg>
