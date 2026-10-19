@@ -145,6 +145,36 @@ export async function POST(req: NextRequest) {
           },
         },
       });
+
+      if (b.returnDate && b.returnTime) {
+        const cleanReturnDateStr = typeof b.returnDate === "string" ? b.returnDate.split("T")[0] : b.returnDate;
+        const returnStartDateTime = new Date(`${cleanReturnDateStr}T${b.returnTime}`);
+        const returnEndDateTime = new Date(returnStartDateTime.getTime() + 60 * 60 * 1000);
+
+        await calendar.events.insert({
+          auth,
+          calendarId: process.env.GOOGLE_CALENDAR_ID,
+          requestBody: {
+            summary: `↩️ Return ride for ${savedBooking.name} (${savedBooking.vehicleName})`,
+            description: `
+              📍 Return Route: ${savedBooking.to} ➡️ ${savedBooking.from}
+              👥 Passengers: ${savedBooking.passengers} (Kids: ${savedBooking.kids})
+              💼 Luggage Bags: ${savedBooking.bags}
+              📧 Email: ${savedBooking.email}
+              📱 WhatsApp: ${savedBooking.whatsapp}
+              📝 Notes: ${savedBooking.notes}
+            `.replace(/^\s+/gm, ""),
+            start: {
+              dateTime: returnStartDateTime.toISOString(),
+              timeZone: "UTC",
+            },
+            end: {
+              dateTime: returnEndDateTime.toISOString(),
+              timeZone: "UTC",
+            },
+          },
+        });
+      }
     } catch (calErr) {
       // We log calendar integration faults separately. This isolates dependencies 
       // ensuring that database-saved bookings don't drop out if external APIs face downtime.
