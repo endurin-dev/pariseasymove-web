@@ -98,7 +98,7 @@ function PickerField({ type, value, onChange, min, placeholder, ariaLabel, hasEr
       <div className="rp-pick">
         <span className={`rp-pick-val${value ? "" : " empty"}`}>
           <span style={{ fontSize:16,flexShrink:0 }}>{icon}</span>
-          <span style={{ overflow:"hidden",textOverflow:"ellipsis" }}>{shown || placeholder}</span>
+          <span className="rp-pick-text">{shown || placeholder}</span>
         </span>
         <input
           type={type}
@@ -689,13 +689,16 @@ export default function ReservationPage() {
         .rp-card{background:#fff;border-radius:18px;box-shadow:0 2px 24px rgba(0,0,0,0.08);padding:40px}
         @media(max-width:640px){.rp-card{padding:20px}.rp-inner{padding:0 12px}}
         @media(max-width:480px){.rp-card{padding:16px}}
-        .rp-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-        @media(max-width:600px){.rp-grid{grid-template-columns:1fr}}
+        .rp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+        .rp-grid>*{min-width:0}
+        @media(max-width:600px){.rp-grid{grid-template-columns:minmax(0,1fr)}}
         .rp-input-wrap:focus-within{border-color:#16a34a!important;box-shadow:0 0 0 3px rgba(22,163,74,0.1)}
+        .rp-input-wrap{box-sizing:border-box;width:100%;min-width:0}
 
         /* ── Mobile-friendly date & time pickers ── */
-        .rp-pick{position:relative;width:100%;min-height:54px;padding:8px 14px;display:flex;align-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+        .rp-pick{position:relative;box-sizing:border-box;width:100%;min-width:0;min-height:54px;padding:8px 14px;display:flex;align-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
         .rp-pick-val{display:flex;align-items:center;gap:10px;min-width:0;width:100%;font-size:15px;font-weight:500;color:#111827;pointer-events:none;white-space:nowrap}
+        .rp-pick-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
         .rp-pick-val.empty{color:#9ca3af;font-weight:400}
         .rp-pick-input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;outline:none;background:transparent;font-size:16px;-webkit-appearance:none;appearance:none}
         .rp-pick-input::-webkit-calendar-picker-indicator{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
